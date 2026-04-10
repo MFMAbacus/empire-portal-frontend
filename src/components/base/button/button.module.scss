@@ -1,0 +1,65 @@
+@use '@/styles' as *;
+
+.button {
+  & {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 3rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    border-radius: .5rem;
+    outline: none;
+    border: none;
+    text-decoration: none;
+    user-select: none;
+    cursor: pointer;
+    transition: background-color $default-anim-speed;
+
+    &:disabled {
+      cursor: default;
+    }
+
+    &--color-default {
+      background-color: $color-primary;
+
+      &:hover:enabled, &:focus-visible {
+        background-color: $color-primary-90;
+      }
+  
+      &:disabled {
+        background-color: $color-primary-30;
+      }
+    }
+
+    &--color-red {
+      background-color: $color-red;
+
+      &:hover:enabled, &:focus-visible {
+        background-color: $color-red-90;
+      }
+  
+      &:disabled {
+        background-color: $color-red-50;
+      }
+    }
+
+    &--size-small {
+      height: 2rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
+
+  &__icon {
+    margin-right: 1rem;
+    color: $color-white;
+    font-size: 1.25rem;
+    line-height: 0;
+  }
+
+  &__label {
+    color: $color-white;
+    font-weight: 500;
+  }
+}

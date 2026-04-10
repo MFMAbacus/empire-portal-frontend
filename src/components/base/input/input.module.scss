@@ -1,0 +1,115 @@
+@use '@/styles' as *;
+
+.input {
+  & {
+    display: inline-block;
+    width: 25rem;
+
+    &--is-disabled {
+      cursor: default;
+    }
+  }
+
+  &__label {
+    display: block;
+    margin-bottom: .5rem;
+    color: $color-primary-150;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: color $default-anim-speed;
+
+    .input--is-required & {
+      &::after {
+        content: "*";
+        margin-left: .5rem;
+        color: $color-red;
+      }
+    }
+
+    .input--has-error & {
+      color: $color-red;
+    }
+  }
+
+  &__border {
+    display: flex;
+    width: 100%;
+    border: 1px solid $color-primary-30;
+    border-radius: .5rem;
+    background-color: $color-white;
+    transition:
+      box-shadow $default-anim-speed,
+      border-color $default-anim-speed,
+      background-color $default-anim-speed;
+
+    .input--size-default & {
+      height: 3rem;
+    }
+
+    .input--size-large & {
+      height: 9rem;
+    }
+
+    .input--has-focus:not(.input--is-disabled) & {
+      box-shadow: 0 0 0 3px rgba($color-primary-30, .2);
+    }
+
+    .input--has-error & {
+      border-color: $color-red;
+    }
+
+    .input--has-focus.input--has-error:not(.input--is-disabled) & {
+      box-shadow: 0 0 0 3px rgba($color-red, .1);
+    }
+
+    .input--is-disabled & {
+      background-color: $color-primary-5;
+    }
+  }
+
+  &__icon, &__handler {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 3rem;
+    height: 100%;
+  }
+
+  &__icon {
+    color: $color-primary;
+    font-size: 1.25rem;
+
+    .input--has-error & {
+      color: $color-red;
+    }
+  }
+
+  &__control {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    height: 100%;
+
+    &:first-child {
+      padding-left: 1rem;
+    }
+
+    &:last-child {
+      padding-right: 1rem;
+    }
+  }
+
+  &__feedback {
+    width: 100%;
+    margin-top: .5rem;
+    color: $color-primary-150;
+    font-size: .875rem;
+    font-weight: 500;
+    transition: color $default-anim-speed;
+
+    .input--has-error & {
+      color: $color-red;
+    }
+  }
+}
