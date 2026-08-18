@@ -1,0 +1,37 @@
+@use '@/styles' as *;
+
+.tabs {
+  & {
+    display: flex;
+    align-items: center;
+    padding: .75rem;
+    border-radius: .5rem;
+    background-color: $color-primary-10;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.5rem;
+    padding: 0 2rem;
+    margin: 0;
+    outline: none;
+    border: none;
+    border-radius: .5rem;
+    color: $color-primary-150;
+    background: none;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color $default-anim-speed;
+
+    &:not(:last-child) {
+      margin-right: .75rem;
+    }
+
+    &--is-active, &:hover, &:focus-visible {
+      background-color: $color-primary-5;
+    }
+  }
+}

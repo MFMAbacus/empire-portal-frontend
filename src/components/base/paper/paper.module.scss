@@ -1,0 +1,32 @@
+@use '@/styles' as *;
+
+.paper {
+  padding: 2rem 1.5rem;
+  border-radius: .5rem;
+  background-color: $color-white;
+  border: 1px solid $color-primary-10;
+  box-shadow: 0 .25rem .5rem rgba($color-black, .1);
+}
+
+.title {
+  position: relative;
+  margin: 0;
+  margin-bottom: 3rem;
+  color: $color-primary;
+  font-size: 1rem;
+  font-weight: 600;
+
+  &:not(:first-child) {
+    margin-top: 4rem;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 1.5rem;
+    left: 0;
+    height: .125rem;
+    width: 2rem;
+    background-color: $color-primary-150;
+  }
+}

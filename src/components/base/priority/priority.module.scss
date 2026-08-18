@@ -1,0 +1,31 @@
+@use '@/styles' as *;
+
+.priority {
+  display: inline-flex;
+  align-items: center;
+}
+
+.flag {
+  .priority--low & {
+    color: $color-green-80;
+  }
+
+  .priority--medium & {
+    color: $color-primary-90;
+  }
+
+  .priority--high & {
+    color: $color-red-80;
+  }
+
+  .priority--urgent & {
+    color: $color-secondary;
+  }
+}
+
+.value {
+  margin-left: .75rem;
+  font-size: 1rem;
+  font-weight: 500;
+  white-space: nowrap;
+}

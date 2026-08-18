@@ -1,0 +1,116 @@
+@use '@/styles' as *;
+
+.stat-box {
+  & {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    background-color: $color-white;
+    box-shadow: 0 0 .75rem rgba($color-black, .15);
+  }
+
+  &__left {
+    flex-shrink: 0;
+    max-width: 50%;
+    overflow-y: auto;
+  }
+
+  &__right {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 200px;
+  }
+
+  &__label {
+    color: $color-primary-40;
+  }
+
+  &__value {
+    margin-top: .25rem;
+    margin-bottom: 1.5rem;
+    color: $color-primary-150;
+    font-size: 1.5rem;
+    font-weight: 500;
+  }
+
+  &__line {
+    display: flex;
+    align-items: center;
+
+    &:not(:first-child) {
+      margin-top: .5rem;
+    }
+  }
+
+  &__line-dot {
+    width: 1rem;
+    height: 1rem;
+    border-radius: .5rem;
+    margin-right: 1rem;
+    
+    .stat-box__line--color-red & {
+      background-color: #FF8787;
+    }
+
+    .stat-box__line--color-green & {
+      background-color: #B2F2BB;
+    }
+
+    .stat-box__line--color-blue & {
+      background-color: #C6DDF0;
+    }
+
+    .stat-box__line--color-orange & {
+      background-color: #FFC078;
+    }
+
+    .stat-box__line--color-pink & {
+      background-color: #F3D9FA;
+    }
+  }
+
+  &__line-val {
+    min-width: 2.5rem;
+    color: $color-primary-150;
+    font-weight: 600;
+  }
+
+  &__line-label {
+    color: $color-primary-40;
+  }
+}
+
+.pdf-header {
+  & {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    height: 7rem;
+    padding-left: 4rem;
+    padding-right: 4rem;
+    background-color: $color-primary-10;
+
+    @media print {
+      display: flex;
+    }
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    color: $color-primary-150;
+  }
+
+  &__dates {
+    margin-top: 1rem;
+    font-size: 1rem;
+    color: $color-primary-90;
+  }
+
+  &__logo {
+    width: 10rem;
+  }
+}

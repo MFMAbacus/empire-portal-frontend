@@ -1,0 +1,38 @@
+@use '@/styles' as *;
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border-radius: 1.25rem;
+  outline: none;
+  border: none;
+  color: $color-primary;
+  background: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition:
+    color $default-anim-speed,
+    background-color $default-anim-speed;
+
+  &--color-default {
+    &:hover:enabled, &:focus-visible {
+      background-color: $color-primary-10;
+    }
+  }
+
+  &--color-red {
+    &:hover:enabled, &:focus-visible {
+      color: $color-red;
+      background-color: $color-red-10;
+    }
+  }
+
+  &:disabled {
+    color: $color-primary-30;
+    cursor: default;
+  }
+}

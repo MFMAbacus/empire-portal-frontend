@@ -1,0 +1,36 @@
+@use '../abstracts/variables' as vars;
+
+html, body, #root, #popups {
+  height: 100%;
+}
+
+body {
+  min-width: 1200px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+* {
+  &, &::before, &::after {
+    box-sizing: border-box;
+  }
+}
+
+li {
+  list-style: none;
+}
+
+a {
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+#popups {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 300;
+}

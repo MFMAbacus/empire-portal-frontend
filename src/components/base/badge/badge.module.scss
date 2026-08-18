@@ -1,0 +1,32 @@
+@use '@/styles' as *;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 1.5rem;
+  padding: 0 1rem;
+  border-radius: .5rem;
+  font-size: .875rem;
+  font-weight: 500;
+  white-space: nowrap;
+
+  &--gray {
+    color: $color-primary-150;
+    background-color: rgba($color-black, .1);
+  }
+
+  &--blue {
+    color: $color-primary;
+    background-color: $color-primary-10;
+  }
+
+  &--red {
+    color: $color-red;
+    background-color: $color-red-10;
+  }
+
+  &--green {
+    color: $color-green;
+    background-color: $color-green-10;
+  }
+}

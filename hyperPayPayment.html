@@ -1,0 +1,65 @@
+<html>
+  <head>
+    <title>HyperPay Test Payment</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <h1>HyperPay Test Payment</h1>
+
+    <div id="payment-form">
+      <form
+        action="http://localhost:5000/v1/hyperpay/status"
+        class="paymentWidgets"
+        data-brands="VISA MASTER"
+      >
+        Loading payment form... type "test"
+      </form>
+      99E15BDE002A936ECD1A3A4F.uat01-vm-tx01
+    </div>
+    p: Tue, 02 Sep 2025 11:06:32 GMT - Your Entity ID:
+    8a8294184e918ca6014e9c6f5ae12a9c
+    <!-- Replace CHECKOUT_ID_HERE with your actual checkout ID -->
+    <script src="https://eu-test.oppwa.com/v1/paymentWidgets.js?checkoutId=CHECKOUT_ID_HERE"></script>
+
+    <script>
+      // Refer to HyperPay portal for the correct Entity ID
+      // Handle payment result for different payment methods
+      wpwlOptions = {
+        // with payment brand parameter
+        style: "card",
+        // instead of IQD
+        onReady: function () {
+          console.log("Payment form ready");
+        },
+        onPaymentResult: function (result) {
+          console.log("Payment result:", result);
+          if (result.resultIndicator) {
+            // Payment completed, now verify on backend
+            verifyPayment(result.resultIndicator);
+          }
+        },
+      };
+
+      function verifyPayment(resultIndicator) {
+        fetch("http://localhost:5000/v1/hyperpay/status", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            resourcePath: "/v1/checkouts/CHECKOUT_ID_HERE/payment",
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Verification result:", data);
+            alert("Payment verification: " + JSON.stringify(data, null, 2));
+          })
+          .catch((error) => {
+            console.error("Verification error:", error);
+          });
+      }
+    </script>
+  </body>
+</html>

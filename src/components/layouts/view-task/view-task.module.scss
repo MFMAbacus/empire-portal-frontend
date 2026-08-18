@@ -1,0 +1,281 @@
+@use 'sass:math';
+@use '@/styles' as *;
+
+$spacing: 30;
+
+.layout {
+  display: flex;
+  width: 100%;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+
+  &:not(&_right) {
+    margin-right: relative($spacing);
+  }
+
+  &_right {
+    flex-grow: 0;
+    flex-shrink: 0;
+    width: 33.3%;
+    min-width: 400px;
+  }
+}
+
+.row {
+  width: 100%;
+
+  &:not(:last-child) {
+    margin-bottom: relative($spacing);
+  }
+}
+
+.info-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
+
+.info-card {
+  display: flex;
+  align-items: center;
+  padding: relative(12) relative(15);
+  border: 1px solid rgba($color-primary-40, .2);
+  border-radius: 4px;
+  font-size: relative(14);
+  color: rgba($color-black, .7);
+
+  &_icon-w {
+    height: relative(45);
+    width: relative(45);
+    margin-right: relative(40);
+  }
+  
+  &_label {
+    margin-right: auto;
+    color: $color-black;
+    font-weight: 500;
+  }
+
+  &:not(:last-child) {
+    margin-bottom: relative(8);
+  }
+}
+
+.details-paper {
+  &_title {
+    color: $color-black;
+    font-weight: 600;
+    font-size: relative(12);
+  }
+  
+  &_description {
+    opacity: .7;
+    margin-top: 0;
+    color: $color-black;
+    font-size: relative(14);
+    font-weight: 500;
+    line-height: relative(20);
+  }
+  
+  &_list {
+    display: flex;
+    align-items: center;
+    margin: relative(30) 0 0 0;
+    padding: 0;
+  }
+}
+
+.detail-owner {
+  display: flex;
+  align-items: center;
+  margin-bottom: relative(40);
+
+  &_sheet {
+    width: relative(30);
+    margin-right: relative(20);
+  }
+
+  &_info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &_name {
+    color: $color-primary;
+    font-weight: 500;
+    margin-bottom: relative(5);
+  }
+
+  &_address {
+    color: $color-black;
+    opacity: .6;
+  }
+}
+
+.detail-card {
+  @extend .info-card;
+  margin-bottom: 0 !important;
+  font-size: relative(12);
+  flex-grow: 1;
+  font-weight: 500;
+  flex-direction: column;
+  background-color: rgba($color-primary, .07);
+  
+  &_value {
+    font-size: relative(14);
+    color: $color-primary;
+    font-weight: 600;
+    margin-top: relative(8);
+  }
+
+  &:not(:last-child) {
+    margin-right: relative(24);
+  }
+
+  &--clickable {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 300ms;
+
+    &:hover {
+      background-color: rgba($color-primary, .15);
+    }
+  }
+}
+
+.timeline {
+  $timeline-spacing: 20;
+  $timeline-create-spacing: 35;
+  $box-size: 44;
+
+  %box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: relative($box-size);
+    width: relative($box-size);
+    border: 1px solid rgba($color-primary-40, .2);
+    border-radius: 50%;
+  }
+
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+
+  &_entry {
+    display: flex;
+    align-items: center;
+    margin-bottom: relative($timeline-spacing);
+    position: relative;
+
+    &.timeline_create {
+      margin-bottom: relative($timeline-create-spacing);
+    }
+
+    &--box {
+      @extend %box;
+      flex-shrink: 0;
+      background-color: $color-white;
+      z-index: 1;
+      margin-right: relative(30);
+
+      .timeline_create & {
+        border-color: $color-primary;
+        background-color: $color-primary;
+      }
+
+      .timeline_entry:not(.timeline_create) &::after {
+        content: '';
+        height: 14px;
+        width: 14px;
+        border-radius: 2px;
+        background-color: rgba($color-primary, .5);
+      }
+
+      &_icon {
+        font-size: relative(20);
+        color: $color-white;
+      }
+    }
+
+    $half-box: math.div($box-size, 2);
+
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: 0;
+      top: 0;
+      left: relative($half-box - 1);
+      height: calc(100% + #{relative($timeline-spacing)});
+      border-right: 1px solid rgba($color-primary-40, .2);
+    }
+
+    &.timeline_create::before {
+      height: calc(
+        100% - #{$half-box}px + #{relative($timeline-create-spacing)}
+      );
+      top: #{$half-box}px;
+    }
+
+    &:last-child::before {
+      height: 50%;
+    }
+  }
+
+  &-card {
+    @extend .info-card;
+    flex-grow: 1;
+
+    &_icon-w {
+      @extend %box;
+      flex-shrink: 0;
+      margin-right: relative(20);
+    }
+
+    &_icon {
+      font-size: relative(20);
+      opacity: .6;
+
+    }
+
+    &_info-w {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    &_label {
+      color: $color-black;
+      font-weight: 500;
+
+      .timeline & {
+        margin-bottom: relative(8);
+      }
+    }
+  }
+
+  .create_btn {
+    position: relative;
+    flex-grow: 1;
+
+    &:hover::before {
+      background-color: $color-primary-90;
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: -4px;
+      width: 8px;
+      height: 8px;
+      background-color: $color-primary;
+      transform: rotate(-45deg);
+      transition: inherit;
+    }
+  }
+}
