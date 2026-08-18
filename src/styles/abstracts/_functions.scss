@@ -1,5 +1,0 @@
-@use 'sass:math';
-
-@function relative($size) {
-  @return math.div($size, 16) * 1rem;
-};
