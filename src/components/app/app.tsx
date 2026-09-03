@@ -50,7 +50,11 @@ import { EditPropertyMaster } from "../layouts/edit-property-master";
 import { ApartmentMaster } from "../layouts/apartment-master";
 import { CreateApartmentMaster } from "../layouts/create-apartment-master";
 import { EditApartmentMaster } from "../layouts/edit-apartment-master";
-// import { ApartmentMaster } from "../layouts/master-form/apartment-master";
+
+import { ResidentMaster } from "../layouts/resident-master";
+import { CreateResidentMaster } from "../layouts/create-resident-master";
+import { EditResidentMaster } from "../layouts/edit-resident-master";
+
 // import { ResidentMaster } from "../layouts/master-form/resident-master";
 // import { RoleMaster } from "../layouts/master-form/role-master";
 // import { ApprovalRoutingMaster } from "../layouts/master-form/approval-routing-master";
@@ -362,6 +366,30 @@ export const App = (): JSX.Element => {
           sessionId={session.id}
           apartmentId={id}
           onBack={() => setCurrentPage("apartment-master")}
+        />
+      )}
+      {currentPage === "resident-master" && (
+        <ResidentMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-resident-master")}
+          onView={(residentId) => {
+            setId(residentId);
+            setCurrentPage("edit-resident-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-resident-master" && (
+        <CreateResidentMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("resident-master")}
+        />
+      )}
+      {currentPage === "edit-resident-master" && id && (
+        <EditResidentMaster
+          sessionId={session.id}
+          residentId={id}
+          onBack={() => setCurrentPage("resident-master")}
         />
       )}
       {/* {currentPage === "apartment-master" && (

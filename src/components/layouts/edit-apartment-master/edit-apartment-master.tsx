@@ -1,8 +1,10 @@
 import * as React from "react";
 
+import { Map } from "@/components/base/map";
 import { Button } from "@/components/base/button";
 import { Paper } from "@/components/base/paper";
 import { TextInput } from "@/components/base/text-input";
+import { ListInput } from "@/components/base/list-input";
 import { Grid } from "@/components/base/grid";
 import { Checkbox } from "@/components/base/checkbox";
 import { Alert } from "@/components/base/alert";
@@ -20,12 +22,20 @@ import { useForm } from "@/hooks/use-form";
 import { AlertSeverity } from "@/types/alert";
 
 import { makeGetApartmentMasterService } from "@/services/get-apartment-master-service";
-import { makeCreateApartmentMasterService } from "@/services/create-apartment-master-service"
+import { makeCreateApartmentMasterService } from "@/services/create-apartment-master-service";
+import { GetPropertyMasterServiceApi } from "@/services/get-property-master-service";
 
 type EditApartmentMasterProps = {
   sessionId: string;
   apartmentId: string; // Database Record ID
   onBack: () => void;
+};
+
+type PropertyMasterItem = {
+  id?: string;
+  projectCode?: string;
+  projectName?: string;
+  [key: string]: any;
 };
 
 const delayAfterSuccess = 1000;
@@ -43,13 +53,55 @@ export const EditApartmentMaster = ({
   const [projectCode, setProjectCode] = React.useState<string>("");
   const [isActive, setIsActive] = React.useState<boolean>(true);
 
+  const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>([]);
+  const [isLoadingProperties, setIsLoadingProperties] = React.useState<boolean>(false);
+
   const [isFetching, setIsFetching] = React.useState<boolean>(true);
   const [isSuccess, setIsSuccess] = React.useState<boolean>(false);
   const [fetchError, setFetchError] = React.useState<string | null>(null);
 
   const { startTimeout } = useTimeout();
 
-  // Initial Data Fetching
+  // Fetch Property Master List for Dropdown
+  React.useEffect(() => {
+    let isMounted = true;
+    const propertyService = new GetPropertyMasterServiceApi();
+
+    const fetchProperties = async () => {
+      setIsLoadingProperties(true);
+      try {
+        const response = await propertyService.execute({
+          sessionId,
+          isArchived: false,
+        } as any);
+
+        if (isMounted && response) {
+          const items: PropertyMasterItem[] = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray(response)
+            ? response
+            : [];
+
+          setPropertyList(items);
+        }
+      } catch (err) {
+        console.error("Failed to fetch property master list:", err);
+      } finally {
+        if (isMounted) {
+          setIsLoadingProperties(false);
+        }
+      }
+    };
+
+    fetchProperties();
+
+    return () => {
+      isMounted = false;
+      propertyService.abort();
+    };
+  }, [sessionId]);
+
+  // Initial Apartment Data Fetching
   React.useEffect(() => {
     let isMounted = true;
     setIsFetching(true);
@@ -96,8 +148,8 @@ export const EditApartmentMaster = ({
   const handleSubmit = React.useCallback(() => {
     submit({
       sessionId,
-      id: apartmentId,            // Target Record Primary Key (e.g., AM-1001)
-      apartmentId: apartmentCode, // User Input Field Value (e.g., APT-101)
+      id: apartmentId,            // Target Record Primary Key
+      apartmentId: apartmentCode, // User Input Field Value
       apartmentNo,
       buildingOrTower,
       floor,
@@ -115,6 +167,14 @@ export const EditApartmentMaster = ({
     isActive,
     submit,
   ]);
+
+  // Extract unique project codes for dropdown options
+  const uniqueProjectCodes = React.useMemo(() => {
+    const codes = propertyList
+      .map((item) => item.projectCode)
+      .filter((code): code is string => Boolean(code));
+    return Array.from(new Set(codes));
+  }, [propertyList]);
 
   return (
     <Dashboard.Content>
@@ -152,8 +212,8 @@ export const EditApartmentMaster = ({
 
             <Paper.Title value={`Apartment Details (ID: ${apartmentId})`} />
 
-            {/* Field 1: Apartment ID (User Input) */}
             <Grid>
+              {/* Field 1: Apartment ID */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <TextInput
                   className="w-100"
@@ -165,10 +225,8 @@ export const EditApartmentMaster = ({
                   onChange={setApartmentCode}
                 />
               </Grid.Cell>
-            </Grid>
 
-            {/* Field 2: Apartment No. */}
-            <Grid>
+              {/* Field 2: Apartment No. */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <TextInput
                   className="w-100"
@@ -180,10 +238,8 @@ export const EditApartmentMaster = ({
                   onChange={setApartmentNo}
                 />
               </Grid.Cell>
-            </Grid>
 
-            {/* Field 3: Building/Tower */}
-            <Grid>
+              {/* Field 3: Building/Tower */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <TextInput
                   className="w-100"
@@ -195,10 +251,8 @@ export const EditApartmentMaster = ({
                   onChange={setBuildingOrTower}
                 />
               </Grid.Cell>
-            </Grid>
 
-            {/* Field 4: Floor */}
-            <Grid>
+              {/* Field 4: Floor */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <TextInput
                   className="w-100"
@@ -212,23 +266,47 @@ export const EditApartmentMaster = ({
               </Grid.Cell>
             </Grid>
 
-            {/* Field 5: Project Code */}
             <Grid>
+              {/* Field 5: Project Code (ListInput Dropdown) */}
               <Grid.Cell size={Grid.CellSize.S3}>
-                <TextInput
+                <ListInput
                   className="w-100"
                   label="Project Code"
-                  placeholder="Enter project code"
-                  value={projectCode}
+                  value={projectCode || undefined}
+                  placeholder={isLoadingProperties ? "Loading..." : "Select project code"}
                   hasError={typeof validation["projectCode"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
-                  onChange={setProjectCode}
-                />
+                  isDisabled={isLoading || isSuccess || isLoadingProperties}
+                >
+                  {(onClose) => (
+                    <React.Fragment>
+                      <ListInput.Item
+                        label="None"
+                        isActive={projectCode === ""}
+                        onClick={() => {
+                          setProjectCode("");
+                          onClose();
+                        }}
+                      />
+                      <Map
+                        items={uniqueProjectCodes}
+                        renderItem={(code) => (
+                          <ListInput.Item
+                            key={code}
+                            label={code}
+                            isActive={projectCode === code}
+                            onClick={() => {
+                              setProjectCode(code);
+                              onClose();
+                            }}
+                          />
+                        )}
+                      />
+                    </React.Fragment>
+                  )}
+                </ListInput>
               </Grid.Cell>
-            </Grid>
 
-            {/* Status Checkbox */}
-            <Grid>
+              {/* Status Checkbox */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <Checkbox
                   className="mt-2"
