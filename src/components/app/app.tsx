@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { Map } from "@/components/base/map";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
-
+import { MasterForms } from "../layouts/master-form/master-forms";
 import { SignIn } from "@/components/layouts/sign-in";
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Topbar } from "@/components/layouts/topbar";
@@ -42,6 +42,17 @@ import {
   // EditGeneralConfiguration,
 } from "../layouts/general-configuration";
 import { EditGeneralConfiguration } from "../layouts/general-configuration/edit-general-configuration";
+// Master Forms sub-page layouts ke imports
+import { PropertyMaster } from "../layouts/property-master";
+import { CreatePropertyMaster } from "../layouts/create-property-master";
+import { EditPropertyMaster } from "../layouts/edit-property-master";
+
+// import { ApartmentMaster } from "../layouts/master-form/apartment-master";
+// import { ResidentMaster } from "../layouts/master-form/resident-master";
+// import { RoleMaster } from "../layouts/master-form/role-master";
+// import { ApprovalRoutingMaster } from "../layouts/master-form/approval-routing-master";
+// import { EmailTemplateMaster } from "../layouts/master-form/email-template-master";
+// import { CommonStatusMaster } from "../layouts/master-form/common-status-master";
 
 export const App = (): JSX.Element => {
   const { session, isLoading, storeSession, destroySession, permissions } =
@@ -54,6 +65,9 @@ export const App = (): JSX.Element => {
 
   const [id, setId] = React.useState<string | undefined>();
 
+  const [selectedPropertyId, setSelectedPropertyId] = React.useState<
+    string | null
+  >(null);
   if (isLoading) {
     return <LoadingFeedback feedback="Loading, please wait." />;
   }
@@ -73,9 +87,11 @@ export const App = (): JSX.Element => {
                 <Topbar.NavItem
                   key={topbarNavItem.id}
                   id={topbarNavItem.id}
-                  isAccess={canReadModule(
-                    topbarNavItem.moduleName as ModuleName
-                  )}
+                  isAccess={
+                    topbarNavItem.id === "masterforms"
+                      ? true
+                      : canReadModule(topbarNavItem.moduleName as ModuleName)
+                  }
                   title={topbarNavItem.title}
                   isActive={
                     topbarNavItemPageMap[currentPage] === topbarNavItem.id
@@ -290,6 +306,73 @@ export const App = (): JSX.Element => {
           onBack={() => setCurrentPage("generalConfigurations")}
         />
       )}
+      {/* Master Forms Views */}
+      {currentPage === "masterforms" && (
+        <MasterForms
+          sessionId={session.id}
+          onNavigate={(page) => setCurrentPage(page)}
+        />
+      )}
+      {currentPage === "property-master" && (
+        <PropertyMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-property-master")}
+          onView={(propertyId) => {
+            setId(propertyId);
+            setCurrentPage("edit-property-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-property-master" && (
+        <CreatePropertyMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("property-master")}
+        />
+      )}
+      {currentPage === "edit-property-master" && id && (
+        <EditPropertyMaster
+          sessionId={session.id}
+          propertyId={id}
+          onBack={() => setCurrentPage("property-master")}
+        />
+      )}
+      {/* {currentPage === "apartment-master" && (
+        <Uom 
+          sessionId={session.id} 
+          onBack={() => setCurrentPage("masterforms")} 
+        />
+      )}
+      {currentPage === "resident-master" && (
+        <ResidentMaster 
+          sessionId={session.id} 
+          onBack={() => setCurrentPage("masterforms")} 
+        />
+      )}
+      {currentPage === "role-master" && (
+        <RoleMaster 
+          sessionId={session.id} 
+          onBack={() => setCurrentPage("masterforms")} 
+        />
+      )}
+      {currentPage === "approval-routing-master" && (
+        <ApprovalRoutingMaster 
+          sessionId={session.id} 
+          onBack={() => setCurrentPage("masterforms")} 
+        />
+      )}
+      {currentPage === "email-template-master" && (
+        <EmailTemplateMaster 
+          sessionId={session.id} 
+          onBack={() => setCurrentPage("masterforms")} 
+        />
+      )}
+      {currentPage === "common-status-master" && (
+        <CommonStatusMaster 
+          sessionId={session.id} 
+          onBack={() => setCurrentPage("masterforms")} 
+        />
+      )} */}
     </Dashboard>
   );
 };
@@ -356,6 +439,11 @@ const topbarNavItems: TopbarNavItemRecord[] = [
     title: "General Configurations",
     moduleName: ModuleName.GENERAL_CONFIGURATIONS,
   },
+  {
+    id: "masterforms",
+    title: "Master Forms",
+    moduleName: ModuleName.MASTER_FORMS,
+  },
 ];
 
 const topbarNavItemPageMap: { [page: string]: string } = {
@@ -386,4 +474,16 @@ const topbarNavItemPageMap: { [page: string]: string } = {
   transactions: "transactions",
   generalConfigurations: "generalConfigurations",
   "edit-general-configuration": "generalConfigurations",
+
+  // Master Forms and Sub-Pages Mapping
+  masterforms: "masterforms",
+  "property-master": "masterforms",
+  "create-property-master": "masterforms",
+  "edit-property-master": "masterforms",
+  "apartment-master": "masterforms",
+  "resident-master": "masterforms",
+  "role-master": "masterforms",
+  "approval-routing-master": "masterforms",
+  "email-template-master": "masterforms",
+  "common-status-master": "masterforms",
 };

@@ -65,7 +65,8 @@ export const PermissionsEditor = ({
       moduleId === "activities" ||
       moduleId === "meeting" ||
       moduleId === "customers" ||
-      moduleId === "inventory"
+      moduleId === "inventory" ||
+      moduleId === "masterForms"
     );
   }, []);
 
@@ -162,6 +163,14 @@ export const PermissionsEditor = ({
             "displayPrices",
             false
           );
+        } else if (moduleName === "masterForms") {
+          updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "property-master", false, false);
+          updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "apartment-master", false, false);
+          updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "resident-master", false, false);
+          updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "role-master", false, false);
+          updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "approval-routing-master", false, false);
+          updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "email-template-master", false, false);
+          updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "common-status-master", false, false);
         }
       }
 
@@ -172,7 +181,7 @@ export const PermissionsEditor = ({
 
   const handleSubSectionChange = React.useCallback(
     (
-      moduleName: "activities" | "meeting",
+      moduleName: "activities" | "meeting" | "masterForms",
       subSectionName: string,
       read: boolean,
       write: boolean
@@ -944,6 +953,109 @@ export const PermissionsEditor = ({
                         )}
                       />
                     )}
+                    {module.id === "masterForms" && (
+                      <Map
+                        items={masterformsSubSections}
+                        renderItem={(subSection, subIndex) => (
+                          <Table.Row key={`masterForms-${subSection.id}`}>
+                            <Table.Header
+                              className={cls["sub_sect"]}
+                              value=""
+                              align={Table.Align.CENTER}
+                            />
+                            <Table.Cell
+                              className={cls["sub_sect"]}
+                              align={Table.Align.CENTER}
+                            >
+                              {index + 1}.{subIndex + 1}
+                            </Table.Cell>
+                            <Table.Cell
+                              className={cls["sub_sect"]}
+                              align={Table.Align.LEFT}
+                            >
+                              ↳ {subSection.title}
+                            </Table.Cell>
+                            <Table.Cell
+                              className={cls["sub_sect"]}
+                              align={Table.Align.CENTER}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "start",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "start",
+                                    gap: "160px",
+                                  }}
+                                >
+                                  <Checkbox
+                                    label="No Access"
+                                    isDisabled={isChildDisabled("masterForms")}
+                                    isChecked={
+                                      PermissionHelper.getSubSectionPermissionState(
+                                        permissions,
+                                        "masterForms",
+                                        subSection.id,
+                                      ) === "none"
+                                    }
+                                    onChange={() =>
+                                      handleSubSectionChange(
+                                        "masterForms",
+                                        subSection.id,
+                                        false,
+                                        false,
+                                      )
+                                    }
+                                  />
+                                  <Checkbox
+                                    label="Read"
+                                    isDisabled={isChildDisabled("masterForms")}
+                                    isChecked={
+                                      PermissionHelper.getSubSectionPermissionState(
+                                        permissions,
+                                        "masterForms",
+                                        subSection.id,
+                                      ) === "read"
+                                    }
+                                    onChange={() =>
+                                      handleSubSectionChange(
+                                        "masterForms",
+                                        subSection.id,
+                                        true,
+                                        false,
+                                      )
+                                    }
+                                  />
+                                  <Checkbox
+                                    label="Read/Write"
+                                    isDisabled={isChildReadWriteDisabled("masterForms")}
+                                    isChecked={
+                                      PermissionHelper.getSubSectionPermissionState(
+                                        permissions,
+                                        "masterForms",
+                                        subSection.id,
+                                      ) === "write"
+                                    }
+                                    onChange={() =>
+                                      handleSubSectionChange(
+                                        "masterForms",
+                                        subSection.id,
+                                        true,
+                                        true,
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </div>
+                            </Table.Cell>
+                          </Table.Row>
+                        )}
+                      />
+                    )}
                   </>
                 )}
               </React.Fragment>
@@ -971,6 +1083,7 @@ const mainModules: PermissionItem[] = [
   { id: "collection", title: "Collections" },
   { id: "transactions", title: "Transactions" },
   { id: "generalConfigurations", title: "General Configurations" },
+  { id: "masterForms", title: "Master Forms" },
 ];
 
 const activitiesSubSections: PermissionItem[] = [
@@ -994,4 +1107,16 @@ const inventoryActions: PermissionItem[] = [
 
 const requestsActions: PermissionItem[] = [
   { id: "receiveCredit", title: "Receive Credit Payments" },
+];
+const propertymaster: PermissionItem[] = [
+  { id: "property-master", title: "Project / Property Master" },
+];
+const masterformsSubSections: PermissionItem[] = [
+  { id: "property-master", title: "Project / Property Master" },
+  { id: "apartment-master", title: "Apartment / Unit Master " },
+  { id: "resident-master", title: "Resident Master  " },
+  { id: "role-master", title: "User / Role Master " },
+  { id: "approval-routing-master", title: "Approval Routing Master " },
+  { id: "email-template-master", title: "Email Template Master" },
+  { id: "common-status-master", title: "Common Status Master" },
 ];

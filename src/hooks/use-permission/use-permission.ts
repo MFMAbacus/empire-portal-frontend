@@ -47,8 +47,8 @@ export const usePermission = () => {
   };
 
   const checkSubSection = (
-    moduleName: ModuleName.ACTIVITIES | ModuleName.MEETING,
-    subSectionName: SubSectionName
+    moduleName: ModuleName.ACTIVITIES | ModuleName.MEETING | ModuleName.MASTER_FORMS,
+    subSectionName: string
   ): PermissionResult => {
     const permissionLevel = PermissionHelper.getSubSectionPermissionState(
       permissions,
@@ -112,22 +112,22 @@ export const usePermission = () => {
   };
 
   const hasSubSectionAccess = (
-    moduleName: ModuleName.ACTIVITIES | ModuleName.MEETING,
-    subSectionName: SubSectionName
+    moduleName: ModuleName.ACTIVITIES | ModuleName.MEETING | ModuleName.MASTER_FORMS,
+    subSectionName: string
   ): boolean => {
     return checkSubSection(moduleName, subSectionName).hasAccess;
   };
 
   const canReadSubSection = (
-    moduleName: ModuleName.ACTIVITIES | ModuleName.MEETING,
-    subSectionName: SubSectionName
+    moduleName: ModuleName.ACTIVITIES | ModuleName.MEETING | ModuleName.MASTER_FORMS,
+    subSectionName: string
   ): boolean => {
     return checkSubSection(moduleName, subSectionName).canRead;
   };
 
   const canWriteSubSection = (
-    moduleName: ModuleName.ACTIVITIES | ModuleName.MEETING,
-    subSectionName: SubSectionName
+    moduleName: ModuleName.ACTIVITIES | ModuleName.MEETING | ModuleName.MASTER_FORMS,
+    subSectionName: string
   ): boolean => {
     return checkSubSection(moduleName, subSectionName).canWrite;
   };

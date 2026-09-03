@@ -52,6 +52,12 @@ export class PermissionHelper {
       welcomescreenMedia: { read: false, write: false },
       transactions: { read: false, write: false },
       generalConfigurations: { read: false, write: false },
+      // FIX 1: Renamed to camelCase masterForms & included subSections
+      masterForms: {
+        read: false,
+        write: false,
+        subSections: {},
+      },
     };
   }
 
@@ -63,7 +69,12 @@ export class PermissionHelper {
   ): UserPermissions {
     const updated = { ...permissions };
 
-    if (moduleName === "activities" || moduleName === "meeting") {
+    // FIX 2: Added "masterForms" to the sub-sections module check
+    if (
+      moduleName === "activities" ||
+      moduleName === "meeting" ||
+      moduleName === "masterForms"
+    ) {
       updated[moduleName] = {
         read,
         write,
@@ -98,7 +109,7 @@ export class PermissionHelper {
 
   static setSubSectionPermission(
     permissions: UserPermissions,
-    moduleName: "activities" | "meeting",
+    moduleName: "activities" | "meeting" | "masterForms", // FIX 3: Added "masterForms"
     subSectionName: string,
     read: boolean,
     write: boolean
@@ -168,7 +179,7 @@ export class PermissionHelper {
 
   static getSubSectionPermissionState(
     permissions: UserPermissions,
-    moduleName: "activities" | "meeting",
+    moduleName: "activities" | "meeting" | "masterForms", // FIX 4: Added "masterForms"
     subSectionName: string
   ): "none" | "read" | "write" {
     const modulePerms = permissions[moduleName] as ModuleWithSubSections;

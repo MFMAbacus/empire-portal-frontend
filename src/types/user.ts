@@ -10,6 +10,7 @@ export enum ModuleName {
   COLLECTION = "collection",
   TRANSACTIONS = "transactions",
   GENERAL_CONFIGURATIONS = "generalConfigurations",
+  MASTER_FORMS = "masterForms",
 }
 
 export enum SubSectionName {
@@ -96,6 +97,13 @@ export interface UserPermissions {
   collection?: BasePermission;
   transactions?: BasePermission;
   generalConfigurations?: BasePermission;
+
+  // FIX 1: Renamed to camelCase 'masterForms' to match ModuleName.MASTER_FORMS ("masterForms")
+  masterForms?: ModuleWithSubSections & {
+    subSections?: {
+      [key: string]: BasePermission | undefined;
+    };
+  };
 }
 
 export class PermissionChecker {
@@ -109,8 +117,9 @@ export class PermissionChecker {
     return this.permissions[module]?.write ?? false;
   }
 
+  // FIX 2: Allowed 'masterForms' in sub-section methods
   canReadSubSection(
-    module: "activities" | "meeting",
+    module: "activities" | "meeting" | "masterForms",
     subSection: string
   ): boolean {
     const modulePerms = this.permissions[module] as ModuleWithSubSections;
@@ -118,7 +127,7 @@ export class PermissionChecker {
   }
 
   canWriteSubSection(
-    module: "activities" | "meeting",
+    module: "activities" | "meeting" | "masterForms",
     subSection: string
   ): boolean {
     const modulePerms = this.permissions[module] as ModuleWithSubSections;
