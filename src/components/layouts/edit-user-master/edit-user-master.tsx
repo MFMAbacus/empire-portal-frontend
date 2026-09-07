@@ -21,14 +21,13 @@ import { useTimeout } from "@/hooks/use-timeout";
 import { useForm } from "@/hooks/use-form";
 import { AlertSeverity } from "@/types/alert";
 
-import { makeGetResidentMasterService } from "@/services/get-resident-master-service";
-import { makeCreateResidentMasterService } from "@/services/create-resident-master-service";
+import { makeGetUserMasterService } from "@/services/get-user-master-service";
+import { makeCreateUserMasterService } from "@/services/create-user-master-service";
 import { GetPropertyMasterServiceApi } from "@/services/get-property-master-service";
-import { GetApartmentMasterServiceApi } from "@/services/get-apartment-master-service";
 
-type EditResidentMasterProps = {
+type EditUserMasterProps = {
   sessionId: string;
-  residentId: string; // Database Record ID
+  userId: string; // Database Record ID
   onBack: () => void;
 };
 
@@ -39,38 +38,24 @@ type PropertyMasterItem = {
   [key: string]: any;
 };
 
-type ApartmentMasterItem = {
-  id?: string;
-  apartmentId?: string;
-  apartmentNo?: string;
-  [key: string]: any;
-};
-
 const delayAfterSuccess = 1000;
 
-export const EditResidentMaster = ({
+export const EditUserMaster = ({
   sessionId,
-  residentId,
+  userId,
   onBack,
-}: EditResidentMasterProps): JSX.Element => {
-  // Resident Form States
-  const [residentCode, setResidentCode] = React.useState<string>("");
+}: EditUserMasterProps): JSX.Element => {
+  // User Form States
+  const [userCode, setUserCode] = React.useState<string>("");
   const [name, setName] = React.useState<string>("");
-  const [email, setEmail] = React.useState<string>("");
-  const [mobileNo, setMobileNo] = React.useState<string>("");
-  const [apartmentId, setApartmentId] = React.useState<string>("");
+  const [role, setRole] = React.useState<string>("");
   const [projectCode, setProjectCode] = React.useState<string>("");
-  const [loginUserId, setLoginUserId] = React.useState<string>("");
-  const [residentType, setResidentType] = React.useState<string>("");
+  const [assignedModule, setAssignedModule] = React.useState<string>("");
   const [isActive, setIsActive] = React.useState<boolean>(true);
 
   // Property Dropdown Data
   const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>([]);
   const [isLoadingProperties, setIsLoadingProperties] = React.useState<boolean>(false);
-
-  // Apartment Dropdown Data
-  const [apartmentList, setApartmentList] = React.useState<ApartmentMasterItem[]>([]);
-  const [isLoadingApartments, setIsLoadingApartments] = React.useState<boolean>(false);
 
   const [isFetching, setIsFetching] = React.useState<boolean>(true);
   const [isSuccess, setIsSuccess] = React.useState<boolean>(false);
@@ -117,79 +102,37 @@ export const EditResidentMaster = ({
     };
   }, [sessionId]);
 
-  // Fetch Apartment Master List for Dropdown
-  React.useEffect(() => {
-    let isMounted = true;
-    const apartmentService = new GetApartmentMasterServiceApi();
-
-    const fetchApartments = async () => {
-      setIsLoadingApartments(true);
-      try {
-        const response = await apartmentService.execute({
-          sessionId,
-          isArchived: false,
-        } as any);
-
-        if (isMounted && response) {
-          const items: ApartmentMasterItem[] = Array.isArray(response.data)
-            ? response.data
-            : Array.isArray(response)
-            ? response
-            : [];
-
-          setApartmentList(items);
-        }
-      } catch (err) {
-        console.error("Failed to fetch apartment master list:", err);
-      } finally {
-        if (isMounted) {
-          setIsLoadingApartments(false);
-        }
-      }
-    };
-
-    fetchApartments();
-
-    return () => {
-      isMounted = false;
-      apartmentService.abort();
-    };
-  }, [sessionId]);
-
-  // Initial Resident Data Fetching
+  // Initial User Data Fetching
   React.useEffect(() => {
     let isMounted = true;
     setIsFetching(true);
 
-    const getResidentService = makeGetResidentMasterService();
-    getResidentService
-      .execute({ sessionId, residentId } as any)
+    const getUserService = makeGetUserMasterService();
+    getUserService
+      .execute({ sessionId, userId } as any)
       .then((response: any) => {
         if (!isMounted) return;
         if (response && response.data) {
           const item = response.data;
-          setResidentCode(item.residentId || item.id || "");
+          setUserCode(item.userId || item.id || "");
           setName(item.name || "");
-          setEmail(item.email || "");
-          setMobileNo(item.mobileNo ? String(item.mobileNo) : "");
-          setApartmentId(item.apartmentId || "");
+          setRole(item.role || "");
           setProjectCode(item.projectCode || "");
-          setLoginUserId(item.loginUserId || "");
-          setResidentType(item.residentType || "");
+          setAssignedModule(item.assignedModule || "");
           setIsActive(item.isActive ?? true);
         }
         setIsFetching(false);
       })
       .catch((err: any) => {
         if (!isMounted) return;
-        setFetchError(err?.message || "Failed to fetch resident details.");
+        setFetchError(err?.message || "Failed to fetch user details.");
         setIsFetching(false);
       });
 
     return () => {
       isMounted = false;
     };
-  }, [sessionId, residentId]);
+  }, [sessionId, userId]);
 
   const handleSuccess = React.useCallback(() => {
     setIsSuccess(true);
@@ -199,35 +142,29 @@ export const EditResidentMaster = ({
   }, [startTimeout, onBack]);
 
   const { isLoading, alertData, validation, submit } = useForm({
-    serviceMaker: makeCreateResidentMasterService,
+    serviceMaker: makeCreateUserMasterService,
     onSuccess: handleSuccess,
   });
 
   const handleSubmit = React.useCallback(() => {
     submit({
       sessionId,
-      id: residentId,              // Target Record Primary Key
-      residentId: residentCode,    // User Input Field Value
+      id: userId,              // Target Record Primary Key
+      userId: userCode,    // User Input Field Value
       name,
-      email,
-      mobileNo: Number(mobileNo),
-      apartmentId,
+      role,
+      assignedModule,
       projectCode,
-      loginUserId,
-      residentType,
       isActive,
     } as any);
   }, [
     sessionId,
-    residentId,
-    residentCode,
+    userId,
+    userCode,
     name,
-    email,
-    mobileNo,
-    apartmentId,
+    role,
+    assignedModule,
     projectCode,
-    loginUserId,
-    residentType,
     isActive,
     submit,
   ]);
@@ -240,30 +177,20 @@ export const EditResidentMaster = ({
     return Array.from(new Set(codes));
   }, [propertyList]);
 
-  // Unique Apartment IDs/Codes for Dropdown
-  const uniqueApartmentIds = React.useMemo(() => {
-    const ids = apartmentList
-      .map((item) => item.apartmentId || item.id)
-      .filter((id): id is string => Boolean(id));
-    return Array.from(new Set(ids));
-  }, [apartmentList]);
-
   return (
     <Dashboard.Content>
-      <Actionbar title="EDIT RESIDENT MASTER">
+      <Actionbar title="EDIT USER MASTER">
         <Button
           label="SAVE"
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
           isDisabled={
             isLoading ||
             isFetching ||
-            !residentCode ||
+            !userCode ||
             !name ||
-            !email ||
-            !mobileNo ||
-            !apartmentId ||
+            !role ||
+            !assignedModule ||
             !projectCode ||
-            !residentType ||
             isSuccess
           }
           onClick={handleSubmit}
@@ -273,7 +200,7 @@ export const EditResidentMaster = ({
 
       <Dashboard.Page>
         {isFetching ? (
-          <LoadingFeedback feedback="Loading resident details..." />
+          <LoadingFeedback feedback="Loading user details..." />
         ) : (
           <Paper>
             {fetchError !== null && (
@@ -284,19 +211,19 @@ export const EditResidentMaster = ({
               <Alert message={alertData.message} severity={alertData.severity} />
             )}
 
-            <Paper.Title value={`Resident Details (ID: ${residentId})`} />
+            <Paper.Title value={`User Details (ID: ${userId})`} />
 
             <Grid>
-              {/* Field 1: Resident ID */}
+              {/* Field 1: User ID */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <TextInput
                   className="w-100"
-                  label="Resident ID"
-                  placeholder="Enter resident ID"
-                  value={residentCode}
-                  hasError={typeof validation["residentId"] !== "undefined"}
+                  label="User ID"
+                  placeholder="Enter user ID"
+                  value={userCode}
+                  hasError={typeof validation["userId"] !== "undefined"}
                   isDisabled={isLoading || isSuccess}
-                  onChange={setResidentCode}
+                  onChange={setUserCode}
                 />
               </Grid.Cell>
 
@@ -313,34 +240,33 @@ export const EditResidentMaster = ({
                 />
               </Grid.Cell>
 
-              {/* Field 3: Email */}
+              {/* Field 3: Role */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <TextInput
                   className="w-100"
-                  label="Email"
-                  placeholder="Enter email address"
-                  value={email}
-                  hasError={typeof validation["email"] !== "undefined"}
+                  label="Role"
+                  placeholder="Enter role"
+                  value={role}
+                  hasError={typeof validation["role"] !== "undefined"}
                   isDisabled={isLoading || isSuccess}
-                  onChange={setEmail}
+                  onChange={setRole}
+                />
+              </Grid.Cell>
+              {/* Field 7: Assigned Module */}
+              <Grid.Cell size={Grid.CellSize.S3}>
+                <TextInput
+                  className="w-100"
+                  label="Assigned Module"
+                  placeholder="Enter Assigned Module"
+                  value={assignedModule}
+                  hasError={typeof validation["assignedModule"] !== "undefined"}
+                  isDisabled={isLoading || isSuccess}
+                  onChange={setAssignedModule}
                 />
               </Grid.Cell>
 
-              {/* Field 4: Mobile No. */}
-              <Grid.Cell size={Grid.CellSize.S3}>
-                <TextInput
-                  className="w-100"
-                  label="Mobile No."
-                  placeholder="Enter mobile number"
-                  value={mobileNo}
-                  hasError={typeof validation["mobileNo"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
-                  onChange={setMobileNo}
-                />
-              </Grid.Cell>
-            </Grid>
-            <Grid>
-             {/* Field 6: Project Code Dropdown */}
+
+              {/* Field 6: Project Code Dropdown */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <ListInput
                   className="w-100"
@@ -377,73 +303,6 @@ export const EditResidentMaster = ({
                     </React.Fragment>
                   )}
                 </ListInput>
-              </Grid.Cell>
-
-            
-              {/* Field 5: Apartment ID Dropdown */}
-              <Grid.Cell size={Grid.CellSize.S3}>
-                <ListInput
-                  className="w-100"
-                  label="Apartment ID"
-                  value={apartmentId || undefined}
-                  placeholder={isLoadingApartments ? "Loading..." : "Select apartment ID"}
-                  hasError={typeof validation["apartmentId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess || isLoadingApartments}
-                >
-                  {(onClose) => (
-                    <React.Fragment>
-                      <ListInput.Item
-                        label="None"
-                        isActive={apartmentId === ""}
-                        onClick={() => {
-                          setApartmentId("");
-                          onClose();
-                        }}
-                      />
-                      <Map
-                        items={uniqueApartmentIds}
-                        renderItem={(aptId) => (
-                          <ListInput.Item
-                            key={aptId}
-                            label={aptId}
-                            isActive={apartmentId === aptId}
-                            onClick={() => {
-                              setApartmentId(aptId);
-                              onClose();
-                            }}
-                          />
-                        )}
-                      />
-                    </React.Fragment>
-                  )}
-                </ListInput>
-              </Grid.Cell>
-
-             
-              {/* Field 7: Login User ID */}
-              <Grid.Cell size={Grid.CellSize.S3}>
-                <TextInput
-                  className="w-100"
-                  label="Login User ID"
-                  placeholder="Enter login user ID"
-                  value={loginUserId}
-                  hasError={typeof validation["loginUserId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
-                  onChange={setLoginUserId}
-                />
-              </Grid.Cell>
-
-              {/* Field 8: Resident Type */}
-              <Grid.Cell size={Grid.CellSize.S3}>
-                <TextInput
-                  className="w-100"
-                  label="Resident Type"
-                  placeholder="Enter resident type (e.g. Owner/Tenant)"
-                  value={residentType}
-                  hasError={typeof validation["residentType"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
-                  onChange={setResidentType}
-                />
               </Grid.Cell>
             </Grid>
 

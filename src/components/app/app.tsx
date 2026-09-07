@@ -55,10 +55,18 @@ import { ResidentMaster } from "../layouts/resident-master";
 import { CreateResidentMaster } from "../layouts/create-resident-master";
 import { EditResidentMaster } from "../layouts/edit-resident-master";
 
-// import { ResidentMaster } from "../layouts/master-form/resident-master";
-// import { RoleMaster } from "../layouts/master-form/role-master";
-// import { ApprovalRoutingMaster } from "../layouts/master-form/approval-routing-master";
-// import { EmailTemplateMaster } from "../layouts/master-form/email-template-master";
+import { UserMaster } from "../layouts/user-master";
+import { CreateUserMaster } from "../layouts/create-user-master";
+import { EditUserMaster } from "../layouts/edit-user-master";
+
+import { ApprovalRoutingMaster } from "../layouts/approval-routing-master";
+import { CreateApprovalRoutingMaster } from "../layouts/create-approval-routing-master";
+import { EditApprovalRoutingMaster } from "../layouts/edit-approval-routing-master";
+
+import { EmailTemplateMaster } from "../layouts/email-template-master";
+import { CreateEmailTemplateMaster } from "../layouts/create-email-template-master";
+import { EditEmailTemplateMaster } from "../layouts/edit-email-template-master";
+
 // import { CommonStatusMaster } from "../layouts/master-form/common-status-master";
 
 export const App = (): JSX.Element => {
@@ -392,36 +400,80 @@ export const App = (): JSX.Element => {
           onBack={() => setCurrentPage("resident-master")}
         />
       )}
-      {/* {currentPage === "apartment-master" && (
-        <Uom 
-          sessionId={session.id} 
-          onBack={() => setCurrentPage("masterforms")} 
+      {/* {currentPage === "user-master" && (
+        <UserMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-user-master")}
+          onView={(userId) => {
+            setId(userId);
+            setCurrentPage("edit-user-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
         />
       )}
-      {currentPage === "resident-master" && (
-        <ResidentMaster 
-          sessionId={session.id} 
-          onBack={() => setCurrentPage("masterforms")} 
+      {currentPage === "create-user-master" && (
+        <CreateUserMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("user-master")}
         />
       )}
-      {currentPage === "role-master" && (
-        <RoleMaster 
-          sessionId={session.id} 
-          onBack={() => setCurrentPage("masterforms")} 
+      {currentPage === "edit-user-master" && id && (
+        <EditUserMaster
+          sessionId={session.id}
+          userId={id}
+          onBack={() => setCurrentPage("user-master")}
         />
-      )}
+      )} */}
       {currentPage === "approval-routing-master" && (
-        <ApprovalRoutingMaster 
-          sessionId={session.id} 
-          onBack={() => setCurrentPage("masterforms")} 
+        <ApprovalRoutingMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-approval-routing-master")}
+          onView={(id) => {
+            setId(id);
+            setCurrentPage("edit-approval-routing-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-approval-routing-master" && (
+        <CreateApprovalRoutingMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("approval-routing-master")}
+        />
+      )}
+      {currentPage === "edit-approval-routing-master" && id && (
+        <EditApprovalRoutingMaster
+          sessionId={session.id}
+          routingRecordId={id}
+          onBack={() => setCurrentPage("approval-routing-master")}
         />
       )}
       {currentPage === "email-template-master" && (
-        <EmailTemplateMaster 
-          sessionId={session.id} 
-          onBack={() => setCurrentPage("masterforms")} 
+        <EmailTemplateMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-email-template-master")}
+          onView={(templateId) => {
+            setId(templateId);
+            setCurrentPage("edit-email-template-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
         />
       )}
+      {currentPage === "create-email-template-master" && (
+        <CreateEmailTemplateMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("email-template-master")}
+        />
+      )}
+      {currentPage === "edit-email-template-master" && id && (
+        <EditEmailTemplateMaster
+          sessionId={session.id}
+          templateId={id}
+          onBack={() => setCurrentPage("email-template-master")}
+        />
+      )}
+
+      {/*
       {currentPage === "common-status-master" && (
         <CommonStatusMaster 
           sessionId={session.id} 
@@ -537,7 +589,7 @@ const topbarNavItemPageMap: { [page: string]: string } = {
   "edit-property-master": "masterforms",
   "apartment-master": "masterforms",
   "resident-master": "masterforms",
-  "role-master": "masterforms",
+  "user-master": "masterforms",
   "approval-routing-master": "masterforms",
   "email-template-master": "masterforms",
   "common-status-master": "masterforms",

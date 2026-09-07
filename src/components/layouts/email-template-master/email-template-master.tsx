@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { ModuleName } from "@/types/user";
 import { AlertSeverity } from "@/types/alert";
-import { ResidentFilters } from "./types";
+import { EmailTemplateFilters } from "./types";
 
 import { Tooltip } from "@/components/base/tooltip";
 import { Table } from "@/components/base/table";
@@ -30,62 +30,59 @@ import { FilterIcon } from "@/components/icons/filter-icon";
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
 
-import { makeGetResidentMasterService } from "@/services/get-resident-master-service";
-import { makeDeleteResidentMasterService } from "@/services/delete-resident-master-service";
+import { makeGetEmailTemplateMasterService } from "@/services/get-email-template-master-service";
+import { makeDeleteEmailTemplateMasterService } from "@/services/delete-email-template-master-service";
 
-export type ResidentItem = {
+export type EmailTemplateItem = {
   id: string;
-  residentId: string;
-  name: string;
-  email: string;
-  mobileNo: number;
-  apartmentId: string;
-  projectCode: string;
-  loginUserId?: string;
-  residentType?: string;
+  templateCode: string;
+  module: string;
+  event: string;
+  subject: string;
+  body?: string;
   isActive: boolean;
   isArchived?: boolean;
 };
 
-type ResidentMasterProps = {
+type EmailTemplateMasterProps = {
   sessionId: string;
   onCreate?: () => void;
-  onView?: (residentId: string) => void;
+  onView?: (templateCode: string) => void;
   onBack?: () => void;
 };
 
-export const ResidentMaster = ({
+export const EmailTemplateMaster = ({
   sessionId,
   onCreate,
   onView,
   onBack,
-}: ResidentMasterProps): JSX.Element => {
+}: EmailTemplateMasterProps): JSX.Element => {
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "resident-master"
+    "email-template-master"
   );
 
-  const [residents, setResidents] = React.useState<ResidentItem[] | null>(
-    null
-  );
-  const [filters, setFilters] = React.useState<ResidentFilters>({});
+  const [emailTemplates, setEmailTemplates] = React.useState<
+    EmailTemplateItem[] | null
+  >(null);
+  const [filters, setFilters] = React.useState<EmailTemplateFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteResidentId, setDeleteResidentId] = React.useState<string | null>(
-    null
-  );
-  const [restoreResidentId, setRestoreResidentId] = React.useState<
+  const [deleteTemplateCode, setDeleteTemplateCode] = React.useState<
+    string | null
+  >(null);
+  const [restoreTemplateCode, setRestoreTemplateCode] = React.useState<
     string | null
   >(null);
 
   const handleSuccess = React.useCallback((data: unknown) => {
-    const list = data as ResidentItem[];
-    setResidents(list || []);
+    const list = data as EmailTemplateItem[];
+    setEmailTemplates(list || []);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
     isLoadingDefault: true,
-    serviceMaker: makeGetResidentMasterService,
+    serviceMaker: makeGetEmailTemplateMasterService,
     onSuccess: handleSuccess,
   });
 
@@ -94,88 +91,56 @@ export const ResidentMaster = ({
     [filters]
   );
 
-  const loadResidents = React.useCallback(() => {
+  const loadEmailTemplates = React.useCallback(() => {
     submit({ sessionId, isArchived: showArchived });
   }, [sessionId, showArchived, submit]);
 
   React.useEffect(() => {
-    loadResidents();
-  }, [loadResidents]);
+    loadEmailTemplates();
+  }, [loadEmailTemplates]);
 
-  const filteredResidents = React.useMemo(() => {
-    if (residents === null) return null;
-    return residents.filter((current) => {
+  const filteredEmailTemplates = React.useMemo(() => {
+    if (emailTemplates === null) return null;
+    return emailTemplates.filter((current) => {
       let predicate = true;
-      if (filters.residentId) {
+      if (filters.templateCode) {
         predicate =
           predicate &&
-          current.residentId
+          current.templateCode
             ?.toLowerCase()
-            .includes(filters.residentId.toLowerCase());
+            .includes(filters.templateCode.toLowerCase());
       }
-      if (filters.name) {
+      if (filters.module) {
         predicate =
           predicate &&
-          current.name
+          current.module
             ?.toLowerCase()
-            .includes(filters.name.toLowerCase());
+            .includes(filters.module.toLowerCase());
       }
-      if (filters.email) {
+      if (filters.event) {
         predicate =
           predicate &&
-          current.email
+          current.event
             ?.toLowerCase()
-            .includes(filters.email.toLowerCase());
+            .includes(filters.event.toLowerCase());
       }
-      if (filters.mobileNo !== undefined && filters.mobileNo !== null) {
+      if (filters.subject) {
         predicate =
           predicate &&
-          current.mobileNo
-            ?.toString()
-            .includes(filters.mobileNo.toString());
-      }
-      if (filters.apartmentId) {
-        predicate =
-          predicate &&
-          current.apartmentId
+          current.subject
             ?.toLowerCase()
-            .includes(filters.apartmentId.toLowerCase());
-      }
-      if (filters.projectCode) {
-        predicate =
-          predicate &&
-          current.projectCode
-            ?.toLowerCase()
-            .includes(filters.projectCode.toLowerCase());
-      }
-      if (filters.loginUserId) {
-        predicate =
-          predicate &&
-          Boolean(
-            current.loginUserId
-              ?.toLowerCase()
-              .includes(filters.loginUserId.toLowerCase())
-          );
-      }
-      if (filters.residentType) {
-        predicate =
-          predicate &&
-          Boolean(
-            current.residentType
-              ?.toLowerCase()
-              .includes(filters.residentType.toLowerCase())
-          );
+            .includes(filters.subject.toLowerCase());
       }
       if (typeof filters.isActive !== "undefined") {
         predicate = predicate && current.isActive === filters.isActive;
       }
       return predicate;
     });
-  }, [residents, filters]);
+  }, [emailTemplates, filters]);
 
   return (
     <Dashboard.Content>
-      <Actionbar title="RESIDENT MASTER">
+      <Actionbar title="EMAIL TEMPLATE MASTER">
         {onBack && (
           <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
         )}
@@ -188,7 +153,7 @@ export const ResidentMaster = ({
         <Button
           label="RELOAD"
           isDisabled={Boolean(isLoading)}
-          onClick={loadResidents}
+          onClick={loadEmailTemplates}
         />
         {canWrite && onCreate && (
           <Button
@@ -202,7 +167,7 @@ export const ResidentMaster = ({
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="Resident Master" />
+          <Paper.Title value="Email Template Master" />
 
           {alertData !== null &&
             alertData.severity !== AlertSeverity.SUCCESS && (
@@ -213,48 +178,42 @@ export const ResidentMaster = ({
             )}
 
           {isLoading && (
-            <LoadingFeedback feedback="Loading resident records, please wait." />
+            <LoadingFeedback feedback="Loading email templates, please wait." />
           )}
 
-          {!isLoading && filteredResidents !== null && (
+          {!isLoading && filteredEmailTemplates !== null && (
             <Table
               head={
                 <Table.Row>
-                  <Table.Header value="RESIDENT ID" />
-                  <Table.Header value="NAME" />
-                  <Table.Header value="EMAIL" />
-                  <Table.Header value="MOBILE NO." />
-                  <Table.Header value="APARTMENT ID" />
-                  <Table.Header value="PROJECT CODE" />
-                  <Table.Header value="RESIDENT TYPE" />
+                  <Table.Header value="TEMPLATE CODE" />
+                  <Table.Header value="MODULE" />
+                  <Table.Header value="EVENT" />
+                  <Table.Header value="SUBJECT" />
                   <Table.Header value="STATUS" />
                   <Table.Header />
                 </Table.Row>
               }
               body={
                 <Map
-                  items={filteredResidents || []}
-                  renderItem={(resident) => (
-                    <Table.Row key={resident.id}>
-                      <Table.Cell>{resident.residentId}</Table.Cell>
-                      <Table.Cell>{resident.name}</Table.Cell>
-                      <Table.Cell>{resident.email}</Table.Cell>
-                      <Table.Cell>{resident.mobileNo}</Table.Cell>
-                      <Table.Cell>{resident.apartmentId}</Table.Cell>
-                      <Table.Cell>{resident.projectCode}</Table.Cell>
-                      <Table.Cell>{resident.residentType ?? "-"}</Table.Cell>
+                  items={filteredEmailTemplates || []}
+                  renderItem={(template) => (
+                    <Table.Row key={template.id || template.templateCode}>
+                      <Table.Cell>{template.templateCode}</Table.Cell>
+                      <Table.Cell>{template.module}</Table.Cell>
+                      <Table.Cell>{template.event}</Table.Cell>
+                      <Table.Cell>{template.subject}</Table.Cell>
                       <Table.Cell>
                         <Badge
-                          value={resident.isActive ? "Active" : "Inactive"}
+                          value={template.isActive ? "Active" : "Inactive"}
                           color={
-                            resident.isActive
+                            template.isActive
                               ? Badge.Color.GREEN
                               : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
                       <Table.Cell align={Table.Align.RIGHT}>
-                        {!resident.isArchived && (
+                        {!template.isArchived && (
                           <React.Fragment>
                             {canWrite && (
                               <Tooltip value="Archive">
@@ -262,7 +221,7 @@ export const ResidentMaster = ({
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
                                   onClick={() =>
-                                    setDeleteResidentId(resident.id)
+                                    setDeleteTemplateCode(template.id)
                                   }
                                 />
                               </Tooltip>
@@ -271,17 +230,19 @@ export const ResidentMaster = ({
                               <Tooltip value="Show / Edit">
                                 <IconButton
                                   icon={<EyeIcon />}
-                                  onClick={() => onView(resident.id)}
+                                  onClick={() => onView(template.id)}
                                 />
                               </Tooltip>
                             )}
                           </React.Fragment>
                         )}
-                        {resident.isArchived && canWrite && (
+                        {template.isArchived && canWrite && (
                           <Tooltip value="Unarchive">
                             <IconButton
                               icon={<CheckIcon />}
-                              onClick={() => setRestoreResidentId(resident.id)}
+                              onClick={() =>
+                                setRestoreTemplateCode(template.templateCode)
+                              }
                             />
                           </Tooltip>
                         )}
@@ -294,16 +255,16 @@ export const ResidentMaster = ({
           )}
 
           {!isLoading &&
-            filteredResidents !== null &&
-            filteredResidents.length === 0 && (
+            filteredEmailTemplates !== null &&
+            filteredEmailTemplates.length === 0 && (
               <Alert
                 className="mt-1"
-                message="No residents found."
+                message="No email templates found."
                 severity={AlertSeverity.SUCCESS}
               />
             )}
 
-          {!isLoading && filteredResidents !== null && <Pagination />}
+          {!isLoading && filteredEmailTemplates !== null && <Pagination />}
         </Paper>
       </Dashboard.Page>
 
@@ -315,32 +276,32 @@ export const ResidentMaster = ({
         />
       )}
 
-      {deleteResidentId !== null && (
+      {deleteTemplateCode !== null && (
         <DeleteModal
           serviceInput={{
             sessionId,
-            residentId: deleteResidentId,
+            templateCode: deleteTemplateCode,
           }}
-          title="ARCHIVE RESIDENT"
-          message="Do you really want to archive this resident record?"
-          serviceMaker={makeDeleteResidentMasterService}
-          onDelete={loadResidents}
-          onClose={() => setDeleteResidentId(null)}
+          title="ARCHIVE EMAIL TEMPLATE"
+          message="Do you really want to archive this email template record?"
+          serviceMaker={makeDeleteEmailTemplateMasterService}
+          onDelete={loadEmailTemplates}
+          onClose={() => setDeleteTemplateCode(null)}
         />
       )}
 
-      {restoreResidentId !== null && (
+      {restoreTemplateCode !== null && (
         <DeleteModal
           serviceInput={{
             sessionId,
             isRestore: true,
-            residentId: restoreResidentId,
+            templateCode: restoreTemplateCode,
           }}
-          title="UNARCHIVE RESIDENT"
-          message="Do you really want to unarchive this resident record?"
-          serviceMaker={makeDeleteResidentMasterService}
-          onDelete={loadResidents}
-          onClose={() => setRestoreResidentId(null)}
+          title="UNARCHIVE EMAIL TEMPLATE"
+          message="Do you really want to unarchive this email template record?"
+          serviceMaker={makeDeleteEmailTemplateMasterService}
+          onDelete={loadEmailTemplates}
+          onClose={() => setRestoreTemplateCode(null)}
         />
       )}
     </Dashboard.Content>

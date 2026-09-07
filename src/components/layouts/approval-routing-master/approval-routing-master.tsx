@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { ModuleName } from "@/types/user";
 import { AlertSeverity } from "@/types/alert";
-import { ResidentFilters } from "./types";
+import { ApprovalRoutingFilters } from "./types";
 
 import { Tooltip } from "@/components/base/tooltip";
 import { Table } from "@/components/base/table";
@@ -30,62 +30,59 @@ import { FilterIcon } from "@/components/icons/filter-icon";
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
 
-import { makeGetResidentMasterService } from "@/services/get-resident-master-service";
-import { makeDeleteResidentMasterService } from "@/services/delete-resident-master-service";
+import { makeGetApprovalRoutingMasterService } from "@/services/get-approval-routing-master-service";
+import { makeDeleteApprovalRoutingMasterService } from "@/services/delete-approval-routing-master-service";
 
-export type ResidentItem = {
+export type ApprovalRoutingItem = {
   id: string;
-  residentId: string;
-  name: string;
-  email: string;
-  mobileNo: number;
-  apartmentId: string;
+  routingId: string;
+  module: string;
   projectCode: string;
-  loginUserId?: string;
-  residentType?: string;
+  approverRole: string;
+  approvalLevel: string;
   isActive: boolean;
   isArchived?: boolean;
 };
 
-type ResidentMasterProps = {
+type ApprovalRoutingMasterProps = {
   sessionId: string;
   onCreate?: () => void;
-  onView?: (residentId: string) => void;
+  onView?: (routingId: string) => void;
   onBack?: () => void;
 };
 
-export const ResidentMaster = ({
+export const ApprovalRoutingMaster = ({
   sessionId,
   onCreate,
   onView,
   onBack,
-}: ResidentMasterProps): JSX.Element => {
+}: ApprovalRoutingMasterProps): JSX.Element => {
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "resident-master"
+    "approval-routing-master"
   );
 
-  const [residents, setResidents] = React.useState<ResidentItem[] | null>(
+  const [routings, setRoutings] = React.useState<ApprovalRoutingItem[] | null>(
     null
   );
-  const [filters, setFilters] = React.useState<ResidentFilters>({});
+  const [filters, setFilters] = React.useState<ApprovalRoutingFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteResidentId, setDeleteResidentId] = React.useState<string | null>(
+  const [deleteRoutingId, setDeleteRoutingId] = React.useState<string | null>(
     null
   );
-  const [restoreResidentId, setRestoreResidentId] = React.useState<
+  const [restoreRoutingId, setRestoreRoutingId] = React.useState<
     string | null
   >(null);
 
   const handleSuccess = React.useCallback((data: unknown) => {
-    const list = data as ResidentItem[];
-    setResidents(list || []);
+    const list = data as ApprovalRoutingItem[];
+    setRoutings(list || []);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
     isLoadingDefault: true,
-    serviceMaker: makeGetResidentMasterService,
+    serviceMaker: makeGetApprovalRoutingMasterService,
     onSuccess: handleSuccess,
   });
 
@@ -94,52 +91,31 @@ export const ResidentMaster = ({
     [filters]
   );
 
-  const loadResidents = React.useCallback(() => {
+  const loadRoutings = React.useCallback(() => {
     submit({ sessionId, isArchived: showArchived });
   }, [sessionId, showArchived, submit]);
 
   React.useEffect(() => {
-    loadResidents();
-  }, [loadResidents]);
+    loadRoutings();
+  }, [loadRoutings]);
 
-  const filteredResidents = React.useMemo(() => {
-    if (residents === null) return null;
-    return residents.filter((current) => {
+  const filteredRoutings = React.useMemo(() => {
+    if (routings === null) return null;
+    return routings.filter((current) => {
       let predicate = true;
-      if (filters.residentId) {
+      if (filters.routingId) {
         predicate =
           predicate &&
-          current.residentId
+          current.routingId
             ?.toLowerCase()
-            .includes(filters.residentId.toLowerCase());
+            .includes(filters.routingId.toLowerCase());
       }
-      if (filters.name) {
+      if (filters.module) {
         predicate =
           predicate &&
-          current.name
+          current.module
             ?.toLowerCase()
-            .includes(filters.name.toLowerCase());
-      }
-      if (filters.email) {
-        predicate =
-          predicate &&
-          current.email
-            ?.toLowerCase()
-            .includes(filters.email.toLowerCase());
-      }
-      if (filters.mobileNo !== undefined && filters.mobileNo !== null) {
-        predicate =
-          predicate &&
-          current.mobileNo
-            ?.toString()
-            .includes(filters.mobileNo.toString());
-      }
-      if (filters.apartmentId) {
-        predicate =
-          predicate &&
-          current.apartmentId
-            ?.toLowerCase()
-            .includes(filters.apartmentId.toLowerCase());
+            .includes(filters.module.toLowerCase());
       }
       if (filters.projectCode) {
         predicate =
@@ -148,34 +124,30 @@ export const ResidentMaster = ({
             ?.toLowerCase()
             .includes(filters.projectCode.toLowerCase());
       }
-      if (filters.loginUserId) {
+      if (filters.approverRole) {
         predicate =
           predicate &&
-          Boolean(
-            current.loginUserId
-              ?.toLowerCase()
-              .includes(filters.loginUserId.toLowerCase())
-          );
+          current.approverRole
+            ?.toLowerCase()
+            .includes(filters.approverRole.toLowerCase());
       }
-      if (filters.residentType) {
+      if (filters.approvalLevel) {
         predicate =
           predicate &&
-          Boolean(
-            current.residentType
-              ?.toLowerCase()
-              .includes(filters.residentType.toLowerCase())
-          );
+          current.approvalLevel
+            ?.toLowerCase()
+            .includes(filters.approvalLevel.toLowerCase());
       }
       if (typeof filters.isActive !== "undefined") {
         predicate = predicate && current.isActive === filters.isActive;
       }
       return predicate;
     });
-  }, [residents, filters]);
+  }, [routings, filters]);
 
   return (
     <Dashboard.Content>
-      <Actionbar title="RESIDENT MASTER">
+      <Actionbar title="APPROVAL ROUTING MASTER">
         {onBack && (
           <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
         )}
@@ -188,7 +160,7 @@ export const ResidentMaster = ({
         <Button
           label="RELOAD"
           isDisabled={Boolean(isLoading)}
-          onClick={loadResidents}
+          onClick={loadRoutings}
         />
         {canWrite && onCreate && (
           <Button
@@ -202,7 +174,7 @@ export const ResidentMaster = ({
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="Resident Master" />
+          <Paper.Title value="Approval Routing Master" />
 
           {alertData !== null &&
             alertData.severity !== AlertSeverity.SUCCESS && (
@@ -213,48 +185,44 @@ export const ResidentMaster = ({
             )}
 
           {isLoading && (
-            <LoadingFeedback feedback="Loading resident records, please wait." />
+            <LoadingFeedback feedback="Loading routing records, please wait." />
           )}
 
-          {!isLoading && filteredResidents !== null && (
+          {!isLoading && filteredRoutings !== null && (
             <Table
               head={
                 <Table.Row>
-                  <Table.Header value="RESIDENT ID" />
-                  <Table.Header value="NAME" />
-                  <Table.Header value="EMAIL" />
-                  <Table.Header value="MOBILE NO." />
-                  <Table.Header value="APARTMENT ID" />
+                  <Table.Header value="ROUTING ID" />
+                  <Table.Header value="MODULE" />
                   <Table.Header value="PROJECT CODE" />
-                  <Table.Header value="RESIDENT TYPE" />
+                  <Table.Header value="APPROVER ROLE" />
+                  <Table.Header value="APPROVAL LEVEL" />
                   <Table.Header value="STATUS" />
                   <Table.Header />
                 </Table.Row>
               }
               body={
                 <Map
-                  items={filteredResidents || []}
-                  renderItem={(resident) => (
-                    <Table.Row key={resident.id}>
-                      <Table.Cell>{resident.residentId}</Table.Cell>
-                      <Table.Cell>{resident.name}</Table.Cell>
-                      <Table.Cell>{resident.email}</Table.Cell>
-                      <Table.Cell>{resident.mobileNo}</Table.Cell>
-                      <Table.Cell>{resident.apartmentId}</Table.Cell>
-                      <Table.Cell>{resident.projectCode}</Table.Cell>
-                      <Table.Cell>{resident.residentType ?? "-"}</Table.Cell>
+                  items={filteredRoutings || []}
+                  renderItem={(item) => (
+                    <Table.Row key={item.id}>
+                      <Table.Cell>{item.routingId}</Table.Cell>
+                      <Table.Cell>{item.module}</Table.Cell>
+                      <Table.Cell>{item.projectCode}</Table.Cell>
+                      <Table.Cell>{item.approverRole}</Table.Cell>
+                      <Table.Cell>{item.approvalLevel}</Table.Cell>
                       <Table.Cell>
                         <Badge
-                          value={resident.isActive ? "Active" : "Inactive"}
+                          value={item.isActive ? "Active" : "Inactive"}
                           color={
-                            resident.isActive
+                            item.isActive
                               ? Badge.Color.GREEN
                               : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
                       <Table.Cell align={Table.Align.RIGHT}>
-                        {!resident.isArchived && (
+                        {!item.isArchived && (
                           <React.Fragment>
                             {canWrite && (
                               <Tooltip value="Archive">
@@ -262,7 +230,7 @@ export const ResidentMaster = ({
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
                                   onClick={() =>
-                                    setDeleteResidentId(resident.id)
+                                    setDeleteRoutingId(item.id)
                                   }
                                 />
                               </Tooltip>
@@ -271,17 +239,17 @@ export const ResidentMaster = ({
                               <Tooltip value="Show / Edit">
                                 <IconButton
                                   icon={<EyeIcon />}
-                                  onClick={() => onView(resident.id)}
+                                  onClick={() => onView(item.id)}
                                 />
                               </Tooltip>
                             )}
                           </React.Fragment>
                         )}
-                        {resident.isArchived && canWrite && (
+                        {item.isArchived && canWrite && (
                           <Tooltip value="Unarchive">
                             <IconButton
                               icon={<CheckIcon />}
-                              onClick={() => setRestoreResidentId(resident.id)}
+                              onClick={() => setRestoreRoutingId(item.id)}
                             />
                           </Tooltip>
                         )}
@@ -294,16 +262,16 @@ export const ResidentMaster = ({
           )}
 
           {!isLoading &&
-            filteredResidents !== null &&
-            filteredResidents.length === 0 && (
+            filteredRoutings !== null &&
+            filteredRoutings.length === 0 && (
               <Alert
                 className="mt-1"
-                message="No residents found."
+                message="No Approval Routing records found."
                 severity={AlertSeverity.SUCCESS}
               />
             )}
 
-          {!isLoading && filteredResidents !== null && <Pagination />}
+          {!isLoading && filteredRoutings !== null && <Pagination />}
         </Paper>
       </Dashboard.Page>
 
@@ -315,32 +283,32 @@ export const ResidentMaster = ({
         />
       )}
 
-      {deleteResidentId !== null && (
+      {deleteRoutingId !== null && (
         <DeleteModal
           serviceInput={{
             sessionId,
-            residentId: deleteResidentId,
+            routingId: deleteRoutingId,
           }}
-          title="ARCHIVE RESIDENT"
-          message="Do you really want to archive this resident record?"
-          serviceMaker={makeDeleteResidentMasterService}
-          onDelete={loadResidents}
-          onClose={() => setDeleteResidentId(null)}
+          title="ARCHIVE APPROVAL ROUTING"
+          message="Do you really want to archive this approval routing record?"
+          serviceMaker={makeDeleteApprovalRoutingMasterService}
+          onDelete={loadRoutings}
+          onClose={() => setDeleteRoutingId(null)}
         />
       )}
 
-      {restoreResidentId !== null && (
+      {restoreRoutingId !== null && (
         <DeleteModal
           serviceInput={{
             sessionId,
             isRestore: true,
-            residentId: restoreResidentId,
+            routingId: restoreRoutingId,
           }}
-          title="UNARCHIVE RESIDENT"
-          message="Do you really want to unarchive this resident record?"
-          serviceMaker={makeDeleteResidentMasterService}
-          onDelete={loadResidents}
-          onClose={() => setRestoreResidentId(null)}
+          title="UNARCHIVE APPROVAL ROUTING"
+          message="Do you really want to unarchive this approval routing record?"
+          serviceMaker={makeDeleteApprovalRoutingMasterService}
+          onDelete={loadRoutings}
+          onClose={() => setRestoreRoutingId(null)}
         />
       )}
     </Dashboard.Content>

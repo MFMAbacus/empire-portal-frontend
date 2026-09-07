@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { ModuleName } from "@/types/user";
 import { AlertSeverity } from "@/types/alert";
-import { ResidentFilters } from "./types";
+import { UserFilters } from "./types";
 
 import { Tooltip } from "@/components/base/tooltip";
 import { Table } from "@/components/base/table";
@@ -30,62 +30,59 @@ import { FilterIcon } from "@/components/icons/filter-icon";
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
 
-import { makeGetResidentMasterService } from "@/services/get-resident-master-service";
-import { makeDeleteResidentMasterService } from "@/services/delete-resident-master-service";
+import { makeGetUserMasterService } from "@/services/get-user-master-service";
+import { makeDeleteUserMasterService } from "@/services/delete-user-master-service";
 
-export type ResidentItem = {
+export type UserItem = {
   id: string;
-  residentId: string;
+  userId: string;
   name: string;
-  email: string;
-  mobileNo: number;
-  apartmentId: string;
+  role: string;
   projectCode: string;
-  loginUserId?: string;
-  residentType?: string;
+  assignedModule?: string;
   isActive: boolean;
   isArchived?: boolean;
 };
 
-type ResidentMasterProps = {
+type UserMasterProps = {
   sessionId: string;
   onCreate?: () => void;
-  onView?: (residentId: string) => void;
+  onView?: (UserId: string) => void;
   onBack?: () => void;
 };
 
-export const ResidentMaster = ({
+export const UserMaster = ({
   sessionId,
   onCreate,
   onView,
   onBack,
-}: ResidentMasterProps): JSX.Element => {
+}: UserMasterProps): JSX.Element => {
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "resident-master"
+    "user-master"
   );
 
-  const [residents, setResidents] = React.useState<ResidentItem[] | null>(
+  const [users, setUsers] = React.useState<UserItem[] | null>(
     null
   );
-  const [filters, setFilters] = React.useState<ResidentFilters>({});
+  const [filters, setFilters] = React.useState<UserFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteResidentId, setDeleteResidentId] = React.useState<string | null>(
+  const [deleteUserId, setDeleteUserId] = React.useState<string | null>(
     null
   );
-  const [restoreResidentId, setRestoreResidentId] = React.useState<
+  const [restoreUserId, setRestoreUserId] = React.useState<
     string | null
   >(null);
 
   const handleSuccess = React.useCallback((data: unknown) => {
-    const list = data as ResidentItem[];
-    setResidents(list || []);
+    const list = data as UserItem[];
+    setUsers(list || []);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
     isLoadingDefault: true,
-    serviceMaker: makeGetResidentMasterService,
+    serviceMaker: makeGetUserMasterService,
     onSuccess: handleSuccess,
   });
 
@@ -94,24 +91,24 @@ export const ResidentMaster = ({
     [filters]
   );
 
-  const loadResidents = React.useCallback(() => {
+  const loadUsers = React.useCallback(() => {
     submit({ sessionId, isArchived: showArchived });
   }, [sessionId, showArchived, submit]);
 
   React.useEffect(() => {
-    loadResidents();
-  }, [loadResidents]);
+    loadUsers();
+  }, [loadUsers]);
 
-  const filteredResidents = React.useMemo(() => {
-    if (residents === null) return null;
-    return residents.filter((current) => {
+  const filteredUsers = React.useMemo(() => {
+    if (users === null) return null;
+    return users.filter((current) => {
       let predicate = true;
-      if (filters.residentId) {
+      if (filters.userId) {
         predicate =
           predicate &&
-          current.residentId
+          current.userId
             ?.toLowerCase()
-            .includes(filters.residentId.toLowerCase());
+            .includes(filters.userId.toLowerCase());
       }
       if (filters.name) {
         predicate =
@@ -120,26 +117,12 @@ export const ResidentMaster = ({
             ?.toLowerCase()
             .includes(filters.name.toLowerCase());
       }
-      if (filters.email) {
+      if (filters.role) {
         predicate =
           predicate &&
-          current.email
+          current.role
             ?.toLowerCase()
-            .includes(filters.email.toLowerCase());
-      }
-      if (filters.mobileNo !== undefined && filters.mobileNo !== null) {
-        predicate =
-          predicate &&
-          current.mobileNo
-            ?.toString()
-            .includes(filters.mobileNo.toString());
-      }
-      if (filters.apartmentId) {
-        predicate =
-          predicate &&
-          current.apartmentId
-            ?.toLowerCase()
-            .includes(filters.apartmentId.toLowerCase());
+            .includes(filters.role.toLowerCase());
       }
       if (filters.projectCode) {
         predicate =
@@ -148,22 +131,13 @@ export const ResidentMaster = ({
             ?.toLowerCase()
             .includes(filters.projectCode.toLowerCase());
       }
-      if (filters.loginUserId) {
+      if (filters.assignedModule) {
         predicate =
           predicate &&
           Boolean(
-            current.loginUserId
+            current.assignedModule
               ?.toLowerCase()
-              .includes(filters.loginUserId.toLowerCase())
-          );
-      }
-      if (filters.residentType) {
-        predicate =
-          predicate &&
-          Boolean(
-            current.residentType
-              ?.toLowerCase()
-              .includes(filters.residentType.toLowerCase())
+              .includes(filters.assignedModule.toLowerCase())
           );
       }
       if (typeof filters.isActive !== "undefined") {
@@ -171,11 +145,11 @@ export const ResidentMaster = ({
       }
       return predicate;
     });
-  }, [residents, filters]);
+  }, [users, filters]);
 
   return (
     <Dashboard.Content>
-      <Actionbar title="RESIDENT MASTER">
+      <Actionbar title="USER MASTER">
         {onBack && (
           <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
         )}
@@ -188,7 +162,7 @@ export const ResidentMaster = ({
         <Button
           label="RELOAD"
           isDisabled={Boolean(isLoading)}
-          onClick={loadResidents}
+          onClick={loadUsers}
         />
         {canWrite && onCreate && (
           <Button
@@ -202,7 +176,7 @@ export const ResidentMaster = ({
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="Resident Master" />
+          <Paper.Title value="User Master" />
 
           {alertData !== null &&
             alertData.severity !== AlertSeverity.SUCCESS && (
@@ -213,48 +187,44 @@ export const ResidentMaster = ({
             )}
 
           {isLoading && (
-            <LoadingFeedback feedback="Loading resident records, please wait." />
+            <LoadingFeedback feedback="Loading user records, please wait." />
           )}
 
-          {!isLoading && filteredResidents !== null && (
+          {!isLoading && filteredUsers !== null && (
             <Table
               head={
                 <Table.Row>
-                  <Table.Header value="RESIDENT ID" />
+                  <Table.Header value="USER ID" />
                   <Table.Header value="NAME" />
-                  <Table.Header value="EMAIL" />
-                  <Table.Header value="MOBILE NO." />
-                  <Table.Header value="APARTMENT ID" />
+                  <Table.Header value="ROLE" />
+                  <Table.Header value="ASSIGNED MODULE" />
                   <Table.Header value="PROJECT CODE" />
-                  <Table.Header value="RESIDENT TYPE" />
                   <Table.Header value="STATUS" />
                   <Table.Header />
                 </Table.Row>
               }
               body={
                 <Map
-                  items={filteredResidents || []}
-                  renderItem={(resident) => (
-                    <Table.Row key={resident.id}>
-                      <Table.Cell>{resident.residentId}</Table.Cell>
-                      <Table.Cell>{resident.name}</Table.Cell>
-                      <Table.Cell>{resident.email}</Table.Cell>
-                      <Table.Cell>{resident.mobileNo}</Table.Cell>
-                      <Table.Cell>{resident.apartmentId}</Table.Cell>
-                      <Table.Cell>{resident.projectCode}</Table.Cell>
-                      <Table.Cell>{resident.residentType ?? "-"}</Table.Cell>
+                  items={filteredUsers || []}
+                  renderItem={(user) => (
+                    <Table.Row key={user.id}>
+                      <Table.Cell>{user.userId}</Table.Cell>
+                      <Table.Cell>{user.name}</Table.Cell>
+                      <Table.Cell>{user.role}</Table.Cell>
+                      <Table.Cell>{user.assignedModule}</Table.Cell>
+                      <Table.Cell>{user.projectCode}</Table.Cell>
                       <Table.Cell>
                         <Badge
-                          value={resident.isActive ? "Active" : "Inactive"}
+                          value={user.isActive ? "Active" : "Inactive"}
                           color={
-                            resident.isActive
+                            user.isActive
                               ? Badge.Color.GREEN
                               : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
                       <Table.Cell align={Table.Align.RIGHT}>
-                        {!resident.isArchived && (
+                        {!user.isArchived && (
                           <React.Fragment>
                             {canWrite && (
                               <Tooltip value="Archive">
@@ -262,7 +232,7 @@ export const ResidentMaster = ({
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
                                   onClick={() =>
-                                    setDeleteResidentId(resident.id)
+                                    setDeleteUserId(user.id)
                                   }
                                 />
                               </Tooltip>
@@ -271,17 +241,17 @@ export const ResidentMaster = ({
                               <Tooltip value="Show / Edit">
                                 <IconButton
                                   icon={<EyeIcon />}
-                                  onClick={() => onView(resident.id)}
+                                  onClick={() => onView(user.id)}
                                 />
                               </Tooltip>
                             )}
                           </React.Fragment>
                         )}
-                        {resident.isArchived && canWrite && (
+                        {user.isArchived && canWrite && (
                           <Tooltip value="Unarchive">
                             <IconButton
                               icon={<CheckIcon />}
-                              onClick={() => setRestoreResidentId(resident.id)}
+                              onClick={() => setRestoreUserId(user.id)}
                             />
                           </Tooltip>
                         )}
@@ -294,16 +264,16 @@ export const ResidentMaster = ({
           )}
 
           {!isLoading &&
-            filteredResidents !== null &&
-            filteredResidents.length === 0 && (
+            filteredUsers !== null &&
+            filteredUsers.length === 0 && (
               <Alert
                 className="mt-1"
-                message="No residents found."
+                message="No Users found."
                 severity={AlertSeverity.SUCCESS}
               />
             )}
 
-          {!isLoading && filteredResidents !== null && <Pagination />}
+          {!isLoading && filteredUsers !== null && <Pagination />}
         </Paper>
       </Dashboard.Page>
 
@@ -315,32 +285,32 @@ export const ResidentMaster = ({
         />
       )}
 
-      {deleteResidentId !== null && (
+      {deleteUserId !== null && (
         <DeleteModal
           serviceInput={{
             sessionId,
-            residentId: deleteResidentId,
+            userId: deleteUserId,
           }}
-          title="ARCHIVE RESIDENT"
-          message="Do you really want to archive this resident record?"
-          serviceMaker={makeDeleteResidentMasterService}
-          onDelete={loadResidents}
-          onClose={() => setDeleteResidentId(null)}
+          title="ARCHIVE USER"
+          message="Do you really want to archive this user record?"
+          serviceMaker={makeDeleteUserMasterService}
+          onDelete={loadUsers}
+          onClose={() => setDeleteUserId(null)}
         />
       )}
 
-      {restoreResidentId !== null && (
+      {restoreUserId !== null && (
         <DeleteModal
           serviceInput={{
             sessionId,
             isRestore: true,
-            residentId: restoreResidentId,
+            userId: restoreUserId,
           }}
-          title="UNARCHIVE RESIDENT"
-          message="Do you really want to unarchive this resident record?"
-          serviceMaker={makeDeleteResidentMasterService}
-          onDelete={loadResidents}
-          onClose={() => setRestoreResidentId(null)}
+          title="UNARCHIVE USER"
+          message="Do you really want to unarchive this user record?"
+          serviceMaker={makeDeleteUserMasterService}
+          onDelete={loadUsers}
+          onClose={() => setRestoreUserId(null)}
         />
       )}
     </Dashboard.Content>

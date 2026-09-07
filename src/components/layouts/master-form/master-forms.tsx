@@ -108,14 +108,14 @@ const DEFAULT_MASTER_FORMS: MasterFormItem[] = [
     icon: UsersIcon,
     badgeColor: MasterBadgeColor.ORANGE,
   },
-  {
-    id: 'role-master',
-    title: 'User / Role Master',
-    page: '/role-master',
-    description: 'Control system access, user roles, and permissions.',
-    icon: UserCheckIcon,
-    badgeColor: MasterBadgeColor.CYAN,
-  },
+  // {
+  //   id: 'user-master',
+  //   title: 'User / Role Master',
+  //   page: '/user-master',
+  //   description: 'Control system access, user roles, and permissions.',
+  //   icon: UserCheckIcon,
+  //   badgeColor: MasterBadgeColor.CYAN,
+  // },
   {
     id: 'approval-routing-master',
     title: 'Approval Routing Master',

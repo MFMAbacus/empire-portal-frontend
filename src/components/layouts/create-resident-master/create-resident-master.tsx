@@ -39,6 +39,8 @@ type ApartmentMasterItem = {
   id?: string;
   apartmentId?: string;
   apartmentNo?: string;
+  projectCode?: string;
+  projectId?: string;
   [key: string]: any;
 };
 
@@ -193,15 +195,21 @@ export const CreateResidentMaster = ({
     return Array.from(new Set(codes));
   }, [propertyList]);
 
-  // Extract unique apartment IDs for dropdown options
+  // Selected projectCode ke relative Apartments filter karein
+  const filteredApartments = React.useMemo(() => {
+    if (!projectCode) return [];
+    return apartmentList.filter(
+      (item) => item.projectCode === projectCode || item.projectId === projectCode
+    );
+  }, [apartmentList, projectCode]);
+
+  // Extract unique apartment IDs filtered apartments list me se
   const uniqueApartmentIds = React.useMemo(() => {
-    const ids = apartmentList
+    const ids = filteredApartments
       .map((item) => item.apartmentId)
       .filter((id): id is string => Boolean(id));
     return Array.from(new Set(ids));
-  }, [apartmentList]);
-
-  const residentTypes = ["Owner", "Tenant", "Family Member"];
+  }, [filteredApartments]);
 
   return (
     <Dashboard.Content>
@@ -286,17 +294,64 @@ export const CreateResidentMaster = ({
             </Grid.Cell>
           </Grid>
 
-          {/* Row 2: Apartment ID, Project Code, Resident Type, Login User ID */}
+          {/* Row 2: Project Code, Apartment ID, Resident Type, Login User ID */}
           <Grid>
+            {/* Project Code Dropdown */}
+            <Grid.Cell size={Grid.CellSize.S3}>
+              <ListInput
+                className="w-100"
+                label="Project Code"
+                value={projectCode || undefined}
+                placeholder={isLoadingProperties ? "Loading..." : "Select project code"}
+                hasError={typeof validation["projectCode"] !== "undefined"}
+                isDisabled={isLoading || isSuccess || isLoadingProperties}
+              >
+                {(onClose) => (
+                  <React.Fragment>
+                    <ListInput.Item
+                      label="None"
+                      isActive={projectCode === ""}
+                      onClick={() => {
+                        setProjectCode("");
+                        setApartmentId("");
+                        onClose();
+                      }}
+                    />
+                    <Map
+                      items={uniqueProjectCodes}
+                      renderItem={(code) => (
+                        <ListInput.Item
+                          key={code}
+                          label={code}
+                          isActive={projectCode === code}
+                          onClick={() => {
+                            setProjectCode(code);
+                            setApartmentId(""); // Project change hone par apartment ID reset
+                            onClose();
+                          }}
+                        />
+                      )}
+                    />
+                  </React.Fragment>
+                )}
+              </ListInput>
+            </Grid.Cell>
+
             {/* Apartment ID Dropdown */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <ListInput
                 className="w-100"
                 label="Apartment ID"
                 value={apartmentId || undefined}
-                placeholder={isLoadingApartments ? "Loading..." : "Select apartment ID"}
+                placeholder={
+                  !projectCode
+                    ? "Select project code first"
+                    : isLoadingApartments
+                    ? "Loading..."
+                    : "Select apartment ID"
+                }
                 hasError={typeof validation["apartmentId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess || isLoadingApartments}
+                isDisabled={isLoading || isSuccess || isLoadingApartments || !projectCode}
               >
                 {(onClose) => (
                   <React.Fragment>
@@ -327,82 +382,17 @@ export const CreateResidentMaster = ({
               </ListInput>
             </Grid.Cell>
 
-            {/* Project Code Dropdown */}
+            {/* Resident Type Input Text */}
             <Grid.Cell size={Grid.CellSize.S3}>
-              <ListInput
-                className="w-100"
-                label="Project Code"
-                value={projectCode || undefined}
-                placeholder={isLoadingProperties ? "Loading..." : "Select project code"}
-                hasError={typeof validation["projectCode"] !== "undefined"}
-                isDisabled={isLoading || isSuccess || isLoadingProperties}
-              >
-                {(onClose) => (
-                  <React.Fragment>
-                    <ListInput.Item
-                      label="None"
-                      isActive={projectCode === ""}
-                      onClick={() => {
-                        setProjectCode("");
-                        onClose();
-                      }}
-                    />
-                    <Map
-                      items={uniqueProjectCodes}
-                      renderItem={(code) => (
-                        <ListInput.Item
-                          key={code}
-                          label={code}
-                          isActive={projectCode === code}
-                          onClick={() => {
-                            setProjectCode(code);
-                            onClose();
-                          }}
-                        />
-                      )}
-                    />
-                  </React.Fragment>
-                )}
-              </ListInput>
-            </Grid.Cell>
-
-            {/* Resident Type Dropdown */}
-            <Grid.Cell size={Grid.CellSize.S3}>
-              <ListInput
+              <TextInput
                 className="w-100"
                 label="Resident Type"
-                value={residentType || undefined}
-                placeholder="Select resident type"
+                placeholder="Enter resident type (e.g. Owner, Tenant)"
+                value={residentType}
                 hasError={typeof validation["residentType"] !== "undefined"}
                 isDisabled={isLoading || isSuccess}
-              >
-                {(onClose) => (
-                  <React.Fragment>
-                    <ListInput.Item
-                      label="None"
-                      isActive={residentType === ""}
-                      onClick={() => {
-                        setResidentType("");
-                        onClose();
-                      }}
-                    />
-                    <Map
-                      items={residentTypes}
-                      renderItem={(type) => (
-                        <ListInput.Item
-                          key={type}
-                          label={type}
-                          isActive={residentType === type}
-                          onClick={() => {
-                            setResidentType(type);
-                            onClose();
-                          }}
-                        />
-                      )}
-                    />
-                  </React.Fragment>
-                )}
-              </ListInput>
+                onChange={setResidentType}
+              />
             </Grid.Cell>
 
             {/* Login User ID */}
