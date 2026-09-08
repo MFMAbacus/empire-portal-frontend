@@ -140,6 +140,38 @@ const DEFAULT_MASTER_FORMS: MasterFormItem[] = [
     icon: SlidersIcon,
     badgeColor: MasterBadgeColor.YELLOW,
   },
+  {
+    id: 'gate-master',
+    title: 'Gate Master',
+    page: '/gate-master',
+    description: 'Define system-wide statuses and state configurations.',
+    icon: SlidersIcon,
+    badgeColor: MasterBadgeColor.RED,
+  },
+  {
+    id: 'guard-account-mapping-master',
+    title: 'Guard Account Mapping Master',
+    page: '/guard-account-mapping-master',
+    description: 'Manage guard account profiles, records, and information.',
+    icon: UsersIcon,
+    badgeColor: MasterBadgeColor.ORANGE,
+  },
+  {
+    id: 'security-coordinator-master',
+    title: 'Security Coordinator Master',
+    page: '/security-coordinator-master',
+    description: 'Manage security coordinator records, and information.',
+    icon: UsersIcon,
+    badgeColor: MasterBadgeColor.CYAN,
+  },
+  {
+    id: 'vehicle-type-master',
+    title: 'Vehicle Type Master',
+    page: '/vehicle-type-master',
+    description: 'Configure vehicle type and routes.',
+    icon: GitMergeIcon,
+    badgeColor: MasterBadgeColor.INDIGO,
+  },
 ];
 
 export const MasterForms = (props: MasterFormsProps): JSX.Element => {

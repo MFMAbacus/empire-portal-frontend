@@ -67,6 +67,21 @@ import { EmailTemplateMaster } from "../layouts/email-template-master";
 import { CreateEmailTemplateMaster } from "../layouts/create-email-template-master";
 import { EditEmailTemplateMaster } from "../layouts/edit-email-template-master";
 
+import { GateMaster } from "../layouts/gate-master";
+import { CreateGateMaster } from "../layouts/create-gate-master";
+import { EditGateMaster } from "../layouts/edit-gate-master";
+
+import { GuardAccountMappingMaster } from "../layouts/guard-account-mapping-master";
+import { CreateGuardAccountMappingMaster } from "../layouts/create-guard-account-mapping-master";
+import { EditGuardAccountMappingMaster } from "../layouts/edit-guard-account-mapping-master";
+
+import { SecurityCoordinatorMaster } from "../layouts/security-coordinator-master";
+import { CreateSecurityCoordinatorMaster } from "../layouts/create-security-coordinator-master";
+import { EditSecurityCoordinatorMaster } from "../layouts/edit-security-coordinator-master";
+
+import { VehicleTypeMaster } from "../layouts/vehicle-type-master";
+import { CreateVehicleTypeMaster } from "../layouts/create-vehicle-type-master";
+import { EditVehicleTypeMaster } from "../layouts/edit-vehicle-type-master";
 // import { CommonStatusMaster } from "../layouts/master-form/common-status-master";
 
 export const App = (): JSX.Element => {
@@ -480,6 +495,102 @@ export const App = (): JSX.Element => {
           onBack={() => setCurrentPage("masterforms")} 
         />
       )} */}
+      {currentPage === "gate-master" && (
+        <GateMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-gate-master")}
+          onView={(gateId) => {
+            setId(gateId);
+            setCurrentPage("edit-gate-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-gate-master" && (
+        <CreateGateMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("gate-master")}
+        />
+      )}
+      {currentPage === "edit-gate-master" && id && (
+        <EditGateMaster
+          sessionId={session.id}
+          gateId={id}
+          onBack={() => setCurrentPage("gate-master")}
+        />
+      )}
+      {currentPage === "guard-account-mapping-master" && (
+        <GuardAccountMappingMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-guard-account-mapping-master")}
+          onView={(guardId) => {
+            setId(guardId);
+            setCurrentPage("edit-guard-account-mapping-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-guard-account-mapping-master" && (
+        <CreateGuardAccountMappingMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("guard-account-mapping-master")}
+        />
+      )}
+      {currentPage === "edit-guard-account-mapping-master" && id && (
+        <EditGuardAccountMappingMaster
+          sessionId={session.id}
+          guardAccountId={id}
+          onBack={() => setCurrentPage("guard-account-mapping-master")}
+        />
+      )}
+      {currentPage === "security-coordinator-master" && (
+        <SecurityCoordinatorMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-security-coordinator-master")}
+          onView={(securityId) => {
+            setId(securityId);
+            setCurrentPage("edit-security-coordinator-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-security-coordinator-master" && (
+        <CreateSecurityCoordinatorMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("security-coordinator-master")}
+        />
+      )}
+      {currentPage === "edit-security-coordinator-master" && id && (
+        <EditSecurityCoordinatorMaster
+          sessionId={session.id}
+          Id={id}
+          onBack={() => setCurrentPage("security-coordinator-master")}
+        />
+      )}
+      {currentPage === "vehicle-type-master" && (
+        <VehicleTypeMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-vehicle-type-master")}
+          onView={(vehicleTypeId) => {
+            setId(vehicleTypeId);
+            setCurrentPage("edit-vehicle-type-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-vehicle-type-master" && (
+        <CreateVehicleTypeMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("vehicle-type-master")}
+        />
+      )}
+      {currentPage === "edit-vehicle-type-master" && id && (
+        <EditVehicleTypeMaster
+          sessionId={session.id}
+          vehicleTypeId={id}
+          onBack={() => setCurrentPage("vehicle-type-master")}
+        />
+      )}
     </Dashboard>
   );
 };
@@ -593,4 +704,8 @@ const topbarNavItemPageMap: { [page: string]: string } = {
   "approval-routing-master": "masterforms",
   "email-template-master": "masterforms",
   "common-status-master": "masterforms",
+  "gate-master":"masterforms",
+  "guard-account-mapping-master": "masterforms",
+  "security-coordinator-master": "masterforms",
+  "vehicle-type-master": "masterforms",
 };
