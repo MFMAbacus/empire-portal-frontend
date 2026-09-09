@@ -11,6 +11,13 @@ export enum ModuleName {
   TRANSACTIONS = "transactions",
   GENERAL_CONFIGURATIONS = "generalConfigurations",
   MASTER_FORMS = "masterForms",
+  // APPROVALS = "approvals",
+  // GUSET_ACCESS_SETUP ="guestAccessSetup",
+  // MOVE_IN_OUT_SETUP = "moveInOutSetup", 
+  // ACCESS_CARD_SETUP = "accessCardSetup",
+  // RESTAURANT_CAFE_SETUP = "restarantCafeSetup",
+  // SPORTS_COURT_SETUP = "sportsCourtSetup",
+  // TRANSACTION_APPROVALS="transactionsApprovals",  
 }
 
 export enum SubSectionName {

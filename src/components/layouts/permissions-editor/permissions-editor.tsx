@@ -1084,7 +1084,8 @@ const mainModules: PermissionItem[] = [
   { id: "collection", title: "Collections" },
   { id: "transactions", title: "Transactions" },
   { id: "generalConfigurations", title: "General Configurations" },
-  { id: "masterForms", title: "Master Forms" },
+  { id: "masterForms", title: "General Setup " },
+  // {id: "approvalForms", title: "Approvals"},
 ];
 
 const activitiesSubSections: PermissionItem[] = [

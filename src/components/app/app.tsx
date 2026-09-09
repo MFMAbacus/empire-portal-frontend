@@ -82,6 +82,15 @@ import { EditSecurityCoordinatorMaster } from "../layouts/edit-security-coordina
 import { VehicleTypeMaster } from "../layouts/vehicle-type-master";
 import { CreateVehicleTypeMaster } from "../layouts/create-vehicle-type-master";
 import { EditVehicleTypeMaster } from "../layouts/edit-vehicle-type-master";
+
+import { QRConfigurationMaster } from "../layouts/qr-configuration-master";
+import { CreateQRConfigurationMaster } from "../layouts/create-qr-configuration-master";
+import { EditQRConfigurationMaster } from "../layouts/edit-qr-configuration-master";
+
+import { MovementTypeMaster } from "../layouts/movement-type-master";
+import { CreateMovementTypeMaster } from "../layouts/create-movement-type-master";
+import { EditMovementTypeMaster } from "../layouts/edit-movement-type-master";
+
 // import { CommonStatusMaster } from "../layouts/master-form/common-status-master";
 
 export const App = (): JSX.Element => {
@@ -127,6 +136,7 @@ export const App = (): JSX.Element => {
                     topbarNavItemPageMap[currentPage] === topbarNavItem.id
                   }
                   onClick={() => setCurrentPage(topbarNavItem.id)}
+                  onSubNavigate={(subPageId) => setCurrentPage(subPageId)}
                 />
               );
             }}
@@ -172,6 +182,7 @@ export const App = (): JSX.Element => {
           onRequests={() => setCurrentPage("requests")}
           onCreate={() => setCurrentPage("create-task")}
         />
+        
       )}
       {currentPage === "create-task" && (
         <CreateTask
@@ -343,6 +354,12 @@ export const App = (): JSX.Element => {
           onNavigate={(page) => setCurrentPage(page)}
         />
       )}
+      {/* {currentPage === "approvals" && (
+        <ApprovalForm
+          sessionId={session.id}
+          onNavigate={(page) => setCurrentPage(page)}
+        />
+      )} */}
       {currentPage === "property-master" && (
         <PropertyMaster
           sessionId={session.id}
@@ -591,6 +608,54 @@ export const App = (): JSX.Element => {
           onBack={() => setCurrentPage("vehicle-type-master")}
         />
       )}
+      {currentPage === "qr-configuration-master" && (
+        <QRConfigurationMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-qr-configuration-master")}
+          onView={(qrConfigId) => {
+            setId(qrConfigId);
+            setCurrentPage("edit-qr-configuration-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-qr-configuration-master" && (
+        <CreateQRConfigurationMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("qr-configuration-master")}
+        />
+      )}
+      {currentPage === "edit-qr-configuration-master" && id && (
+        <EditQRConfigurationMaster
+          sessionId={session.id}
+          qrConfigId={id}
+          onBack={() => setCurrentPage("qr-configuration-master")}
+        />
+      )}
+      {currentPage === "movement-type-master" && (
+        <MovementTypeMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-movement-type-master")}
+          onView={(movementTypeId) => {
+            setId(movementTypeId);
+            setCurrentPage("edit-movement-type-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-movement-type-master" && (
+        <CreateMovementTypeMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("movement-type-master")}
+        />
+      )}
+      {currentPage === "edit-movement-type-master" && id && (
+        <EditMovementTypeMaster
+          sessionId={session.id}
+          movementTypeId={id}
+          onBack={() => setCurrentPage("movement-type-master")}
+        />
+      )}
     </Dashboard>
   );
 };
@@ -599,6 +664,7 @@ type TopbarNavItemRecord = {
   id: string;
   title: string;
   moduleName: string;
+  children?: { id: string; title: string; }[];
 };
 
 const topbarNavItems: TopbarNavItemRecord[] = [
@@ -657,9 +723,14 @@ const topbarNavItems: TopbarNavItemRecord[] = [
     title: "General Configurations",
     moduleName: ModuleName.GENERAL_CONFIGURATIONS,
   },
+  // {
+  //   id: "approvals",
+  //   title: "Approvals",
+  //   moduleName: ModuleName.APPROVALS,
+  // },
   {
     id: "masterforms",
-    title: "Master Forms",
+    title: "Quick Menu",
     moduleName: ModuleName.MASTER_FORMS,
   },
 ];
@@ -672,7 +743,7 @@ const topbarNavItemPageMap: { [page: string]: string } = {
   "create-task": "requests",
   "view-task": "requests",
   customers: "customers",
-  "view-customer": "customers",
+  "view-customer": "requests",
   inventory: "inventory",
   announcements: "announcements",
   "create-announcement": "announcements",
@@ -692,6 +763,7 @@ const topbarNavItemPageMap: { [page: string]: string } = {
   transactions: "transactions",
   generalConfigurations: "generalConfigurations",
   "edit-general-configuration": "generalConfigurations",
+  approvals: "approvals",
 
   // Master Forms and Sub-Pages Mapping
   masterforms: "masterforms",
@@ -699,13 +771,63 @@ const topbarNavItemPageMap: { [page: string]: string } = {
   "create-property-master": "masterforms",
   "edit-property-master": "masterforms",
   "apartment-master": "masterforms",
+  "create-apartment-master": "masterforms",
+  "edit-apartment-master": "masterforms",
   "resident-master": "masterforms",
+  "create-resident-master": "masterforms",
+  "edit-resident-master": "masterforms",
   "user-master": "masterforms",
+  "create-user-master": "masterforms",
+  "edit-user-master": "masterforms",
   "approval-routing-master": "masterforms",
+  "create-approval-routing-master": "masterforms",
+  "edit-approval-routing-master": "masterforms",
   "email-template-master": "masterforms",
+  "create-email-template-master": "masterforms",
+  "edit-email-template-master": "masterforms",
   "common-status-master": "masterforms",
-  "gate-master":"masterforms",
+  "gate-master": "masterforms",
+  "create-gate-master": "masterforms",
+  "edit-gate-master": "masterforms",
   "guard-account-mapping-master": "masterforms",
+  "create-guard-account-mapping-master": "masterforms",
+  "edit-guard-account-mapping-master": "masterforms",
   "security-coordinator-master": "masterforms",
+  "create-security-coordinator-master": "masterforms",
+  "edit-security-coordinator-master": "masterforms",
   "vehicle-type-master": "masterforms",
+  "create-vehicle-type-master": "masterforms",
+  "edit-vehicle-type-master": "masterforms",
+  "qr-configuration-master": "masterforms",
+  "create-qr-configuration-master": "masterforms",
+  "edit-qr-configuration-master": "masterforms",
+
+  // Additional Mega Menu Master Form Categories
+  "movement-type-master": "masterforms",
+  "item-type-master": "masterforms",
+  "movement-rule-master": "masterforms",
+  "access-card-master": "masterforms",
+  "replacement-reason-master": "masterforms",
+  "replacement-fee-master": "masterforms",
+  "delivery-sla-master": "masterforms",
+  "payment-method-master": "masterforms",
+  "venue-master": "masterforms",
+  "menu-master": "masterforms",
+  "operating-hours-master": "masterforms",
+  "staff-mapping-master": "masterforms",
+  "project-venue-mapping-master": "masterforms",
+  "reservation-slot-rules-master": "masterforms",
+  "court-master": "masterforms",
+  "court-operating-hours-master": "masterforms",
+  "court-time-slots-master": "masterforms",
+  "court-blocking-master": "masterforms",
+  "project-court-mapping-master": "masterforms",
+  "booking-rules-master": "masterforms",
+  "guest-approval-master": "masterforms",
+  "move-approval-master": "masterforms",
+  "card-processing-master": "masterforms",
+  "restaurant-reservation-approval-master": "masterforms",
+  "court-approval-master": "masterforms",
+  "request-history-master": "masterforms",
+  "audit-logs-master": "masterforms",
 };

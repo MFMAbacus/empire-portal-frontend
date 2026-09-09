@@ -10,6 +10,7 @@ import { UsePermissionContext } from "@/context/PermissionContext";
 import logoPng from "@/assets/images/logo.png";
 
 import { clsx } from "@/utility/clsx";
+import { MASTER_FORM_CATEGORIES } from "@/config/master-forms-config";
 
 import cls from "./topbar.module.scss";
 
@@ -299,6 +300,7 @@ type TopbarNavItemProps = {
   isAccess: boolean;
   isActive?: boolean;
   onClick?: () => void;
+  onSubNavigate?: (subPageId: string) => void;
 };
 
 const TopbarNavItem = ({
@@ -307,23 +309,122 @@ const TopbarNavItem = ({
   isAccess = false,
   isActive = false,
   onClick,
+  onSubNavigate,
 }: TopbarNavItemProps): JSX.Element => {
+  const [isMegaOpen, setIsMegaOpen] = React.useState<boolean>(false);
+  const hoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const handleClickAway = React.useCallback(() => {
+    setIsMegaOpen(false);
+  }, []);
+
+  const { ref: megaMenuRef } = useClickAway<HTMLLIElement>({
+    isActive: isMegaOpen,
+    onClickAway: handleClickAway,
+  });
+
+  const isMasterForms = id === "masterforms";
+
+  const handleMouseEnter = () => {
+    if (!isMasterForms) return;
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    setIsMegaOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    if (!isMasterForms) return;
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsMegaOpen(false);
+    }, 200);
+  };
+
   const rootCls = clsx([
     cls["topbar-nav__item"],
     isActive && cls["topbar-nav__item--is-active"],
   ]);
 
-  const { permissions } = UsePermissionContext();
-
   if (!isAccess) {
     return <></>;
   }
 
+  const handleSubItemClick = (subId: string) => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    setIsMegaOpen(false);
+    if (onSubNavigate) {
+      onSubNavigate(subId);
+    } else if (onClick) {
+      onClick();
+    }
+  };
+
+  const handleMainClick = (e: React.MouseEvent) => {
+    if (isMasterForms) {
+      setIsMegaOpen((prev) => !prev);
+    }
+    if (onClick) {
+      onClick();
+    }
+  };
+
   return (
-    <li className={rootCls}>
-      <button className={cls["topbar-nav__button"]} onClick={onClick}>
-        {title}
+    <li
+      ref={isMasterForms ? megaMenuRef : undefined}
+      className={rootCls}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <button className={cls["topbar-nav__button"]} onClick={handleMainClick}>
+        <span>{title}</span>
+        {isMasterForms && (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              marginLeft: "6px",
+              fontSize: "12px",
+              transform: isMegaOpen ? "rotate(180deg)" : "rotate(0deg)",
+              transition: "transform 0.2s ease",
+            }}
+          >
+            <ChevronDownIcon />
+          </span>
+        )}
       </button>
+
+      {isMasterForms && (
+        <div
+          className={clsx([
+            cls["topbar-mega"],
+            isMegaOpen && cls["topbar-mega--is-active"],
+          ])}
+        >
+          <div className={cls["topbar-mega__grid"]}>
+            {MASTER_FORM_CATEGORIES.map((cat) => (
+              <div key={cat.id} className={cls["topbar-mega__column"]}>
+                <div className={cls["topbar-mega__column-title"]}>
+                  {cat.title}
+                </div>
+                <ul className={cls["topbar-mega__list"]}>
+                  {cat.items.map((subItem) => (
+                    <li key={subItem.id}>
+                      <button
+                        type="button"
+                        className={cls["topbar-mega__item-button"]}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSubItemClick(subItem.id);
+                        }}
+                      >
+                        {subItem.title}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </li>
   );
 };
