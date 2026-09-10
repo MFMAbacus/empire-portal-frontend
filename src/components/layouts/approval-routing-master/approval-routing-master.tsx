@@ -162,7 +162,7 @@ export const ApprovalRoutingMaster = ({
           isDisabled={Boolean(isLoading)}
           onClick={loadRoutings}
         />
-        {canWrite && onCreate && (
+        {!canWrite && onCreate && (
           <Button
             label="CREATE"
             icon={<PlusIcon />}

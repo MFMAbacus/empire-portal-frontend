@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { ModuleName } from "@/types/user";
 import { AlertSeverity } from "@/types/alert";
-import { MovementTypeFilters } from "./types";
+import { ItemTypeFilters } from "./types";
 
 import { Tooltip } from "@/components/base/tooltip";
 import { Table } from "@/components/base/table";
@@ -30,59 +30,60 @@ import { FilterIcon } from "@/components/icons/filter-icon";
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
 
-import { makeGetMovementTypeMasterService } from "@/services/get-movement-type-master-service";
-import { makeDeleteMovementTypeMasterService } from "@/services/delete-movement-type-master-service";
+import { makeGetItemTypeMasterService } from "@/services/get-item-type-master-service";
+import { makeDeleteItemTypeMasterService } from "@/services/delete-item-type-master-service";
 
-// Exact Type Definition (As per document)
-export type MovementTypeItem = {
+// Item Type Master Data Model Structure
+export type ItemTypeItem = {
   id: string;
-  movementTypeId: string;
-  type: string; // Dynamic Name from DB (Move-in / Move-out)
+  itemTypeId: string;
+  itemTypeName: string;
+  description?: string;
   isActive: boolean;
   isArchived?: boolean;
 };
 
-type MovementTypeMasterProps = {
+type ItemTypeMasterProps = {
   sessionId: string;
   onCreate?: () => void;
-  onView?: (movementTypeId: string) => void;
+  onView?: (itemTypeId: string) => void;
   onBack?: () => void;
 };
 
 // ─── List Component ──────────────────────────────────────────────────────────
 
-export const MovementTypeMaster = ({
+export const ItemTypeMaster = ({
   sessionId,
   onCreate,
   onView,
   onBack,
-}: MovementTypeMasterProps): JSX.Element => {
+}: ItemTypeMasterProps): JSX.Element => {
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "movement-type-master"
+    "item-type-master"
   );
 
-  const [movementTypes, setMovementTypes] = React.useState<MovementTypeItem[] | null>(
+  const [itemTypes, setItemTypes] = React.useState<ItemTypeItem[] | null>(
     null
   );
-  const [filters, setFilters] = React.useState<MovementTypeFilters>({});
+  const [filters, setFilters] = React.useState<ItemTypeFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteMovementTypeId, setDeleteMovementTypeId] = React.useState<string | null>(
+  const [deleteItemTypeId, setDeleteItemTypeId] = React.useState<string | null>(
     null
   );
-  const [restoreMovementTypeId, setRestoreMovementTypeId] = React.useState<
+  const [restoreItemTypeId, setRestoreItemTypeId] = React.useState<
     string | null
   >(null);
 
   const handleSuccess = React.useCallback((data: unknown) => {
-    const list = data as MovementTypeItem[];
-    setMovementTypes(list || []);
+    const list = data as ItemTypeItem[];
+    setItemTypes(list || []);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
     isLoadingDefault: true,
-    serviceMaker: makeGetMovementTypeMasterService,
+    serviceMaker: makeGetItemTypeMasterService,
     onSuccess: handleSuccess,
   });
 
@@ -91,33 +92,43 @@ export const MovementTypeMaster = ({
     [filters]
   );
 
-  const loadMovementTypes = React.useCallback(() => {
+  const loadItemTypes = React.useCallback(() => {
     submit({ sessionId, isArchived: showArchived });
   }, [sessionId, showArchived, submit]);
 
   React.useEffect(() => {
-    loadMovementTypes();
-  }, [loadMovementTypes]);
+    loadItemTypes();
+  }, [loadItemTypes]);
 
-  const filteredMovementTypes = React.useMemo(() => {
-    if (movementTypes === null) return null;
-    return movementTypes.filter((current) => {
+  const filteredItemTypes = React.useMemo(() => {
+    if (itemTypes === null) return null;
+    return itemTypes.filter((current) => {
       let predicate = true;
 
-      if (filters.movementTypeId) {
+      if (filters.itemTypeId) {
         predicate =
           predicate &&
-          current.movementTypeId
+          current.itemTypeId
             .toLowerCase()
-            .includes(filters.movementTypeId.toLowerCase());
+            .includes(filters.itemTypeId.toLowerCase());
       }
 
-      if (filters.type) {
+      if (filters.itemTypeName) {
         predicate =
           predicate &&
-          current.type
+          current.itemTypeName
             .toLowerCase()
-            .includes(filters.type.toLowerCase());
+            .includes(filters.itemTypeName.toLowerCase());
+      }
+
+      if (filters.description) {
+        predicate =
+          predicate &&
+          Boolean(
+            current.description
+              ?.toLowerCase()
+              .includes(filters.description.toLowerCase())
+          );
       }
 
       if (typeof filters.isActive !== "undefined") {
@@ -126,11 +137,11 @@ export const MovementTypeMaster = ({
 
       return predicate;
     });
-  }, [movementTypes, filters]);
+  }, [itemTypes, filters]);
 
   return (
     <Dashboard.Content>
-      <Actionbar title="MOVEMENT TYPE MASTER">
+      <Actionbar title="ITEM TYPE MASTER">
         {onBack && (
           <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
         )}
@@ -143,7 +154,7 @@ export const MovementTypeMaster = ({
         <Button
           label="RELOAD"
           isDisabled={isLoading}
-          onClick={loadMovementTypes}
+          onClick={loadItemTypes}
         />
         {!canWrite && onCreate && (
           <Button
@@ -157,7 +168,7 @@ export const MovementTypeMaster = ({
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="Movement Type Master" />
+          <Paper.Title value="Item Type Master" />
 
           {alertData !== null &&
             alertData.severity !== AlertSeverity.SUCCESS && (
@@ -168,26 +179,28 @@ export const MovementTypeMaster = ({
             )}
 
           {isLoading && (
-            <LoadingFeedback feedback="Loading movement type records, please wait." />
+            <LoadingFeedback feedback="Loading item type records, please wait." />
           )}
 
-          {!isLoading && filteredMovementTypes !== null && (
+          {!isLoading && filteredItemTypes !== null && (
             <Table
               head={
                 <Table.Row>
-                  <Table.Header value="MOVEMENT TYPE ID" />
-                  <Table.Header value="TYPE NAME" />
+                  <Table.Header value="ITEM TYPE ID" />
+                  <Table.Header value="ITEM TYPE NAME" />
+                  <Table.Header value="DESCRIPTION" />
                   <Table.Header value="STATUS" />
                   <Table.Header />
                 </Table.Row>
               }
               body={
                 <Map
-                  items={filteredMovementTypes || []}
+                  items={filteredItemTypes || []}
                   renderItem={(item) => (
                     <Table.Row key={item.id}>
-                      <Table.Cell>{item.movementTypeId}</Table.Cell>
-                      <Table.Cell>{item.type}</Table.Cell>
+                      <Table.Cell>{item.itemTypeId}</Table.Cell>
+                      <Table.Cell>{item.itemTypeName}</Table.Cell>
+                      <Table.Cell>{item.description || "-"}</Table.Cell>
                       <Table.Cell>
                         <Badge
                           value={item.isActive ? "Active" : "Inactive"}
@@ -207,7 +220,7 @@ export const MovementTypeMaster = ({
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
                                   onClick={() =>
-                                    setDeleteMovementTypeId(item.id)
+                                    setDeleteItemTypeId(item.id)
                                   }
                                 />
                               </Tooltip>
@@ -226,7 +239,7 @@ export const MovementTypeMaster = ({
                           <Tooltip value="Unarchive">
                             <IconButton
                               icon={<CheckIcon />}
-                              onClick={() => setRestoreMovementTypeId(item.id)}
+                              onClick={() => setRestoreItemTypeId(item.id)}
                             />
                           </Tooltip>
                         )}
@@ -239,16 +252,16 @@ export const MovementTypeMaster = ({
           )}
 
           {!isLoading &&
-            filteredMovementTypes !== null &&
-            filteredMovementTypes.length === 0 && (
+            filteredItemTypes !== null &&
+            filteredItemTypes.length === 0 && (
               <Alert
                 className="mt-1"
-                message="No movement types found."
+                message="No item types found."
                 severity={AlertSeverity.SUCCESS}
               />
             )}
 
-          {!isLoading && filteredMovementTypes !== null && <Pagination />}
+          {!isLoading && filteredItemTypes !== null && <Pagination />}
         </Paper>
       </Dashboard.Page>
 
@@ -260,32 +273,32 @@ export const MovementTypeMaster = ({
         />
       )}
 
-      {deleteMovementTypeId !== null && (
+      {deleteItemTypeId !== null && (
         <DeleteModal
           serviceInput={{
             sessionId,
-            movementTypeId: deleteMovementTypeId,
+            itemTypeId: deleteItemTypeId,
           }}
-          title="ARCHIVE MOVEMENT TYPE"
-          message="Do you really want to archive this movement type record?"
-          serviceMaker={makeDeleteMovementTypeMasterService}
-          onDelete={loadMovementTypes}
-          onClose={() => setDeleteMovementTypeId(null)}
+          title="ARCHIVE ITEM TYPE"
+          message="Do you really want to archive this item type record?"
+          serviceMaker={makeDeleteItemTypeMasterService}
+          onDelete={loadItemTypes}
+          onClose={() => setDeleteItemTypeId(null)}
         />
       )}
 
-      {restoreMovementTypeId !== null && (
+      {restoreItemTypeId !== null && (
         <DeleteModal
           serviceInput={{
             sessionId,
             isRestore: true,
-            movementTypeId: restoreMovementTypeId,
+            itemTypeId: restoreItemTypeId,
           }}
-          title="UNARCHIVE MOVEMENT TYPE"
-          message="Do you really want to unarchive this movement type record?"
-          serviceMaker={makeDeleteMovementTypeMasterService}
-          onDelete={loadMovementTypes}
-          onClose={() => setRestoreMovementTypeId(null)}
+          title="UNARCHIVE ITEM TYPE"
+          message="Do you really want to unarchive this item type record?"
+          serviceMaker={makeDeleteItemTypeMasterService}
+          onDelete={loadItemTypes}
+          onClose={() => setRestoreItemTypeId(null)}
         />
       )}
     </Dashboard.Content>

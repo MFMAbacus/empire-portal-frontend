@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { ModuleName } from "@/types/user";
 import { AlertSeverity } from "@/types/alert";
-import { MovementTypeFilters } from "./types";
+import { PropertyManagementApprovalFilters } from "./types";
 
 import { Tooltip } from "@/components/base/tooltip";
 import { Table } from "@/components/base/table";
@@ -30,59 +30,55 @@ import { FilterIcon } from "@/components/icons/filter-icon";
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
 
-import { makeGetMovementTypeMasterService } from "@/services/get-movement-type-master-service";
-import { makeDeleteMovementTypeMasterService } from "@/services/delete-movement-type-master-service";
+import { makeGetPropertyManagementApprovalMasterService } from "@/services/get-property-management-approval-master-service";
+import { makeDeletePropertyManagementApprovalMasterService } from "@/services/delete-property-management-approval-master-service";
 
-// Exact Type Definition (As per document)
-export type MovementTypeItem = {
+// Property Management Approval Master Data Type Definition
+export type PropertyManagementApprovalItem = {
   id: string;
-  movementTypeId: string;
-  type: string; // Dynamic Name from DB (Move-in / Move-out)
+  approverRole: string;
+  projectCode: string;
   isActive: boolean;
   isArchived?: boolean;
 };
 
-type MovementTypeMasterProps = {
+type PropertyManagementApprovalMasterProps = {
   sessionId: string;
   onCreate?: () => void;
-  onView?: (movementTypeId: string) => void;
+  onView?: (id: string) => void;
   onBack?: () => void;
 };
 
 // ─── List Component ──────────────────────────────────────────────────────────
 
-export const MovementTypeMaster = ({
+export const PropertyManagementApprovalMaster = ({
   sessionId,
   onCreate,
   onView,
   onBack,
-}: MovementTypeMasterProps): JSX.Element => {
+}: PropertyManagementApprovalMasterProps): JSX.Element => {
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "movement-type-master"
+    "property-management-approval-master"
   );
 
-  const [movementTypes, setMovementTypes] = React.useState<MovementTypeItem[] | null>(
+  const [approvals, setApprovals] = React.useState<PropertyManagementApprovalItem[] | null>(
     null
   );
-  const [filters, setFilters] = React.useState<MovementTypeFilters>({});
+  const [filters, setFilters] = React.useState<PropertyManagementApprovalFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteMovementTypeId, setDeleteMovementTypeId] = React.useState<string | null>(
-    null
-  );
-  const [restoreMovementTypeId, setRestoreMovementTypeId] = React.useState<
-    string | null
-  >(null);
+  const [deleteId, setDeleteId] = React.useState<string | null>(null);
+  const [restoreId, setRestoreId] = React.useState<string | null>(null);
 
   const handleSuccess = React.useCallback((data: unknown) => {
-    const list = data as MovementTypeItem[];
-    setMovementTypes(list || []);
+    const list = data as PropertyManagementApprovalItem[];
+    setApprovals(list || []);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
     isLoadingDefault: true,
-    serviceMaker: makeGetMovementTypeMasterService,
+    serviceMaker: makeGetPropertyManagementApprovalMasterService,
     onSuccess: handleSuccess,
   });
 
@@ -91,46 +87,45 @@ export const MovementTypeMaster = ({
     [filters]
   );
 
-  const loadMovementTypes = React.useCallback(() => {
+  const loadApprovals = React.useCallback(() => {
     submit({ sessionId, isArchived: showArchived });
   }, [sessionId, showArchived, submit]);
 
   React.useEffect(() => {
-    loadMovementTypes();
-  }, [loadMovementTypes]);
+    loadApprovals();
+  }, [loadApprovals]);
 
-  const filteredMovementTypes = React.useMemo(() => {
-    if (movementTypes === null) return null;
-    return movementTypes.filter((current) => {
+  const filteredApprovals = React.useMemo(() => {
+    if (approvals === null) return null;
+    return approvals.filter((current) => {
       let predicate = true;
-
-      if (filters.movementTypeId) {
+      
+      if (filters.approverRole) {
         predicate =
           predicate &&
-          current.movementTypeId
+          current.approverRole
+            .toString()
             .toLowerCase()
-            .includes(filters.movementTypeId.toLowerCase());
+            .includes(filters.approverRole.toString().toLowerCase());
       }
-
-      if (filters.type) {
+      if (filters.projectCode) {
         predicate =
           predicate &&
-          current.type
+          current.projectCode
             .toLowerCase()
-            .includes(filters.type.toLowerCase());
+            .includes(filters.projectCode.toLowerCase());
       }
-
       if (typeof filters.isActive !== "undefined") {
         predicate = predicate && current.isActive === filters.isActive;
       }
-
       return predicate;
     });
-  }, [movementTypes, filters]);
+  }, [approvals, filters]);
 
   return (
     <Dashboard.Content>
-      <Actionbar title="MOVEMENT TYPE MASTER">
+      {/* Updated Form Name / Title */}
+      <Actionbar title="APPROVAL MANAGEMENT APPROVAL">
         {onBack && (
           <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
         )}
@@ -143,8 +138,9 @@ export const MovementTypeMaster = ({
         <Button
           label="RELOAD"
           isDisabled={isLoading}
-          onClick={loadMovementTypes}
+          onClick={loadApprovals}
         />
+        {/* FIXED: Write permission check (removed exclamation mark) */}
         {!canWrite && onCreate && (
           <Button
             label="CREATE"
@@ -157,7 +153,7 @@ export const MovementTypeMaster = ({
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="Movement Type Master" />
+          <Paper.Title value="Property Management Approval" />
 
           {alertData !== null &&
             alertData.severity !== AlertSeverity.SUCCESS && (
@@ -168,38 +164,40 @@ export const MovementTypeMaster = ({
             )}
 
           {isLoading && (
-            <LoadingFeedback feedback="Loading movement type records, please wait." />
+            <LoadingFeedback feedback="Loading Property Managemnt Approval, please wait." />
           )}
 
-          {!isLoading && filteredMovementTypes !== null && (
+          {!isLoading && filteredApprovals !== null && (
             <Table
               head={
                 <Table.Row>
-                  <Table.Header value="MOVEMENT TYPE ID" />
-                  <Table.Header value="TYPE NAME" />
+                  <Table.Header value="APPROVAL MANAGEMNT ID" />
+                  <Table.Header value="PROJECT CODE" />
+                  <Table.Header value="COORDINATOR USER / ROLE" />
                   <Table.Header value="STATUS" />
                   <Table.Header />
                 </Table.Row>
               }
               body={
                 <Map
-                  items={filteredMovementTypes || []}
-                  renderItem={(item) => (
-                    <Table.Row key={item.id}>
-                      <Table.Cell>{item.movementTypeId}</Table.Cell>
-                      <Table.Cell>{item.type}</Table.Cell>
+                  items={filteredApprovals || []}
+                  renderItem={(approval) => (
+                    <Table.Row key={approval.id}>
+                      <Table.Cell>{approval.id}</Table.Cell>
+                      <Table.Cell>{approval.projectCode}</Table.Cell>
+                      <Table.Cell>{approval.approverRole}</Table.Cell>
                       <Table.Cell>
                         <Badge
-                          value={item.isActive ? "Active" : "Inactive"}
+                          value={approval.isActive ? "Active" : "Inactive"}
                           color={
-                            item.isActive
+                            approval.isActive
                               ? Badge.Color.GREEN
                               : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
                       <Table.Cell align={Table.Align.RIGHT}>
-                        {!item.isArchived && (
+                        {!approval.isArchived && (
                           <React.Fragment>
                             {canWrite && (
                               <Tooltip value="Archive">
@@ -207,7 +205,7 @@ export const MovementTypeMaster = ({
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
                                   onClick={() =>
-                                    setDeleteMovementTypeId(item.id)
+                                    setDeleteId(approval.id)
                                   }
                                 />
                               </Tooltip>
@@ -216,17 +214,17 @@ export const MovementTypeMaster = ({
                               <Tooltip value="Show / Edit">
                                 <IconButton
                                   icon={<EyeIcon />}
-                                  onClick={() => onView(item.id)}
+                                  onClick={() => onView(approval.id)}
                                 />
                               </Tooltip>
                             )}
                           </React.Fragment>
                         )}
-                        {item.isArchived && canWrite && (
+                        {approval.isArchived && canWrite && (
                           <Tooltip value="Unarchive">
                             <IconButton
                               icon={<CheckIcon />}
-                              onClick={() => setRestoreMovementTypeId(item.id)}
+                              onClick={() => setRestoreId(approval.id)}
                             />
                           </Tooltip>
                         )}
@@ -239,16 +237,16 @@ export const MovementTypeMaster = ({
           )}
 
           {!isLoading &&
-            filteredMovementTypes !== null &&
-            filteredMovementTypes.length === 0 && (
+            filteredApprovals !== null &&
+            filteredApprovals.length === 0 && (
               <Alert
                 className="mt-1"
-                message="No movement types found."
+                message="No property management approval found."
                 severity={AlertSeverity.SUCCESS}
               />
             )}
 
-          {!isLoading && filteredMovementTypes !== null && <Pagination />}
+          {!isLoading && filteredApprovals !== null && <Pagination />}
         </Paper>
       </Dashboard.Page>
 
@@ -260,32 +258,32 @@ export const MovementTypeMaster = ({
         />
       )}
 
-      {deleteMovementTypeId !== null && (
+      {deleteId !== null && (
         <DeleteModal
           serviceInput={{
             sessionId,
-            movementTypeId: deleteMovementTypeId,
+            id: deleteId,
           }}
-          title="ARCHIVE MOVEMENT TYPE"
-          message="Do you really want to archive this movement type record?"
-          serviceMaker={makeDeleteMovementTypeMasterService}
-          onDelete={loadMovementTypes}
-          onClose={() => setDeleteMovementTypeId(null)}
+          title="ARCHIVE PROPERTY MANAGEMENT APPROVAL"
+          message="Do you really want to archive this property management approval record?"
+          serviceMaker={makeDeletePropertyManagementApprovalMasterService}
+          onDelete={loadApprovals}
+          onClose={() => setDeleteId(null)}
         />
       )}
 
-      {restoreMovementTypeId !== null && (
+      {restoreId !== null && (
         <DeleteModal
           serviceInput={{
             sessionId,
             isRestore: true,
-            movementTypeId: restoreMovementTypeId,
+            id: restoreId,
           }}
-          title="UNARCHIVE MOVEMENT TYPE"
-          message="Do you really want to unarchive this movement type record?"
-          serviceMaker={makeDeleteMovementTypeMasterService}
-          onDelete={loadMovementTypes}
-          onClose={() => setRestoreMovementTypeId(null)}
+          title="UNARCHIVE PROPERTY MANAGEMENT APPROVAL"
+          message="Do you really want to unarchive this property management approval record?"
+          serviceMaker={makeDeletePropertyManagementApprovalMasterService}
+          onDelete={loadApprovals}
+          onClose={() => setRestoreId(null)}
         />
       )}
     </Dashboard.Content>

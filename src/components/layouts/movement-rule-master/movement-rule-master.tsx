@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { ModuleName } from "@/types/user";
 import { AlertSeverity } from "@/types/alert";
-import { MovementTypeFilters } from "./types";
+import { MovementRuleFilters } from "./types";
 
 import { Tooltip } from "@/components/base/tooltip";
 import { Table } from "@/components/base/table";
@@ -30,59 +30,53 @@ import { FilterIcon } from "@/components/icons/filter-icon";
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
 
-import { makeGetMovementTypeMasterService } from "@/services/get-movement-type-master-service";
-import { makeDeleteMovementTypeMasterService } from "@/services/delete-movement-type-master-service";
+import { makeGetMovementRuleMasterService } from "@/services/get-movement-rule-master-service";
+import { makeDeleteMovementRuleMasterService } from "@/services/delete-movement-rule-master-service";
 
-// Exact Type Definition (As per document)
-export type MovementTypeItem = {
+export type MovementRuleItem = {
   id: string;
-  movementTypeId: string;
-  type: string; // Dynamic Name from DB (Move-in / Move-out)
+  ruleId?: string;
+  projectCode: string;
+  startTime: string;
+  endTime: string;
+  blockedDays: string;
   isActive: boolean;
   isArchived?: boolean;
 };
 
-type MovementTypeMasterProps = {
+type MovementRuleMasterProps = {
   sessionId: string;
   onCreate?: () => void;
-  onView?: (movementTypeId: string) => void;
+  onView?: (ruleId: string) => void;
   onBack?: () => void;
 };
 
-// ─── List Component ──────────────────────────────────────────────────────────
-
-export const MovementTypeMaster = ({
+export const MovementRuleMaster = ({
   sessionId,
   onCreate,
   onView,
   onBack,
-}: MovementTypeMasterProps): JSX.Element => {
+}: MovementRuleMasterProps): JSX.Element => {
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "movement-type-master"
+    "movement-rule-master"
   );
 
-  const [movementTypes, setMovementTypes] = React.useState<MovementTypeItem[] | null>(
-    null
-  );
-  const [filters, setFilters] = React.useState<MovementTypeFilters>({});
+  const [rules, setRules] = React.useState<MovementRuleItem[] | null>(null);
+  const [filters, setFilters] = React.useState<MovementRuleFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteMovementTypeId, setDeleteMovementTypeId] = React.useState<string | null>(
-    null
-  );
-  const [restoreMovementTypeId, setRestoreMovementTypeId] = React.useState<
-    string | null
-  >(null);
+  const [deleteRuleId, setDeleteRuleId] = React.useState<string | null>(null);
+  const [restoreRuleId, setRestoreRuleId] = React.useState<string | null>(null);
 
   const handleSuccess = React.useCallback((data: unknown) => {
-    const list = data as MovementTypeItem[];
-    setMovementTypes(list || []);
+    const list = data as MovementRuleItem[];
+    setRules(list || []);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
     isLoadingDefault: true,
-    serviceMaker: makeGetMovementTypeMasterService,
+    serviceMaker: makeGetMovementRuleMasterService,
     onSuccess: handleSuccess,
   });
 
@@ -91,65 +85,82 @@ export const MovementTypeMaster = ({
     [filters]
   );
 
-  const loadMovementTypes = React.useCallback(() => {
+  const loadRules = React.useCallback(() => {
     submit({ sessionId, isArchived: showArchived });
   }, [sessionId, showArchived, submit]);
 
   React.useEffect(() => {
-    loadMovementTypes();
-  }, [loadMovementTypes]);
+    loadRules();
+  }, [loadRules]);
 
-  const filteredMovementTypes = React.useMemo(() => {
-    if (movementTypes === null) return null;
-    return movementTypes.filter((current) => {
+  const filteredRules = React.useMemo(() => {
+    if (rules === null) return null;
+    return rules.filter((current) => {
       let predicate = true;
-
-      if (filters.movementTypeId) {
+      if (filters.ruleId) {
         predicate =
           predicate &&
-          current.movementTypeId
-            .toLowerCase()
-            .includes(filters.movementTypeId.toLowerCase());
+          current.ruleId
+            ?.toLowerCase()
+            .indexOf(filters.ruleId.toLowerCase()) !== -1;
       }
-
-      if (filters.type) {
+      if (filters.projectCode) {
         predicate =
           predicate &&
-          current.type
-            .toLowerCase()
-            .includes(filters.type.toLowerCase());
+          current.projectCode
+            ?.toLowerCase()
+            .indexOf(filters.projectCode.toLowerCase()) !== -1;
       }
-
+      if (filters.startTime) {
+        predicate =
+          predicate &&
+          current.startTime
+            ?.toLowerCase()
+            .indexOf(filters.startTime.toLowerCase()) !== -1;
+      }
+      if (filters.endTime) {
+        predicate =
+          predicate &&
+          current.endTime
+            ?.toLowerCase()
+            .indexOf(filters.endTime.toLowerCase()) !== -1;
+      }
+      if (filters.blockedDays) {
+        predicate =
+          predicate &&
+          current.blockedDays
+            ?.toLowerCase()
+            .indexOf(filters.blockedDays.toLowerCase()) !== -1;
+      }
       if (typeof filters.isActive !== "undefined") {
         predicate = predicate && current.isActive === filters.isActive;
       }
-
       return predicate;
     });
-  }, [movementTypes, filters]);
+  }, [rules, filters]);
 
   return (
     <Dashboard.Content>
-      <Actionbar title="MOVEMENT TYPE MASTER">
+      <Actionbar title="MOVEMENT RULE MASTER">
         {onBack && (
           <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
         )}
         <Button
           label="FILTER"
           icon={<FilterIcon />}
-          isDisabled={isLoading}
+          isDisabled={Boolean(isLoading)}
           onClick={() => setFilterModal(true)}
         />
         <Button
           label="RELOAD"
-          isDisabled={isLoading}
-          onClick={loadMovementTypes}
+          isDisabled={Boolean(isLoading)}
+          onClick={loadRules}
         />
         {!canWrite && onCreate && (
           <Button
             label="CREATE"
             icon={<PlusIcon />}
-            isDisabled={isLoading}
+            isDisabled={Boolean(isLoading)}
             onClick={onCreate}
           />
         )}
@@ -157,7 +168,7 @@ export const MovementTypeMaster = ({
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="Movement Type Master" />
+          <Paper.Title value="Movement Rule Master" />
 
           {alertData !== null &&
             alertData.severity !== AlertSeverity.SUCCESS && (
@@ -168,26 +179,30 @@ export const MovementTypeMaster = ({
             )}
 
           {isLoading && (
-            <LoadingFeedback feedback="Loading movement type records, please wait." />
+            <LoadingFeedback feedback="Loading movement rule records, please wait." />
           )}
 
-          {!isLoading && filteredMovementTypes !== null && (
+          {!isLoading && filteredRules !== null && (
             <Table
               head={
                 <Table.Row>
-                  <Table.Header value="MOVEMENT TYPE ID" />
-                  <Table.Header value="TYPE NAME" />
+                  <Table.Header value="PROJECT CODE" />
+                  <Table.Header value="ALLOWED START TIME" />
+                  <Table.Header value="ALLOWED END TIME" />
+                  <Table.Header value="BLOCKED DAYS" />
                   <Table.Header value="STATUS" />
                   <Table.Header />
                 </Table.Row>
               }
               body={
                 <Map
-                  items={filteredMovementTypes || []}
+                  items={filteredRules || []}
                   renderItem={(item) => (
                     <Table.Row key={item.id}>
-                      <Table.Cell>{item.movementTypeId}</Table.Cell>
-                      <Table.Cell>{item.type}</Table.Cell>
+                      <Table.Cell>{item.projectCode}</Table.Cell>
+                      <Table.Cell>{item.startTime}</Table.Cell>
+                      <Table.Cell>{item.endTime}</Table.Cell>
+                      <Table.Cell>{item.blockedDays}</Table.Cell>
                       <Table.Cell>
                         <Badge
                           value={item.isActive ? "Active" : "Inactive"}
@@ -206,9 +221,7 @@ export const MovementTypeMaster = ({
                                 <IconButton
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
-                                  onClick={() =>
-                                    setDeleteMovementTypeId(item.id)
-                                  }
+                                  onClick={() => setDeleteRuleId(item.id)}
                                 />
                               </Tooltip>
                             )}
@@ -226,7 +239,7 @@ export const MovementTypeMaster = ({
                           <Tooltip value="Unarchive">
                             <IconButton
                               icon={<CheckIcon />}
-                              onClick={() => setRestoreMovementTypeId(item.id)}
+                              onClick={() => setRestoreRuleId(item.id)}
                             />
                           </Tooltip>
                         )}
@@ -239,16 +252,16 @@ export const MovementTypeMaster = ({
           )}
 
           {!isLoading &&
-            filteredMovementTypes !== null &&
-            filteredMovementTypes.length === 0 && (
+            filteredRules !== null &&
+            filteredRules.length === 0 && (
               <Alert
                 className="mt-1"
-                message="No movement types found."
+                message="No Movement Rule records found."
                 severity={AlertSeverity.SUCCESS}
               />
             )}
 
-          {!isLoading && filteredMovementTypes !== null && <Pagination />}
+          {!isLoading && filteredRules !== null && <Pagination />}
         </Paper>
       </Dashboard.Page>
 
@@ -260,32 +273,32 @@ export const MovementTypeMaster = ({
         />
       )}
 
-      {deleteMovementTypeId !== null && (
+      {deleteRuleId !== null && (
         <DeleteModal
           serviceInput={{
             sessionId,
-            movementTypeId: deleteMovementTypeId,
+            id: deleteRuleId,
           }}
-          title="ARCHIVE MOVEMENT TYPE"
-          message="Do you really want to archive this movement type record?"
-          serviceMaker={makeDeleteMovementTypeMasterService}
-          onDelete={loadMovementTypes}
-          onClose={() => setDeleteMovementTypeId(null)}
+          title="ARCHIVE MOVEMENT RULE"
+          message="Do you really want to archive this movement rule record?"
+          serviceMaker={makeDeleteMovementRuleMasterService}
+          onDelete={loadRules}
+          onClose={() => setDeleteRuleId(null)}
         />
       )}
 
-      {restoreMovementTypeId !== null && (
+      {restoreRuleId !== null && (
         <DeleteModal
           serviceInput={{
             sessionId,
             isRestore: true,
-            movementTypeId: restoreMovementTypeId,
+            id: restoreRuleId,
           }}
-          title="UNARCHIVE MOVEMENT TYPE"
-          message="Do you really want to unarchive this movement type record?"
-          serviceMaker={makeDeleteMovementTypeMasterService}
-          onDelete={loadMovementTypes}
-          onClose={() => setRestoreMovementTypeId(null)}
+          title="UNARCHIVE MOVEMENT RULE"
+          message="Do you really want to unarchive this movement rule record?"
+          serviceMaker={makeDeleteMovementRuleMasterService}
+          onDelete={loadRules}
+          onClose={() => setRestoreRuleId(null)}
         />
       )}
     </Dashboard.Content>

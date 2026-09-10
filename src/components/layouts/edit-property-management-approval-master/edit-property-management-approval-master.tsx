@@ -22,11 +22,11 @@ import { useForm } from "@/hooks/use-form";
 import { AlertSeverity } from "@/types/alert";
 import { GetUserServiceApi } from "@/services/get-user-service";
 
-import { makeGetSecurityCoordinatorMasterService } from "@/services/get-security-coordinator-master-service";
-import { makeCreateSecurityCoordinatorMasterService } from "@/services/create-security-coordinator-master-service";
+import { makeGetPropertyManagementApprovalMasterService } from "@/services/get-property-management-approval-master-service";
+import { makeCreatePropertyManagementApprovalMasterService } from "@/services/create-property-management-approval-master-service";
 import { GetPropertyMasterServiceApi } from "@/services/get-property-master-service";
 
-type EditSecurityCoordinatorMasterProps = {
+type EditPropertyManagementApprovalMasterProps = {
   sessionId: string;
   Id: string; // Database Record ID
   onBack: () => void;
@@ -51,13 +51,13 @@ type UserItem = {
 };
 const delayAfterSuccess = 1000;
 
-export const EditSecurityCoordinatorMaster = ({
+export const EditPropertyManagementApprovalMaster = ({
   sessionId,
   Id,
   onBack,
-}: EditSecurityCoordinatorMasterProps): JSX.Element => {
-  // Security Coordinator Mapping States
-  const [coordinatorRole, setCoordinatorRole] = React.useState<string>("");
+}: EditPropertyManagementApprovalMasterProps): JSX.Element => {
+  // Property Managemnt Approval Mapping States
+  const [approverRole, setApproverRole] = React.useState<string>("");
   const [projectCode, setProjectCode] = React.useState<string>("");
   const [isActive, setIsActive] = React.useState<boolean>(true);
 
@@ -70,7 +70,7 @@ export const EditSecurityCoordinatorMaster = ({
 // Users State
   const [userList, setUserList] = React.useState<UserItem[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = React.useState<boolean>(false);
-
+  
   const { startTimeout } = useTimeout();
 
   // Fetch Property Master List for Dropdown
@@ -109,51 +109,51 @@ export const EditSecurityCoordinatorMaster = ({
     };
   }, [sessionId]);
 // 3. Fetch Users
-    React.useEffect(() => {
-      let isMounted = true;
-      const userService = new GetUserServiceApi();
-  
-      const fetchUsers = async () => {
-        setIsLoadingUsers(true);
-        try {
-          const response = await userService.execute({
-            sessionId,
-            userId: "",
-          } as any);
-  
-          if (isMounted && response) {
-            const rawData = Array.isArray(response.data)
-              ? response.data
-              : Array.isArray(response)
-              ? response
-              : [];
-  
-            setUserList(rawData);
-          }
-        } catch (error) {
-          console.error("Failed to fetch users list:", error);
-        } finally {
-          if (isMounted) {
-            setIsLoadingUsers(false);
-          }
+  React.useEffect(() => {
+    let isMounted = true;
+    const userService = new GetUserServiceApi();
+
+    const fetchUsers = async () => {
+      setIsLoadingUsers(true);
+      try {
+        const response = await userService.execute({
+          sessionId,
+          userId: "",
+        } as any);
+
+        if (isMounted && response) {
+          const rawData = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray(response)
+            ? response
+            : [];
+
+          setUserList(rawData);
         }
-      };
-  
-      fetchUsers();
-  
-      return () => {
-        isMounted = false;
-        userService.abort();
-      };
-    }, [sessionId]);
-  
-  // Initial Security Coordinator Data Fetching
+      } catch (error) {
+        console.error("Failed to fetch users list:", error);
+      } finally {
+        if (isMounted) {
+          setIsLoadingUsers(false);
+        }
+      }
+    };
+
+    fetchUsers();
+
+    return () => {
+      isMounted = false;
+      userService.abort();
+    };
+  }, [sessionId]);
+
+  // Initial Property Management Approval Data Fetching
   React.useEffect(() => {
     let isMounted = true;
     setIsFetching(true);
 
-    const getCoordinatorService = makeGetSecurityCoordinatorMasterService();
-    getCoordinatorService
+    const getApprovalService = makeGetPropertyManagementApprovalMasterService();
+    getApprovalService
       .execute({ sessionId, id: Id, Id } as any)
       .then((response: any) => {
         if (!isMounted) return;
@@ -161,7 +161,7 @@ export const EditSecurityCoordinatorMaster = ({
         const item = Array.isArray(data) ? data[0] : data;
 
         if (item) {
-          setCoordinatorRole(item.coordinatorRole || "");
+          setApproverRole(item.approverRole || "");
           setProjectCode(item.projectCode || "");
           setIsActive(Boolean(item.isActive));
         }
@@ -169,7 +169,7 @@ export const EditSecurityCoordinatorMaster = ({
       })
       .catch((err: any) => {
         if (!isMounted) return;
-        setFetchError(err?.message || "Failed to fetch security coordinator details.");
+        setFetchError(err?.message || "Failed to fetch property management approval details.");
         setIsFetching(false);
       });
 
@@ -187,7 +187,7 @@ export const EditSecurityCoordinatorMaster = ({
 
   // FIX 2: Updated Service Maker to use Update Service
   const { isLoading, alertData, validation, submit } = useForm({
-    serviceMaker: makeCreateSecurityCoordinatorMasterService,
+    serviceMaker: makeCreatePropertyManagementApprovalMasterService,
     onSuccess: handleSuccess,
   });
 
@@ -196,14 +196,14 @@ export const EditSecurityCoordinatorMaster = ({
       sessionId,
       id: Id,
       Id,
-      coordinatorRole,
+      approverRole,
       projectCode,
       isActive,
     } as any);
   }, [
     sessionId,
     Id,
-    coordinatorRole,
+    approverRole,
     projectCode,
     isActive,
     submit,
@@ -230,14 +230,14 @@ export const EditSecurityCoordinatorMaster = ({
   
   return (
     <Dashboard.Content>
-      <Actionbar title="EDIT SECURITY COORDINATOR MAPPING">
+      <Actionbar title="EDIT PROPERTY MANAGEMENT APPROVAL">
         <Button
           label="SAVE"
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
           isDisabled={
             isLoading ||
             isFetching ||
-            !coordinatorRole ||
+            !approverRole ||
             !projectCode ||
             isSuccess
           }
@@ -248,7 +248,7 @@ export const EditSecurityCoordinatorMaster = ({
 
       <Dashboard.Page>
         {isFetching ? (
-          <LoadingFeedback feedback="Loading security coordinator mapping details..." />
+          <LoadingFeedback feedback="Loading property management appproval mapping details..." />
         ) : (
           <Paper>
             {fetchError !== null && (
@@ -259,7 +259,7 @@ export const EditSecurityCoordinatorMaster = ({
               <Alert message={alertData.message} severity={alertData.severity} />
             )}
 
-            <Paper.Title value={`Security Coordinator Mapping Details (ID: ${Id})`} />
+            <Paper.Title value={`Property Management Approval Mapping Details (ID: ${Id})`} />
 
             <Grid>
               {/* Field 1: Project Code (ListInput Dropdown) */}
@@ -301,12 +301,12 @@ export const EditSecurityCoordinatorMaster = ({
                 </ListInput>
               </Grid.Cell>
 
-              {/* coordibnator Role / User Dropdown */}
+              {/* Approver Role / User Dropdown */}
                                       <Grid.Cell size={Grid.CellSize.S3}>
                                         <ListInput
                                           className="w-100"
                                           label="Approver Role / User"
-                                          value={coordinatorRole || undefined}
+                                          value={approverRole || undefined}
                                           placeholder={isLoadingUsers ? "Loading..." : "Select user or role"}
                                           hasError={typeof validation["approverRole"] !== "undefined"}
                                           isDisabled={isLoading || isSuccess || isLoadingUsers}
@@ -315,9 +315,9 @@ export const EditSecurityCoordinatorMaster = ({
                                             <React.Fragment>
                                               <ListInput.Item
                                                 label="None"
-                                                isActive={coordinatorRole === ""}
+                                                isActive={approverRole === ""}
                                                 onClick={() => {
-                                                  setCoordinatorRole("");
+                                                  setApproverRole("");
                                                   onClose();
                                                 }}
                                               />
@@ -327,9 +327,9 @@ export const EditSecurityCoordinatorMaster = ({
                                                   <ListInput.Item
                                                     key={userName}
                                                     label={userName}
-                                                    isActive={coordinatorRole === userName}
+                                                    isActive={approverRole === userName}
                                                     onClick={() => {
-                                                      setCoordinatorRole(userName);
+                                                      setApproverRole(userName);
                                                       onClose();
                                                     }}
                                                   />

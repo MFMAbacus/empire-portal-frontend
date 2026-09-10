@@ -91,6 +91,18 @@ import { MovementTypeMaster } from "../layouts/movement-type-master";
 import { CreateMovementTypeMaster } from "../layouts/create-movement-type-master";
 import { EditMovementTypeMaster } from "../layouts/edit-movement-type-master";
 
+import { ItemTypeMaster } from "../layouts/item-type-master";
+import { CreateItemTypeMaster } from "../layouts/create-item-type-master";
+import { EditItemTypeMaster } from "../layouts/edit-item-type-master";
+
+import { MovementRuleMaster } from "../layouts/movement-rule-master";
+import { CreateMovementRuleMaster } from "../layouts/create-movement-rule-master";
+import { EditMovementRuleMaster } from "../layouts/edit-movement-rule-master";
+
+import { PropertyManagementApprovalMaster } from "../layouts/property-management-approval-master";
+import { CreatePropertyManagementApprovalMaster } from "../layouts/create-property-management-approval-master";
+import { EditPropertyManagementApprovalMaster } from "../layouts/edit-property-management-approval-master";
+
 // import { CommonStatusMaster } from "../layouts/master-form/common-status-master";
 
 export const App = (): JSX.Element => {
@@ -656,6 +668,78 @@ export const App = (): JSX.Element => {
           onBack={() => setCurrentPage("movement-type-master")}
         />
       )}
+      {currentPage === "item-type-master" && (
+        <ItemTypeMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-item-type-master")}
+          onView={(itemTypeId) => {
+            setId(itemTypeId);
+            setCurrentPage("edit-item-type-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-item-type-master" && (
+        <CreateItemTypeMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("item-type-master")}
+        />
+      )}
+      {currentPage === "edit-item-type-master" && id && (
+        <EditItemTypeMaster
+          sessionId={session.id}
+          itemTypeId={id}
+          onBack={() => setCurrentPage("item-type-master")}
+        />
+      )}
+      {currentPage === "movement-rule-master" && (
+        <MovementRuleMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-movement-rule-master")}
+          onView={(movementRuleId) => {
+            setId(movementRuleId);
+            setCurrentPage("edit-movement-rule-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-movement-rule-master" && (
+        <CreateMovementRuleMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("movement-rule-master")}
+        />
+      )}
+      {currentPage === "edit-movement-rule-master" && id && (
+        <EditMovementRuleMaster
+          sessionId={session.id}
+          ruleRecordId={id}
+          onBack={() => setCurrentPage("movement-rule-master")}
+        />
+      )}
+      {currentPage === "property-management-approval-master" && (
+        <PropertyManagementApprovalMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-property-management-approval-master")}
+          onView={(id) => {
+            setId(id);
+            setCurrentPage("edit-property-management-approval-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-property-management-approval-master" && (
+        <CreatePropertyManagementApprovalMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("property-management-approval-master")}
+        />
+      )}
+      {currentPage === "edit-property-management-approval-master" && id && (
+        <EditPropertyManagementApprovalMaster
+          sessionId={session.id}
+          Id={id}
+          onBack={() => setCurrentPage("property-management-approval-master")}
+        />
+      )}
     </Dashboard>
   );
 };
@@ -806,6 +890,9 @@ const topbarNavItemPageMap: { [page: string]: string } = {
   "movement-type-master": "masterforms",
   "item-type-master": "masterforms",
   "movement-rule-master": "masterforms",
+  "property-management-approval-master": "masterforms",
+  "create-property-management-approval-master": "masterforms",
+  "edit-property-management-approval-master": "masterforms",
   "access-card-master": "masterforms",
   "replacement-reason-master": "masterforms",
   "replacement-fee-master": "masterforms",

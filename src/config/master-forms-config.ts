@@ -118,6 +118,12 @@ export const MASTER_FORM_CATEGORIES: MasterFormCategory[] = [
         description: "Define timing rules and restrictions for move activities.",
         badgeColor: "yellow",
       },
+      {
+        id: "property-management-approval-master",
+        title: "Property Management Approval Mapping",
+        description: "Manage property approvals and permissions.",
+        badgeColor: "cyan",
+      },
     ],
   },
   {

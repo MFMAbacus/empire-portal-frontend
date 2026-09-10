@@ -13,7 +13,7 @@ export class GetSecurityCoordinatorMasterServiceMock extends Service<Input> {
   }
 
   public async execute(input: Input): Promise<ServiceOutput> {
-    console.log('get apatment master service', input);
+    console.log('get security master service', input);
 
     return this._mockService.execute(() => {
       return {

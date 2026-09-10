@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { MovementTypeFilters } from './types';
+import { ItemTypeFilters } from './types';
 
 import { Button } from '@/components/base/button';
 import { Modal } from '@/components/base/modal';
@@ -11,8 +11,8 @@ import { Checkbox } from '@/components/base/checkbox';
 import { FilterIcon } from '@/components/icons/filter-icon';
 
 type FilterModalProps = {
-  defaultFilters: MovementTypeFilters;
-  onFilter: (filters: MovementTypeFilters) => void;
+  defaultFilters: ItemTypeFilters;
+  onFilter: (filters: ItemTypeFilters) => void;
   onClose: () => void;
 };
 
@@ -21,39 +21,55 @@ export const FilterModal = ({
   onFilter,
   onClose,
 }: FilterModalProps): JSX.Element => {
-  const [filters, setFilters] = React.useState<MovementTypeFilters>(defaultFilters);
+  const [filters, setFilters] = React.useState<ItemTypeFilters>(defaultFilters);
 
   return (
     <Modal>
-      <Modal.Header title='Filter Movement Types' />
+      <Modal.Header title='Filter Item Types' />
       <Modal.Body>
-        {/* Field 1: Movement Type ID */}
+        {/* Field 1: Item Type ID */}
         <Grid>
           <TextInput
             className='w-100'
-            label='Movement Type ID'
-            placeholder='Enter movement type ID.'
-            value={filters.movementTypeId ?? ''}
+            label='Item Type ID'
+            placeholder='Enter item type ID.'
+            value={filters.itemTypeId ?? ''}
             onChange={(value) =>
               setFilters((prev) => ({
                 ...prev,
-                movementTypeId: value,
+                itemTypeId: value,
               }))
             }
           />
         </Grid>
 
-        {/* Field 2: Movement Type Name */}
+        {/* Field 2: Item Type Name */}
         <Grid>
           <TextInput
             className='w-100'
-            label='Movement Type'
-            placeholder='Enter movement type (e.g. Move-in, Move-out).'
-            value={filters.type ?? ''}
+            label='Item Type Name'
+            placeholder='Enter item type name.'
+            value={filters.itemTypeName ?? ''}
             onChange={(value) =>
               setFilters((prev) => ({
                 ...prev,
-                type: value,
+                itemTypeName: value,
+              }))
+            }
+          />
+        </Grid>
+
+        {/* Field 3: Description */}
+        <Grid>
+          <TextInput
+            className='w-100'
+            label='Description'
+            placeholder='Enter description.'
+            value={filters.description ?? ''}
+            onChange={(value) =>
+              setFilters((prev) => ({
+                ...prev,
+                description: value,
               }))
             }
           />

@@ -1,10 +1,10 @@
 import { Service } from '@/services/service';
-import { Input } from './get-movement-type-master-service';
+import { Input } from './delete-movement-rule-master-service';
 import { ServiceOutput } from '@/types/service';
 
 import { MockService } from '@/utility/mock-service';
 
-export class GetMovementTypeMasterServiceMock extends Service<Input> {
+export class DeleteMovementRuleMasterServiceMock extends Service<Input> {
   protected _mockService: MockService;
 
   public constructor() {
@@ -13,13 +13,13 @@ export class GetMovementTypeMasterServiceMock extends Service<Input> {
   }
 
   public async execute(input: Input): Promise<ServiceOutput> {
-    console.log('get movement master service', input);
+    console.log('delete movement rule master service', input);
 
     return this._mockService.execute(() => {
       return {
         success: true,
         code: 'success',
-        data: [],
+        data: undefined,
       };
     });
   }

@@ -3,12 +3,11 @@ import * as React from "react";
 import { Map } from "@/components/base/map";
 import { Button } from "@/components/base/button";
 import { Paper } from "@/components/base/paper";
-import { TextInput } from "@/components/base/text-input";
 import { ListInput } from "@/components/base/list-input";
+import { TextInput } from "@/components/base/text-input";
 import { Grid } from "@/components/base/grid";
 import { Checkbox } from "@/components/base/checkbox";
 import { Alert } from "@/components/base/alert";
-
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
 
@@ -18,12 +17,11 @@ import { SpinnerIcon } from "@/components/icons/spinner-icon";
 
 import { useTimeout } from "@/hooks/use-timeout";
 import { useForm } from "@/hooks/use-form";
-import { GetUserServiceApi } from "@/services/get-user-service";
 
-import { makeCreateSecurityCoordinatorMasterService } from "@/services/create-security-coordinator-master-service";
+import { makeCreateMovementRuleMasterService } from "@/services/create-movement-rule-master-service";
 import { GetPropertyMasterServiceApi } from "@/services/get-property-master-service";
 
-type CreateSecurityCoordinatorMasterProps = {
+type CreateMovementRuleMasterProps = {
   sessionId: string;
   onBack: () => void;
 };
@@ -35,26 +33,27 @@ type PropertyMasterItem = {
   [key: string]: any;
 };
 
-type UserItem = {
-  _id?: string;
-  id?: string;
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  jobTitle?: string;
-  employeeId?: string;
-  [key: string]: any;
-};
+const DAYS_OF_WEEK = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 
 const delayAfterSuccess = 1000;
 
-export const CreateSecurityCoordinatorMaster = ({
+export const CreateMovementRuleMaster = ({
   sessionId,
   onBack,
-}: CreateSecurityCoordinatorMasterProps): JSX.Element => {
-  const [coordinatorRole, setCoordinatorRole] = React.useState<string>("");
-  
+}: CreateMovementRuleMasterProps): JSX.Element => {
   const [projectCode, setProjectCode] = React.useState<string>("");
+  const [startTime, setStartTime] = React.useState<string>("08:00 AM");
+  const [endTime, setEndTime] = React.useState<string>("04:00 PM");
+  const [blockedDays, setBlockedDays] = React.useState<string[]>(["Friday"]);
+
   const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>([]);
   const [isLoadingProperties, setIsLoadingProperties] = React.useState<boolean>(false);
 
@@ -62,11 +61,8 @@ export const CreateSecurityCoordinatorMaster = ({
   const [isSuccess, setIsSuccess] = React.useState<boolean>(false);
 
   const { startTimeout } = useTimeout();
-// Users State
-  const [userList, setUserList] = React.useState<UserItem[]>([]);
-  const [isLoadingUsers, setIsLoadingUsers] = React.useState<boolean>(false);
 
-  // Fetch Property Master list from API
+  // Fetch Property Master for Project Code Dropdown
   React.useEffect(() => {
     let isMounted = true;
     const service = new GetPropertyMasterServiceApi();
@@ -74,16 +70,14 @@ export const CreateSecurityCoordinatorMaster = ({
     const fetchPropertyMaster = async () => {
       setIsLoadingProperties(true);
       try {
-        const response: any = await service.execute({
+        const response = await service.execute({
           sessionId,
           isArchived: false,
         } as any);
 
         if (isMounted && response) {
-          // Handle response format variations safely
-          const rawData = response.data?.data || response.data || response;
+          const rawData = response.data || response;
           const items: PropertyMasterItem[] = Array.isArray(rawData) ? rawData : [];
-          
           setPropertyList(items);
         }
       } catch (error) {
@@ -103,46 +97,6 @@ export const CreateSecurityCoordinatorMaster = ({
     };
   }, [sessionId]);
 
-  // 3. Fetch Users
-    React.useEffect(() => {
-      let isMounted = true;
-      const userService = new GetUserServiceApi();
-  
-      const fetchUsers = async () => {
-        setIsLoadingUsers(true);
-        try {
-          const response = await userService.execute({
-            sessionId,
-            userId: "",
-          } as any);
-  
-          if (isMounted && response) {
-            const rawData = Array.isArray(response.data)
-              ? response.data
-              : Array.isArray(response)
-              ? response
-              : [];
-  
-            setUserList(rawData);
-          }
-        } catch (error) {
-          console.error("Failed to fetch users list:", error);
-        } finally {
-          if (isMounted) {
-            setIsLoadingUsers(false);
-          }
-        }
-      };
-  
-      fetchUsers();
-  
-      return () => {
-        isMounted = false;
-        userService.abort();
-      };
-    }, [sessionId]);
-  
-
   const handleSuccess = React.useCallback(() => {
     setIsSuccess(true);
     startTimeout(() => {
@@ -151,26 +105,35 @@ export const CreateSecurityCoordinatorMaster = ({
   }, [startTimeout, onBack]);
 
   const { isLoading, alertData, validation, submit } = useForm({
-    serviceMaker: makeCreateSecurityCoordinatorMasterService,
+    serviceMaker: makeCreateMovementRuleMasterService,
     onSuccess: handleSuccess,
   });
 
   const handleSubmit = React.useCallback(() => {
     submit({
       sessionId,
-      coordinatorRole,
       projectCode,
+      startTime,
+      endTime,
+      blockedDays: blockedDays.join(", "),
       isActive,
     });
   }, [
     sessionId,
-    coordinatorRole,
     projectCode,
+    startTime,
+    endTime,
+    blockedDays,
     isActive,
     submit,
   ]);
 
-  // Extract unique project codes for dropdown options
+  const toggleBlockedDay = (day: string) => {
+  setBlockedDays((prev) =>
+    prev.indexOf(day) !== -1 ? prev.filter((item) => item !== day) : [...prev, day]
+  );
+};
+
   const uniqueProjectCodes = React.useMemo(() => {
     const codes = propertyList
       .map((item) => item.projectCode)
@@ -178,28 +141,23 @@ export const CreateSecurityCoordinatorMaster = ({
     return Array.from(new Set(codes));
   }, [propertyList]);
 
-  const userOptions = React.useMemo(() => {
-      const names = userList
-        .map((user) => {
-          const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
-          return fullName || user.jobTitle || user.email || user.id;
-        })
-        .filter((name): name is string => Boolean(name));
-      return Array.from(new Set(names));
-    }, [userList]);
-  
+  const blockedDaysDisplayText = React.useMemo(() => {
+    if (blockedDays.length === 0) return "None";
+    if (blockedDays.length === 1) return blockedDays[0];
+    return `${blockedDays.length} Days Blocked (${blockedDays.join(", ")})`;
+  }, [blockedDays]);
 
   return (
     <Dashboard.Content>
-      {/* Purpose: Routes approval to security team */}
-      <Actionbar title="SECURITY COORDINATOR MAPPING">
+      <Actionbar title="CREATE MOVEMENT RULE MASTER">
         <Button
           label="SAVE"
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
           isDisabled={
             isLoading ||
-            !coordinatorRole ||
             !projectCode ||
+            !startTime ||
+            !endTime ||
             isSuccess
           }
           onClick={handleSubmit}
@@ -213,17 +171,19 @@ export const CreateSecurityCoordinatorMaster = ({
             <Alert message={alertData.message} severity={alertData.severity} />
           )}
 
-          <Paper.Title value="Security Coordinator Mapping Details" />
+          <Paper.Title value="Movement Rule Details" />
 
+          {/* Row 1: Project Code Dropdown & Allowed Timing Fields */}
           <Grid>
-            {/* Field 1: Project Code */}
-            <Grid.Cell size={Grid.CellSize.S3}>
+            {/* Project Code Dropdown */}
+            <Grid.Cell size={Grid.CellSize.S4}>
               <ListInput
                 className="w-100"
                 label="Project Code"
                 value={projectCode || undefined}
                 placeholder={isLoadingProperties ? "Loading..." : "Select project code"}
                 hasError={typeof validation["projectCode"] !== "undefined"}
+                feedback={validation["projectCode"]}
                 isDisabled={isLoading || isSuccess || isLoadingProperties}
               >
                 {(onClose) => (
@@ -255,46 +215,75 @@ export const CreateSecurityCoordinatorMaster = ({
               </ListInput>
             </Grid.Cell>
 
-            {/* coordibnator Role / User Dropdown */}
-                        <Grid.Cell size={Grid.CellSize.S3}>
-                          <ListInput
-                            className="w-100"
-                            label="Approver Role / User"
-                            value={coordinatorRole || undefined}
-                            placeholder={isLoadingUsers ? "Loading..." : "Select user or role"}
-                            hasError={typeof validation["approverRole"] !== "undefined"}
-                            isDisabled={isLoading || isSuccess || isLoadingUsers}
-                          >
-                            {(onClose) => (
-                              <React.Fragment>
-                                <ListInput.Item
-                                  label="None"
-                                  isActive={coordinatorRole === ""}
-                                  onClick={() => {
-                                    setCoordinatorRole("");
-                                    onClose();
-                                  }}
-                                />
-                                <Map
-                                  items={userOptions}
-                                  renderItem={(userName) => (
-                                    <ListInput.Item
-                                      key={userName}
-                                      label={userName}
-                                      isActive={coordinatorRole === userName}
-                                      onClick={() => {
-                                        setCoordinatorRole(userName);
-                                        onClose();
-                                      }}
-                                    />
-                                  )}
-                                />
-                              </React.Fragment>
-                            )}
-                          </ListInput>
-                        </Grid.Cell>
+            {/* Allowed Start Time */}
+            <Grid.Cell size={Grid.CellSize.S4}>
+              <TextInput
+                className="w-100"
+                label="Allowed Start Time"
+                placeholder="e.g. 08:00 AM"
+                value={startTime}
+                hasError={typeof validation["startTime"] !== "undefined"}
+                feedback={validation["startTime"]}
+                isDisabled={isLoading || isSuccess}
+                onChange={setStartTime}
+              />
+            </Grid.Cell>
 
-            {/* Field 3: Status (Active / Inactive) */}
+            {/* Allowed End Time */}
+            <Grid.Cell size={Grid.CellSize.S4}>
+              <TextInput
+                className="w-100"
+                label="Allowed End Time"
+                placeholder="e.g. 04:00 PM"
+                value={endTime}
+                hasError={typeof validation["endTime"] !== "undefined"}
+                feedback={validation["endTime"]}
+                isDisabled={isLoading || isSuccess}
+                onChange={setEndTime}
+              />
+            </Grid.Cell>
+          </Grid>
+
+          {/* Row 2: Multi-Select Blocked Days Dropdown */}
+          <Grid>
+            <Grid.Cell size={Grid.CellSize.S6}>
+              <ListInput
+                className="w-100"
+                label="Blocked Days"
+                value={blockedDaysDisplayText}
+                placeholder="Select blocked days"
+                hasError={typeof validation["blockedDays"] !== "undefined"}
+                feedback={validation["blockedDays"]}
+                isDisabled={isLoading || isSuccess}
+              >
+                {() => (
+                  <React.Fragment>
+                    <ListInput.Item
+                      label="Clear Selection"
+                      onClick={() => setBlockedDays([])}
+                    />
+                    <Map
+                      items={DAYS_OF_WEEK}
+                      renderItem={(day) => {
+                        const isChecked = blockedDays.indexOf(day) !== -1;
+                        return (
+                          <ListInput.Item
+                            key={day}
+                            label={`${isChecked ? "✓ " : ""}${day}`}
+                            isActive={isChecked}
+                            onClick={() => toggleBlockedDay(day)}
+                          />
+                        );
+                      }}
+                    />
+                  </React.Fragment>
+                )}
+              </ListInput>
+            </Grid.Cell>
+          </Grid>
+
+          {/* Row 3: Status Checkbox */}
+          <Grid>
             <Grid.Cell size={Grid.CellSize.S3}>
               <Checkbox
                 className="mt-2"

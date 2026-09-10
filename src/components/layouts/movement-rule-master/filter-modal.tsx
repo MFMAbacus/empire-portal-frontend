@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { MovementTypeFilters } from './types';
+import { MovementRuleFilters } from './types';
 
 import { Button } from '@/components/base/button';
 import { Modal } from '@/components/base/modal';
@@ -11,8 +11,8 @@ import { Checkbox } from '@/components/base/checkbox';
 import { FilterIcon } from '@/components/icons/filter-icon';
 
 type FilterModalProps = {
-  defaultFilters: MovementTypeFilters;
-  onFilter: (filters: MovementTypeFilters) => void;
+  defaultFilters: MovementRuleFilters;
+  onFilter: (filters: MovementRuleFilters) => void;
   onClose: () => void;
 };
 
@@ -21,39 +21,72 @@ export const FilterModal = ({
   onFilter,
   onClose,
 }: FilterModalProps): JSX.Element => {
-  const [filters, setFilters] = React.useState<MovementTypeFilters>(defaultFilters);
+  const [filters, setFilters] =
+    React.useState<MovementRuleFilters>(defaultFilters);
 
   return (
     <Modal>
-      <Modal.Header title='Filter Movement Types' />
+      <Modal.Header title='Filter Movement Rules' />
       <Modal.Body>
-        {/* Field 1: Movement Type ID */}
+        {/* Field 1: Project Code */}
         <Grid>
           <TextInput
             className='w-100'
-            label='Movement Type ID'
-            placeholder='Enter movement type ID.'
-            value={filters.movementTypeId ?? ''}
+            label='Project Code'
+            placeholder='Enter project code.'
+            value={filters.projectCode ?? ''}
             onChange={(value) =>
               setFilters((prev) => ({
                 ...prev,
-                movementTypeId: value,
+                projectCode: value,
               }))
             }
           />
         </Grid>
 
-        {/* Field 2: Movement Type Name */}
+        {/* Field 2: Allowed Start Time */}
         <Grid>
           <TextInput
             className='w-100'
-            label='Movement Type'
-            placeholder='Enter movement type (e.g. Move-in, Move-out).'
-            value={filters.type ?? ''}
+            label='Allowed Start Time'
+            placeholder='Enter start time (e.g. 08:00 AM).'
+            value={filters.startTime ?? ''}
             onChange={(value) =>
               setFilters((prev) => ({
                 ...prev,
-                type: value,
+                startTime: value,
+              }))
+            }
+          />
+        </Grid>
+
+        {/* Field 3: Allowed End Time */}
+        <Grid>
+          <TextInput
+            className='w-100'
+            label='Allowed End Time'
+            placeholder='Enter end time (e.g. 04:00 PM).'
+            value={filters.endTime ?? ''}
+            onChange={(value) =>
+              setFilters((prev) => ({
+                ...prev,
+                endTime: value,
+              }))
+            }
+          />
+        </Grid>
+
+        {/* Field 4: Blocked Days */}
+        <Grid>
+          <TextInput
+            className='w-100'
+            label='Blocked Days'
+            placeholder='Enter blocked day (e.g. Friday).'
+            value={filters.blockedDays ?? ''}
+            onChange={(value) =>
+              setFilters((prev) => ({
+                ...prev,
+                blockedDays: value,
               }))
             }
           />
