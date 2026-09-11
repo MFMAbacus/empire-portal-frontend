@@ -141,7 +141,7 @@ export const SecurityCoordinatorMaster = ({
           onClick={loadSecuritys}
         />
         {/* FIXED: Write permission check (removed exclamation mark) */}
-        {!canWrite && onCreate && (
+        {canWrite && onCreate && (
           <Button
             label="CREATE"
             icon={<PlusIcon />}

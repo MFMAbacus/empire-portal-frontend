@@ -103,6 +103,18 @@ import { PropertyManagementApprovalMaster } from "../layouts/property-management
 import { CreatePropertyManagementApprovalMaster } from "../layouts/create-property-management-approval-master";
 import { EditPropertyManagementApprovalMaster } from "../layouts/edit-property-management-approval-master";
 
+import { AccessCardMaster } from "../layouts/access-card-master";
+import { CreateAccessCardMaster } from "../layouts/create-access-card-master";
+import { EditAccessCardMaster } from "../layouts/edit-access-card-master";
+
+import { CardReplacementReasonMaster } from "../layouts/card-replacement-reason-master";
+import { CreateCardReplacementReasonMaster } from "../layouts/create-card-replacement-reason-master";
+import { EditCardReplacementReasonMaster } from "../layouts/edit-card-replacement-reason-master";
+
+import { ReplacementFeeMaster } from "../layouts/replacement-fee-master";
+import { CreateReplacementFeeMaster } from "../layouts/create-replacement-fee-master";
+import { EditReplacementFeeMaster } from "../layouts/edit-replacement-fee-master";
+
 // import { CommonStatusMaster } from "../layouts/master-form/common-status-master";
 
 export const App = (): JSX.Element => {
@@ -740,6 +752,78 @@ export const App = (): JSX.Element => {
           onBack={() => setCurrentPage("property-management-approval-master")}
         />
       )}
+      {currentPage === "access-card-master" && (
+        <AccessCardMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-access-card-master")}
+          onView={(cardId) => {
+            setId(cardId);
+            setCurrentPage("edit-access-card-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-access-card-master" && (
+        <CreateAccessCardMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("access-card-master")}
+        />
+      )}
+      {currentPage === "edit-access-card-master" && id && (
+        <EditAccessCardMaster
+          sessionId={session.id}
+          cardRecordId={id}
+          onBack={() => setCurrentPage("access-card-master")}
+        />
+      )}
+      {currentPage === "card-replacement-reason-master" && (
+        <CardReplacementReasonMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-card-replacement-reason-master")}
+          onView={(reasonId) => {
+            setId(reasonId);
+            setCurrentPage("edit-card-replacement-reason-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-card-replacement-reason-master" && (
+        <CreateCardReplacementReasonMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("card-replacement-reason-master")}
+        />
+      )}
+      {currentPage === "edit-card-replacement-reason-master" && id && (
+        <EditCardReplacementReasonMaster
+          sessionId={session.id}
+          reasonRecordId={id}
+          onBack={() => setCurrentPage("card-replacement-reason-master")}
+        />
+      )}
+      {currentPage === "replacement-fee-master" && (
+        <ReplacementFeeMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-replacement-fee-master")}
+          onView={(feeId) => {
+            setId(feeId);
+            setCurrentPage("edit-replacement-fee-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-replacement-fee-master" && (
+        <CreateReplacementFeeMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("replacement-fee-master")}
+        />
+      )}
+      {currentPage === "edit-replacement-fee-master" && id && (
+        <EditReplacementFeeMaster
+          sessionId={session.id}
+          feeRecordId={id}
+          onBack={() => setCurrentPage("replacement-fee-master")}
+        />
+      )}
     </Dashboard>
   );
 };
@@ -894,7 +978,7 @@ const topbarNavItemPageMap: { [page: string]: string } = {
   "create-property-management-approval-master": "masterforms",
   "edit-property-management-approval-master": "masterforms",
   "access-card-master": "masterforms",
-  "replacement-reason-master": "masterforms",
+  "card-replacement-reason-master": "masterforms",
   "replacement-fee-master": "masterforms",
   "delivery-sla-master": "masterforms",
   "payment-method-master": "masterforms",

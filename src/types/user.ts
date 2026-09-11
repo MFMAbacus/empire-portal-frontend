@@ -5,11 +5,12 @@ export enum ModuleName {
   CUSTOMERS = "customers",
   INVENTORY = "inventory",
   ANNOUNCEMENTS = "announcements",
-  USER_MANAGEMENT = "userManagement",
+  USER_MANAGEMENT = "user-management",
   WELCOMESCREEN_MEDIA = "welcomescreenMedia",
   COLLECTION = "collection",
   TRANSACTIONS = "transactions",
   GENERAL_CONFIGURATIONS = "generalConfigurations",
+  CREDIT = "credit",                  
   MASTER_FORMS = "masterForms",
   // APPROVALS = "approvals",
   // GUSET_ACCESS_SETUP ="guestAccessSetup",
@@ -67,6 +68,7 @@ export interface ModuleWithActions extends BasePermission {
 }
 
 export interface UserPermissions {
+  [key: string]: any;
   activities?: ModuleWithSubSections & {
     subSections?: {
       tasks?: BasePermission;
@@ -99,6 +101,7 @@ export interface UserPermissions {
   };
 
   announcements?: BasePermission;
+  "user-management"?: BasePermission;
   userManagement?: BasePermission;
   welcomescreenMedia?: BasePermission;
   collection?: BasePermission;

@@ -19,6 +19,8 @@ import { useTimeout } from "@/hooks/use-timeout";
 import { useForm } from "@/hooks/use-form";
 import { AlertSeverity } from "@/types/alert";
 
+import { usePermission } from "@/hooks/use-permission";
+import { ModuleName, SubSectionName } from "@/types/user";
 import { makeGetPropertyMasterService } from "@/services/get-property-master-service";
 import { makeCreatePropertyMasterService } from "@/services/create-property-master-service";
 
@@ -88,6 +90,17 @@ export const EditPropertyMaster = ({
     onSuccess: handleSuccess,
   });
 
+  // Permission Logic Fix:
+  // 1. "property-master" key backend se string format mein aati hai.
+  // 2. Safe check fallback apply kiya hai taake undefined error na aaye.
+  const { checkSubSection } = usePermission();
+  const subSectionPermission = checkSubSection(
+    ModuleName.MASTER_FORMS,
+    "property-master" as SubSectionName
+  );
+  
+  const canWrite = Boolean(subSectionPermission?.canWrite);
+
   const handleSubmit = React.useCallback(() => {
     submit({
       sessionId,
@@ -102,12 +115,21 @@ export const EditPropertyMaster = ({
   return (
     <Dashboard.Content>
       <Actionbar title="EDIT PROJECT MASTER">
-        <Button
-          label="SAVE"
-          icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
-          isDisabled={isLoading || isFetching || !projectCode || !projectName || !propertyName || isSuccess}
-          onClick={handleSubmit}
-        />
+        {canWrite && (
+          <Button
+            label="SAVE"
+            icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
+            isDisabled={
+              isLoading ||
+              isFetching ||
+              !projectCode ||
+              !projectName ||
+              !propertyName ||
+              isSuccess
+            }
+            onClick={handleSubmit}
+          />
+        )}
         <Button label="GO BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
       </Actionbar>
 
@@ -135,7 +157,7 @@ export const EditPropertyMaster = ({
                   placeholder="Enter project code"
                   value={projectCode}
                   hasError={typeof validation["projectCode"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={isLoading || isSuccess || !canWrite}
                   onChange={setProjectCode}
                 />
               </Grid.Cell>
@@ -150,7 +172,7 @@ export const EditPropertyMaster = ({
                   placeholder="Enter project name"
                   value={projectName}
                   hasError={typeof validation["projectName"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={isLoading || isSuccess || !canWrite}
                   onChange={setProjectName}
                 />
               </Grid.Cell>
@@ -165,7 +187,7 @@ export const EditPropertyMaster = ({
                   placeholder="Enter property name"
                   value={propertyName}
                   hasError={typeof validation["propertyName"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={isLoading || isSuccess || !canWrite}
                   onChange={setPropertyName}
                 />
               </Grid.Cell>
@@ -178,7 +200,7 @@ export const EditPropertyMaster = ({
                   className="mt-2"
                   label="Active"
                   isChecked={isActive}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={isLoading || isSuccess || !canWrite}
                   onChange={setIsActive}
                 />
               </Grid.Cell>

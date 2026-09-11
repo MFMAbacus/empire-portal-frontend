@@ -150,7 +150,7 @@ export const PropertyMaster = ({
           isDisabled={isLoading}
           onClick={loadProperties}
         />
-        {!canWrite && onCreate && (
+        {canWrite && onCreate && (
           <Button
             label="CREATE"
             icon={<PlusIcon />}

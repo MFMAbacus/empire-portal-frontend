@@ -171,7 +171,6 @@ export const PermissionsEditor = ({
           updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "approval-routing-master", false, false);
           updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "email-template-master", false, false);
           updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "common-status-master", false, false);
-          updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "gate-master", false, false);
         }
       }
 
@@ -1084,7 +1083,7 @@ const mainModules: PermissionItem[] = [
   { id: "collection", title: "Collections" },
   { id: "transactions", title: "Transactions" },
   { id: "generalConfigurations", title: "General Configurations" },
-  { id: "masterForms", title: "General Setup " },
+  { id: "masterForms", title: "Quick Menu" },
   // {id: "approvalForms", title: "Approvals"},
 ];
 
@@ -1110,9 +1109,6 @@ const inventoryActions: PermissionItem[] = [
 const requestsActions: PermissionItem[] = [
   { id: "receiveCredit", title: "Receive Credit Payments" },
 ];
-const propertymaster: PermissionItem[] = [
-  { id: "property-master", title: "Project / Property Master" },
-];
 const masterformsSubSections: PermissionItem[] = [
   { id: "property-master", title: "Project / Property Master" },
   { id: "apartment-master", title: "Apartment / Unit Master " },
@@ -1121,5 +1117,4 @@ const masterformsSubSections: PermissionItem[] = [
   { id: "approval-routing-master", title: "Approval Routing Master " },
   { id: "email-template-master", title: "Email Template Master" },
   { id: "common-status-master", title: "Common Status Master" },
-  { id: "gate-master", title: "Gate Master" },
 ];

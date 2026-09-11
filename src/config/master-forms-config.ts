@@ -137,8 +137,8 @@ export const MASTER_FORM_CATEGORIES: MasterFormCategory[] = [
         badgeColor: "purple",
       },
       {
-        id: "replacement-reason-master",
-        title: "Replacement Reason",
+        id: "card-replacement-reason-master",
+        title: "Card Replacement Reason",
         description: "Define standard reasons for card re-issuance.",
         badgeColor: "red",
       },

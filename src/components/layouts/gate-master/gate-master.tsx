@@ -154,7 +154,7 @@ export const GateMaster = ({
           isDisabled={Boolean(isLoading)}
           onClick={loadGates}
         />
-        {!canWrite && onCreate && (
+        {canWrite && onCreate && (
           <Button
             label="CREATE"
             icon={<PlusIcon />}

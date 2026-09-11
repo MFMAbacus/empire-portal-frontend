@@ -137,7 +137,7 @@ export const VehicleTypeMaster = ({
           isDisabled={isLoading}
           onClick={loadVehicleTypes}
         />
-        {!canWrite && onCreate && (
+        {canWrite && onCreate && (
           <Button
             label="CREATE"
             icon={<PlusIcon />}

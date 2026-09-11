@@ -156,7 +156,7 @@ export const ItemTypeMaster = ({
           isDisabled={isLoading}
           onClick={loadItemTypes}
         />
-        {!canWrite && onCreate && (
+        {canWrite && onCreate && (
           <Button
             label="CREATE"
             icon={<PlusIcon />}

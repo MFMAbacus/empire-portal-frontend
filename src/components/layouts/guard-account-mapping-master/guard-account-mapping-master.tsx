@@ -164,7 +164,7 @@ export const GuardAccountMappingMaster = ({
           isDisabled={Boolean(isLoading)}
           onClick={loadGuards}
         />
-        {!canWrite && onCreate && (
+        {canWrite && onCreate && (
           <Button
             label="CREATE"
             icon={<PlusIcon />}

@@ -151,7 +151,7 @@ export const QRConfigurationMaster = ({
           isDisabled={isLoading}
           onClick={loadQrConfigs}
         />
-        {!canWrite && onCreate && (
+        {canWrite && onCreate && (
           <Button
             label="CREATE"
             icon={<PlusIcon />}

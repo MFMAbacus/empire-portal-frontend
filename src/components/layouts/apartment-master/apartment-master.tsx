@@ -166,7 +166,7 @@ export const ApartmentMaster = ({
           isDisabled={isLoading}
           onClick={loadApartments}
         />
-        {!canWrite && onCreate && (
+        {canWrite && onCreate && (
           <Button
             label="CREATE"
             icon={<PlusIcon />}
