@@ -115,7 +115,24 @@ import { ReplacementFeeMaster } from "../layouts/replacement-fee-master";
 import { CreateReplacementFeeMaster } from "../layouts/create-replacement-fee-master";
 import { EditReplacementFeeMaster } from "../layouts/edit-replacement-fee-master";
 
+import { AccessCardStaffMaster } from "../layouts/access-card-staff-master";
+import { CreateAccessCardStaffMaster } from "../layouts/create-access-card-staff-master";
+import { EditAccessCardStaffMaster } from "../layouts/edit-access-card-staff-master";
+
+import { DeliverySLAMaster } from "../layouts/delivery-sla-master";
+import { CreateDeliverySLAMaster } from "../layouts/create-delivery-sla-master";
+import { EditDeliverySLAMaster } from "../layouts/edit-delivery-sla-master";
+
+import { VenueMaster } from "../layouts/venue-master";
+import { CreateVenueMaster } from "../layouts/create-venue-master";
+import { EditVenueMaster } from "../layouts/edit-venue-master";
+
+import { ProjectVenueMaster } from "../layouts/project-venue-master";
+import { CreateProjectVenueMaster } from "../layouts/create-project-venue-master";
+import { EditProjectVenueMaster } from "../layouts/edit-project-venue-master";
+
 // import { CommonStatusMaster } from "../layouts/master-form/common-status-master";
+// import { PaymentMethodMaster } from "../layouts/master-form/payment-method-master";
 
 export const App = (): JSX.Element => {
   const { session, isLoading, storeSession, destroySession, permissions } =
@@ -824,6 +841,102 @@ export const App = (): JSX.Element => {
           onBack={() => setCurrentPage("replacement-fee-master")}
         />
       )}
+      {currentPage === "access-card-staff-master" && (
+        <AccessCardStaffMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-access-card-staff-master")}
+          onView={(id) => {
+            setId(id);
+            setCurrentPage("edit-access-card-staff-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-access-card-staff-master" && (
+        <CreateAccessCardStaffMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("access-card-staff-master")}
+        />
+      )}
+      {currentPage === "edit-access-card-staff-master" && id && (
+        <EditAccessCardStaffMaster
+          sessionId={session.id}
+          Id={id}
+          onBack={() => setCurrentPage("access-card-staff-master")}
+        />
+      )}
+      {currentPage === "delivery-sla-master" && (
+        <DeliverySLAMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-delivery-sla-master")}
+          onView={(id) => {
+            setId(id);
+            setCurrentPage("edit-delivery-sla-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-delivery-sla-master" && (
+        <CreateDeliverySLAMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("delivery-sla-master")}
+        />
+      )}
+      {currentPage === "edit-delivery-sla-master" && id && (
+        <EditDeliverySLAMaster
+          sessionId={session.id}
+          Id={id}
+          onBack={() => setCurrentPage("delivery-sla-master")}
+        />
+      )}
+      {currentPage === "venue-master" && (
+        <VenueMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-venue-master")}
+          onView={(venueId) => {
+            setId(venueId);
+            setCurrentPage("edit-venue-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-venue-master" && (
+        <CreateVenueMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("venue-master")}
+        />
+      )}
+      {currentPage === "edit-venue-master" && id && (
+        <EditVenueMaster
+          sessionId={session.id}
+          id={id}
+          onBack={() => setCurrentPage("venue-master")}
+        />
+      )}
+      {currentPage === "project-venue-master" && (
+        <ProjectVenueMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-project-venue-master")}
+          onView={(id) => {
+            setId(id);
+            setCurrentPage("edit-project-venue-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-project-venue-master" && (
+        <CreateProjectVenueMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("project-venue-master")}
+        />
+      )}
+      {currentPage === "edit-project-venue-master" && id && (
+        <EditProjectVenueMaster
+          sessionId={session.id}
+          id={id}
+          onBack={() => setCurrentPage("project-venue-master")}
+        />
+      )}
     </Dashboard>
   );
 };
@@ -980,13 +1093,14 @@ const topbarNavItemPageMap: { [page: string]: string } = {
   "access-card-master": "masterforms",
   "card-replacement-reason-master": "masterforms",
   "replacement-fee-master": "masterforms",
+  "access-card-staff-master" : "masterforms",
   "delivery-sla-master": "masterforms",
   "payment-method-master": "masterforms",
   "venue-master": "masterforms",
   "menu-master": "masterforms",
   "operating-hours-master": "masterforms",
   "staff-mapping-master": "masterforms",
-  "project-venue-mapping-master": "masterforms",
+  "project-venue-master": "masterforms",
   "reservation-slot-rules-master": "masterforms",
   "court-master": "masterforms",
   "court-operating-hours-master": "masterforms",

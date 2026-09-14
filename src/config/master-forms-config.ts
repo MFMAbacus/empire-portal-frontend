@@ -149,6 +149,12 @@ export const MASTER_FORM_CATEGORIES: MasterFormCategory[] = [
         badgeColor: "green",
       },
       {
+        id: "access-card-staff-master",
+        title: "Access Card Staff Mapping ",
+        description: "Configure card staff access structures.",
+        badgeColor: "orange",
+      },
+      {
         id: "delivery-sla-master",
         title: "Delivery SLA",
         description: "Manage card fulfillment service timelines.",
@@ -191,7 +197,7 @@ export const MASTER_FORM_CATEGORIES: MasterFormCategory[] = [
         badgeColor: "indigo",
       },
       {
-        id: "project-venue-mapping-master",
+        id: "project-venue-master",
         title: "Project-Venue Mapping",
         description: "Link dining facilities to residential complexes.",
         badgeColor: "purple",
