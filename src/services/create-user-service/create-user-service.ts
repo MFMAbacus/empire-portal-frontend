@@ -3,6 +3,7 @@ import { BuyServiceCategoryNames, UserPermissions } from "@/types/user";
 export type Input = {
   sessionId: string;
   salespersonId: string | null;
+  role?: string | null;
   firstName: string;
   lastName: string;
   email: string;

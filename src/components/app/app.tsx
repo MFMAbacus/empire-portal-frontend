@@ -131,6 +131,10 @@ import { ProjectVenueMaster } from "../layouts/project-venue-master";
 import { CreateProjectVenueMaster } from "../layouts/create-project-venue-master";
 import { EditProjectVenueMaster } from "../layouts/edit-project-venue-master";
 
+import { VenueOperatingMaster } from "../layouts/venue-operating-master";
+import { CreateVenueOperatingMaster } from "../layouts/create-venue-operating-master";
+import { EditVenueOperatingMaster } from "../layouts/edit-venue-operating-master";
+
 // import { CommonStatusMaster } from "../layouts/master-form/common-status-master";
 // import { PaymentMethodMaster } from "../layouts/master-form/payment-method-master";
 
@@ -937,6 +941,30 @@ export const App = (): JSX.Element => {
           onBack={() => setCurrentPage("project-venue-master")}
         />
       )}
+      {currentPage === "venue-operating-master" && (
+        <VenueOperatingMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-venue-operating-master")}
+          onView={(venuoperatingId) => {
+            setId(venuoperatingId);
+            setCurrentPage("edit-venue-operating-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-venue-operating-master" && (
+        <CreateVenueOperatingMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("venue-operating-master")}
+        />
+      )}
+      {currentPage === "edit-venue-operating-master" && id && (
+        <EditVenueOperatingMaster
+          sessionId={session.id}
+          id={id}
+          onBack={() => setCurrentPage("venue-operating-master")}
+        />
+      )}
     </Dashboard>
   );
 };
@@ -1098,7 +1126,7 @@ const topbarNavItemPageMap: { [page: string]: string } = {
   "payment-method-master": "masterforms",
   "venue-master": "masterforms",
   "menu-master": "masterforms",
-  "operating-hours-master": "masterforms",
+  "venue-operating-master": "masterforms",
   "staff-mapping-master": "masterforms",
   "project-venue-master": "masterforms",
   "reservation-slot-rules-master": "masterforms",

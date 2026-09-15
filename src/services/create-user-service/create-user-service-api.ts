@@ -16,6 +16,7 @@ export class CreateUserServiceApi extends Service<Input> {
     const {
       sessionId,
       salespersonId,
+      role,
       firstName,
       lastName,
       email,
@@ -39,6 +40,7 @@ export class CreateUserServiceApi extends Service<Input> {
       },
       body: JSON.stringify({
         salespersonId,
+        role: role !== "" ? role : undefined,
         firstName: firstName !== "" ? firstName : undefined,
         lastName: lastName !== "" ? lastName : undefined,
         email: email !== "" ? email : undefined,

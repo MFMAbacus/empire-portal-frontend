@@ -21,6 +21,7 @@ import { useForm } from "@/hooks/use-form";
 
 import { makeCreateUserMasterService } from "@/services/create-user-master-service";
 import { GetPropertyMasterServiceApi } from "@/services/get-property-master-service";
+import { RoleListInput } from "@/components/layouts/role-list-input";
 
 type CreateUserMasterProps = {
   sessionId: string;
@@ -188,14 +189,14 @@ export const CreateUserMaster = ({
             </Grid.Cell>
 
             <Grid.Cell size={Grid.CellSize.S3}>
-              <TextInput
+              <RoleListInput
                 className="w-100"
-                label="Role"
-                placeholder="Enter Role "
-                value={role}
+                role={role}
+                feedback={validation["role"]}
                 hasError={typeof validation["role"] !== "undefined"}
+                onChange={(selectedRole) => setRole(selectedRole || "")}
+                sessionId={sessionId}
                 isDisabled={isLoading || isSuccess}
-                onChange={setRole}
               />
             </Grid.Cell>
 

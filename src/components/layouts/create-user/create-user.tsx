@@ -23,6 +23,7 @@ import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
 import { DepartmentListInput } from "@/components/layouts/department-list-input";
 import { SalespersonListInput } from "@/components/layouts/salesperson-list-input";
+import { RoleListInput } from "@/components/layouts/role-list-input";
 import { PermissionsEditor } from "@/components/layouts/permissions-editor/permissions-editor";
 
 import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
@@ -63,6 +64,8 @@ export const CreateUser = ({
 
   const [salespersonId, setSalespersonId] = React.useState<string | null>(null);
 
+  const [role, setRole] = React.useState<string | null>(null);
+
   const [password, setPassword] = React.useState<string>("");
 
   const [isMobileUser, setIsMobileUser] = React.useState<boolean>(false);
@@ -70,7 +73,7 @@ export const CreateUser = ({
   const [isCachier, setIsCachier] = React.useState<boolean>(false);
 
   const [profilePicture, setProfilePicture] = React.useState<string | null>(
-    null
+    null,
   );
 
   const [serviceType, setServiceType] = React.useState<
@@ -109,6 +112,7 @@ export const CreateUser = ({
     submit({
       sessionId,
       salespersonId,
+      role,
       firstName,
       lastName,
       email,
@@ -126,6 +130,7 @@ export const CreateUser = ({
   }, [
     sessionId,
     salespersonId,
+    role,
     firstName,
     lastName,
     email,
@@ -276,6 +281,17 @@ export const CreateUser = ({
             </Grid.Cell>
           </Grid>
           <Grid>
+            <Grid.Cell size={Grid.CellSize.S3}>
+              <RoleListInput
+                className="w-100"
+                role={role}
+                feedback={validation["role"]}
+                hasError={typeof validation["role"] !== "undefined"}
+                onChange={setRole}
+                sessionId={sessionId}
+                isDisabled={isLoading || isSuccess}
+              />
+            </Grid.Cell>
             <Grid.Cell size={Grid.CellSize.S3}>
               <PasswordInput
                 className="w-100"

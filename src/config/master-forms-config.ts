@@ -185,8 +185,8 @@ export const MASTER_FORM_CATEGORIES: MasterFormCategory[] = [
         badgeColor: "yellow",
       },
       {
-        id: "operating-hours-master",
-        title: "Operating Hours",
+        id: "venue-operating-master",
+        title: "Venue Operating Hours",
         description: "Define opening, closing, and kitchen operation schedules.",
         badgeColor: "teal",
       },

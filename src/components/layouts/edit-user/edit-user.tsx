@@ -43,7 +43,7 @@ import { UploadField } from "@/components/base/upload-field";
 import { usePermission } from "@/hooks/use-permission";
 import { BuyRequestCategoryTypeInput } from "../service-type-input";
 import { PrsListInput } from "../prs-list-input";
-
+import { RoleListInput } from "../role-list-input";
 type EditUserProps = {
   sessionId: string;
   userId: string;
@@ -87,6 +87,7 @@ export const EditUser = ({
 
   const [project, setProject] = React.useState<string[]>([]);
 
+  const [role, setRole] = React.useState<string | null>(null);
   const [isGetSuccess, setIsGetSuccess] = React.useState<boolean>(false);
 
   const [isSuccess, setIsSuccess] = React.useState<boolean>(false);
@@ -361,6 +362,17 @@ export const EditUser = ({
             </Grid.Cell>
           </Grid>
           <Grid>
+            <Grid.Cell size={Grid.CellSize.S3}>
+                          <RoleListInput
+                            className="w-100"
+                            role={role}
+                            feedback={validation["role"]}
+                            hasError={typeof validation["role"] !== "undefined"}
+                            onChange={setRole}
+                            sessionId={sessionId}
+                            isDisabled={isLoading || isSuccess}
+                          />
+                        </Grid.Cell>
             <Grid.Cell size={Grid.CellSize.S3}>
               <PasswordInput
                 className="w-100"

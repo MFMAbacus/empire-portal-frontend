@@ -23,6 +23,8 @@ import { makeCreateGuardAccountMappingMasterService } from "@/services/create-gu
 import { GetPropertyMasterServiceApi } from "@/services/get-property-master-service";
 import { GetGateMasterServiceApi } from "@/services/get-gate-master-service";
 
+import { GetUserServiceApi } from "@/services/get-user-service";
+
 type CreateGuardAccountMappingMasterProps = {
   sessionId: string;
   onBack: () => void;
@@ -41,7 +43,19 @@ type GateMasterItem = {
   gateName?: string;
   projectCode?: string;
   projectId?: string;
-  location?:string;
+  location?: string;
+  [key: string]: any;
+};
+
+type UserItem = {
+  _id?: string;
+  id?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  jobTitle?: string;
+  role?: string;
+  employeeId?: string;
   [key: string]: any;
 };
 
@@ -60,8 +74,15 @@ export const CreateGuardAccountMappingMaster = ({
   const [isLoadingGates, setIsLoadingGates] = React.useState<boolean>(false);
 
   const [projectCode, setProjectCode] = React.useState<string>("");
-  const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>([]);
-  const [isLoadingProperties, setIsLoadingProperties] = React.useState<boolean>(false);
+  const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>(
+    []
+  );
+  const [isLoadingProperties, setIsLoadingProperties] =
+    React.useState<boolean>(false);
+
+  // Users State
+  const [userList, setUserList] = React.useState<UserItem[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = React.useState<boolean>(false);
 
   const [isActive, setIsActive] = React.useState<boolean>(true);
   const [isSuccess, setIsSuccess] = React.useState<boolean>(false);
@@ -85,8 +106,8 @@ export const CreateGuardAccountMappingMaster = ({
           const items: PropertyMasterItem[] = Array.isArray(response.data)
             ? response.data
             : Array.isArray(response)
-            ? response
-            : [];
+              ? response
+              : [];
 
           setPropertyList(items);
         }
@@ -124,8 +145,8 @@ export const CreateGuardAccountMappingMaster = ({
           const items: GateMasterItem[] = Array.isArray(response.data)
             ? response.data
             : Array.isArray(response)
-            ? response
-            : [];
+              ? response
+              : [];
 
           setGateList(items);
         }
@@ -143,6 +164,45 @@ export const CreateGuardAccountMappingMaster = ({
     return () => {
       isMounted = false;
       service.abort();
+    };
+  }, [sessionId]);
+
+  // Fetch Users
+  React.useEffect(() => {
+    let isMounted = true;
+    const userService = new GetUserServiceApi();
+
+    const fetchUsers = async () => {
+      setIsLoadingUsers(true);
+      try {
+        const response = await userService.execute({
+          sessionId,
+          userId: "",
+        } as any);
+
+        if (isMounted && response) {
+          const rawData = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray(response)
+              ? response
+              : [];
+
+          setUserList(rawData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch users list:", error);
+      } finally {
+        if (isMounted) {
+          setIsLoadingUsers(false);
+        }
+      }
+    };
+
+    fetchUsers();
+
+    return () => {
+      isMounted = false;
+      userService.abort();
     };
   }, [sessionId]);
 
@@ -191,7 +251,8 @@ export const CreateGuardAccountMappingMaster = ({
   const filteredGates = React.useMemo(() => {
     if (!projectCode) return [];
     return gateList.filter(
-      (item) => item.projectCode === projectCode || item.projectId === projectCode
+      (item) =>
+        item.projectCode === projectCode || item.projectId === projectCode
     );
   }, [gateList, projectCode]);
 
@@ -202,6 +263,24 @@ export const CreateGuardAccountMappingMaster = ({
       .filter((id): id is string => Boolean(id));
     return Array.from(new Set(ids));
   }, [filteredGates]);
+
+  // Sirf Guard role wale users ko filter karke options banana
+  const userOptions = React.useMemo(() => {
+    const names = userList
+      .filter((user) => {
+        const role = user.role || user.jobTitle || "";
+        return role.toLowerCase() === "guard";
+      })
+      .map((user) => {
+        const fullName = [user.firstName, user.lastName]
+          .filter(Boolean)
+          .join(" ");
+        return fullName || user.jobTitle || user.email || user.id;
+      })
+      .filter((name): name is string => Boolean(name));
+
+    return Array.from(new Set(names));
+  }, [userList]);
 
   return (
     <Dashboard.Content>
@@ -231,7 +310,7 @@ export const CreateGuardAccountMappingMaster = ({
 
           <Paper.Title value="Guard Account Mapping Master Details" />
 
-          {/* Row 1: guard account ID, guard user Id , gate ID ,Project Code  */}
+          {/* Row 1: Guard Account ID, Guard User ID, Project Code, Gate ID */}
           <Grid>
             <Grid.Cell size={Grid.CellSize.S3}>
               <TextInput
@@ -246,23 +325,54 @@ export const CreateGuardAccountMappingMaster = ({
             </Grid.Cell>
 
             <Grid.Cell size={Grid.CellSize.S3}>
-              <TextInput
+              <ListInput
                 className="w-100"
                 label="Guard User ID"
-                placeholder="Enter guard user Id"
-                value={guardUserId}
+                value={guardUserId || undefined}
+                placeholder={
+                  isLoadingUsers ? "Loading..." : "Select guard User Id"
+                }
                 hasError={typeof validation["guardUserId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
-                onChange={setGuardUserId}
-              />
+                isDisabled={isLoading || isSuccess || isLoadingUsers}
+              >
+                {(onClose) => (
+                  <React.Fragment>
+                    <ListInput.Item
+                      label="None"
+                      isActive={guardUserId === ""}
+                      onClick={() => {
+                        setGuardUserId("");
+                        onClose();
+                      }}
+                    />
+                    <Map
+                      items={userOptions}
+                      renderItem={(userName) => (
+                        <ListInput.Item
+                          key={userName}
+                          label={userName}
+                          isActive={guardUserId === userName}
+                          onClick={() => {
+                            setGuardUserId(userName);
+                            onClose();
+                          }}
+                        />
+                      )}
+                    />
+                  </React.Fragment>
+                )}
+              </ListInput>
             </Grid.Cell>
+
             {/* Project Code Dropdown */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <ListInput
                 className="w-100"
                 label="Project Code"
                 value={projectCode || undefined}
-                placeholder={isLoadingProperties ? "Loading..." : "Select project code"}
+                placeholder={
+                  isLoadingProperties ? "Loading..." : "Select project code"
+                }
                 hasError={typeof validation["projectCode"] !== "undefined"}
                 isDisabled={isLoading || isSuccess || isLoadingProperties}
               >
@@ -286,7 +396,7 @@ export const CreateGuardAccountMappingMaster = ({
                           isActive={projectCode === code}
                           onClick={() => {
                             setProjectCode(code);
-                            setGateId(""); // Project change hone par gate ID reset
+                            setGateId("");
                             onClose();
                           }}
                         />
@@ -307,11 +417,13 @@ export const CreateGuardAccountMappingMaster = ({
                   !projectCode
                     ? "Select project code first"
                     : isLoadingGates
-                    ? "Loading..."
-                    : "Select gate ID"
+                      ? "Loading..."
+                      : "Select gate ID"
                 }
                 hasError={typeof validation["gateId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess || isLoadingGates || !projectCode}
+                isDisabled={
+                  isLoading || isSuccess || isLoadingGates || !projectCode
+                }
               >
                 {(onClose) => (
                   <React.Fragment>
@@ -341,18 +453,14 @@ export const CreateGuardAccountMappingMaster = ({
                 )}
               </ListInput>
             </Grid.Cell>
-
           </Grid>
 
-          {/* Row 2: device ID, */}
+          {/* Row 2: Device ID */}
           <Grid>
-            
-
-            {/* device id  Input Text */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <TextInput
                 className="w-100"
-                label="Device ID  "
+                label="Device ID"
                 placeholder="Enter Device ID"
                 value={deviceId}
                 hasError={typeof validation["deviceId"] !== "undefined"}
@@ -360,7 +468,6 @@ export const CreateGuardAccountMappingMaster = ({
                 onChange={setDeviceId}
               />
             </Grid.Cell>
-
           </Grid>
 
           {/* Row 3: Active Checkbox */}
