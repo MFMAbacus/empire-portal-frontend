@@ -203,7 +203,7 @@ export const MASTER_FORM_CATEGORIES: MasterFormCategory[] = [
         badgeColor: "purple",
       },
       {
-        id: "reservation-slot-rules-master",
+        id: "reservation-rule-master",
         title: "Reservation Slot Rules",
         description: "Configure table booking slot capacities and limits.",
         badgeColor: "blue",
@@ -239,7 +239,7 @@ export const MASTER_FORM_CATEGORIES: MasterFormCategory[] = [
         badgeColor: "red",
       },
       {
-        id: "project-court-mapping-master",
+        id: "project-court-master",
         title: "Project-Court Mapping",
         description: "Associate courts with specific residential projects.",
         badgeColor: "purple",

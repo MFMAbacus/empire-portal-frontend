@@ -135,8 +135,25 @@ import { VenueOperatingMaster } from "../layouts/venue-operating-master";
 import { CreateVenueOperatingMaster } from "../layouts/create-venue-operating-master";
 import { EditVenueOperatingMaster } from "../layouts/edit-venue-operating-master";
 
+import { MenuMaster } from "../layouts/menu-master";
+import { CreateMenuMaster } from "../layouts/create-menu-master";
+import { EditMenuMaster } from "../layouts/edit-menu-master";
+
+import { ReservationRuleMaster } from "../layouts/reservation-rule-master";
+import { CreateReservationRuleMaster } from "../layouts/create-reservation-rule-master";
+import { EditReservationRuleMaster } from "../layouts/edit-reservation-rule-master";
+
+import { CourtMaster } from "../layouts/court-master";
+import { CreateCourtMaster } from "../layouts/create-court-master";
+import { EditCourtMaster } from "../layouts/edit-court-master";
+
+import { ProjectCourtMaster } from "../layouts/project-court-master";
+import { CreateProjectCourtMaster } from "../layouts/create-project-court-master";
+import { EditProjectCourtMaster } from "../layouts/edit-project-court-master";
+
 // import { CommonStatusMaster } from "../layouts/master-form/common-status-master";
 // import { PaymentMethodMaster } from "../layouts/master-form/payment-method-master";
+// import { ResturantStaffMaster } from "../layouts/master-form/resturant-staff-master";
 
 export const App = (): JSX.Element => {
   const { session, isLoading, storeSession, destroySession, permissions } =
@@ -965,6 +982,103 @@ export const App = (): JSX.Element => {
           onBack={() => setCurrentPage("venue-operating-master")}
         />
       )}
+      {currentPage === "menu-master" && (
+        <MenuMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-menu-master")}
+          onView={(menuId) => {
+            setId(menuId);
+            setCurrentPage("edit-menu-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-menu-master" && (
+        <CreateMenuMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("menu-master")}
+        />
+      )}
+      {currentPage === "edit-menu-master" && id && (
+        <EditMenuMaster
+          sessionId={session.id}
+          menuId={id}
+          onBack={() => setCurrentPage("menu-master")}
+        />
+      )}
+      {currentPage === "reservation-rule-master" && (
+        <ReservationRuleMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-reservation-rule-master")}
+          onView={(id) => {
+            setId(id);
+            setCurrentPage("edit-reservation-rule-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-reservation-rule-master" && (
+        <CreateReservationRuleMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("reservation-rule-master")}
+        />
+      )}
+      {currentPage === "edit-reservation-rule-master" && id && (
+        <EditReservationRuleMaster
+          sessionId={session.id}
+          id={id}
+          onBack={() => setCurrentPage("reservation-rule-master")}
+        />
+      )}
+      {currentPage === "court-master" && (
+        <CourtMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-court-master")}
+          onView={(courtId) => {
+            setId(courtId);
+            setCurrentPage("edit-court-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-court-master" && (
+        <CreateCourtMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("court-master")}
+        />
+      )}
+      {currentPage === "edit-court-master" && id && (
+        <EditCourtMaster
+          sessionId={session.id}
+          courtId={id}
+          onBack={() => setCurrentPage("court-master")}
+        />
+      )}
+      {currentPage === "project-court-master" && (
+        <ProjectCourtMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-project-court-master")}
+          onView={(id) => {
+            setId(id);
+            setCurrentPage("edit-project-court-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-project-court-master" && (
+        <CreateProjectCourtMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("project-court-master")}
+        />
+      )}
+      {currentPage === "edit-project-court-master" && id && (
+        <EditProjectCourtMaster
+          sessionId={session.id}
+          id={id}
+          onBack={() => setCurrentPage("project-court-master")}
+        />
+      )}
+  
     </Dashboard>
   );
 };
@@ -1129,12 +1243,12 @@ const topbarNavItemPageMap: { [page: string]: string } = {
   "venue-operating-master": "masterforms",
   "staff-mapping-master": "masterforms",
   "project-venue-master": "masterforms",
-  "reservation-slot-rules-master": "masterforms",
+  "reservation-rule-master": "masterforms",
   "court-master": "masterforms",
   "court-operating-hours-master": "masterforms",
   "court-time-slots-master": "masterforms",
   "court-blocking-master": "masterforms",
-  "project-court-mapping-master": "masterforms",
+  "project-court-master": "masterforms",
   "booking-rules-master": "masterforms",
   "guest-approval-master": "masterforms",
   "move-approval-master": "masterforms",
