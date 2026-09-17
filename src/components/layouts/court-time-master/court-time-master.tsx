@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { ModuleName } from "@/types/user";
 import { AlertSeverity } from "@/types/alert";
-import { AccessCardStaffFilters } from "./types";
+import { CourtTimeFilters } from "./types";
 
 import { Tooltip } from "@/components/base/tooltip";
 import { Table } from "@/components/base/table";
@@ -18,7 +18,7 @@ import { Badge } from "@/components/base/badge";
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
 import { DeleteModal } from "@/components/layouts/delete-modal";
-import { FilterModal } from "./filter-modal";
+import { CourtTimeFilterModal } from "./filter-modal";
 
 import { PlusIcon } from "@/components/icons/plus-icon";
 import { EyeIcon } from "@/components/icons/eye-icon";
@@ -30,55 +30,58 @@ import { FilterIcon } from "@/components/icons/filter-icon";
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
 
-import { makeGetAccessCardStaffMasterService } from "@/services/get-access-card-staff-master-service";
-import { makeDeleteAccessCardStaffMasterService } from "@/services/delete-access-card-staff-master-service";
+import { makeGetCourtTimeMasterService } from "@/services/get-court-time-master-service";
+import { makeDeleteCourtTimeMasterService } from "@/services/delete-court-time-master-service";
 
-// Property Management Approval Master Data Type Definition
-export type AccessCardStaffItem = {
+export type CourtTimeItem = {
   id: string;
-  staffRole: string;
-  projectCode: string;
+  courtId: string;
+  startTime: string;
+  endTime: string;
+  slotDuration: number;
   isActive: boolean;
   isArchived?: boolean;
 };
 
-type AccessCardStaffMasterProps = {
+type CourtTimeMasterProps = {
   sessionId: string;
   onCreate?: () => void;
   onView?: (id: string) => void;
   onBack?: () => void;
 };
 
-// ─── List Component ──────────────────────────────────────────────────────────
-
-export const AccessCardStaffMaster = ({
+export const CourtTimeMaster = ({
   sessionId,
   onCreate,
   onView,
   onBack,
-}: AccessCardStaffMasterProps): JSX.Element => {
+}: CourtTimeMasterProps): JSX.Element => {
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "access-card-staff-master"
+    "CourtTime-master"
   );
 
-  const [staffs, setStaffs] = React.useState<AccessCardStaffItem[] | null>(
-    null
-  );
-  const [filters, setFilters] = React.useState<AccessCardStaffFilters>({});
+  const [courtTimes, setCourtTimes] = React.useState<
+    CourtTimeItem[] | null
+  >(null);
+  const [filters, setFilters] = React.useState<CourtTimeFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteId, setDeleteId] = React.useState<string | null>(null);
-  const [restoreId, setRestoreId] = React.useState<string | null>(null);
+  const [deleteCourtTimeId, setDeleteCourtTimeId] = React.useState<
+    string | null
+  >(null);
+  const [restoreCourtTimeId, setRestoreCourtTimeId] = React.useState<
+    string | null
+  >(null);
 
   const handleSuccess = React.useCallback((data: unknown) => {
-    const list = data as AccessCardStaffItem[];
-    setStaffs(list || []);
+    const list = data as CourtTimeItem[];
+    setCourtTimes(list || []);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
     isLoadingDefault: true,
-    serviceMaker: makeGetAccessCardStaffMasterService,
+    serviceMaker: makeGetCourtTimeMasterService,
     onSuccess: handleSuccess,
   });
 
@@ -87,65 +90,75 @@ export const AccessCardStaffMaster = ({
     [filters]
   );
 
-  const loadApprovals = React.useCallback(() => {
+  const loadCourtTimes = React.useCallback(() => {
     submit({ sessionId, isArchived: showArchived });
   }, [sessionId, showArchived, submit]);
 
   React.useEffect(() => {
-    loadApprovals();
-  }, [loadApprovals]);
+    loadCourtTimes();
+  }, [loadCourtTimes]);
 
-  const filteredApprovals = React.useMemo(() => {
-    if (staffs === null) return null;
-    return staffs.filter((current) => {
+  const filteredCourtTimes = React.useMemo(() => {
+    if (courtTimes === null) return null;
+    return courtTimes.filter((current) => {
       let predicate = true;
-      
-      if (filters.staffRole) {
+
+      if (filters.courtId) {
         predicate =
           predicate &&
-          current.staffRole
-            .toString()
-            .toLowerCase()
-            .includes(filters.staffRole.toString().toLowerCase());
+          current.courtId
+            ?.toLowerCase()
+            .includes(filters.courtId.toLowerCase());
       }
-      if (filters.projectCode) {
+      if (filters.startTime) {
         predicate =
           predicate &&
-          current.projectCode
-            .toLowerCase()
-            .includes(filters.projectCode.toLowerCase());
+          current.startTime
+            ?.toLowerCase()
+            .includes(filters.startTime.toLowerCase());
+      }
+      if (filters.endTime) {
+        predicate =
+          predicate &&
+          current.endTime
+            ?.toLowerCase()
+            .includes(filters.endTime.toLowerCase());
+      }
+      if (filters.slotDuration) {
+        predicate =
+          predicate &&
+          Number(current.slotDuration) === Number(filters.slotDuration);
       }
       if (typeof filters.isActive !== "undefined") {
         predicate = predicate && current.isActive === filters.isActive;
       }
+
       return predicate;
     });
-  }, [staffs, filters]);
+  }, [courtTimes, filters]);
 
   return (
     <Dashboard.Content>
-      {/* Updated Form Name / Title */}
-      <Actionbar title="ACCESS CARD STAFF ">
+      <Actionbar title="COURT TIME SLOT MASTER">
         {onBack && (
           <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
         )}
         <Button
           label="FILTER"
           icon={<FilterIcon />}
-          isDisabled={isLoading}
+          isDisabled={Boolean(isLoading)}
           onClick={() => setFilterModal(true)}
         />
         <Button
           label="RELOAD"
-          isDisabled={isLoading}
-          onClick={loadApprovals}
+          isDisabled={Boolean(isLoading)}
+          onClick={loadCourtTimes}
         />
-        {/* FIXED: Write permission check (removed exclamation mark) */}
         {canWrite && onCreate && (
           <Button
             label="CREATE"
             icon={<PlusIcon />}
-            isDisabled={isLoading}
+            isDisabled={Boolean(isLoading)}
             onClick={onCreate}
           />
         )}
@@ -153,7 +166,7 @@ export const AccessCardStaffMaster = ({
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="Property Management Approval" />
+          <Paper.Title value="Court Time Master" />
 
           {alertData !== null &&
             alertData.severity !== AlertSeverity.SUCCESS && (
@@ -164,40 +177,42 @@ export const AccessCardStaffMaster = ({
             )}
 
           {isLoading && (
-            <LoadingFeedback feedback="Loading Property Managemnt Approval, please wait." />
+            <LoadingFeedback feedback="Loading Court Time records, please wait." />
           )}
 
-          {!isLoading && filteredApprovals !== null && (
+          {!isLoading && filteredCourtTimes !== null && (
             <Table
               head={
                 <Table.Row>
-                  <Table.Header value="ACCESS CARD ID" />
-                  <Table.Header value="PROJECT CODE" />
-                  <Table.Header value="STAFF USER / ROLE" />
+                  <Table.Header value="COURT ID" />
+                  <Table.Header value="START TIME" />
+                  <Table.Header value="END TIME" />
+                  <Table.Header value="SLOT DURATION" />
                   <Table.Header value="STATUS" />
                   <Table.Header />
                 </Table.Row>
               }
               body={
                 <Map
-                  items={filteredApprovals || []}
-                  renderItem={(approval) => (
-                    <Table.Row key={approval.id}>
-                      <Table.Cell>{approval.id}</Table.Cell>
-                      <Table.Cell>{approval.projectCode}</Table.Cell>
-                      <Table.Cell>{approval.staffRole}</Table.Cell>
+                  items={filteredCourtTimes || []}
+                  renderItem={(item) => (
+                    <Table.Row key={item.id}>
+                      <Table.Cell>{item.courtId}</Table.Cell>
+                      <Table.Cell>{item.startTime}</Table.Cell>
+                      <Table.Cell>{item.endTime}</Table.Cell>
+                      <Table.Cell>{item.slotDuration}</Table.Cell>
                       <Table.Cell>
                         <Badge
-                          value={approval.isActive ? "Active" : "Inactive"}
+                          value={item.isActive ? "Active" : "Inactive"}
                           color={
-                            approval.isActive
+                            item.isActive
                               ? Badge.Color.GREEN
                               : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
                       <Table.Cell align={Table.Align.RIGHT}>
-                        {!approval.isArchived && (
+                        {!item.isArchived && (
                           <React.Fragment>
                             {canWrite && (
                               <Tooltip value="Archive">
@@ -205,7 +220,7 @@ export const AccessCardStaffMaster = ({
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
                                   onClick={() =>
-                                    setDeleteId(approval.id)
+                                    setDeleteCourtTimeId(item.id)
                                   }
                                 />
                               </Tooltip>
@@ -214,17 +229,17 @@ export const AccessCardStaffMaster = ({
                               <Tooltip value="Show / Edit">
                                 <IconButton
                                   icon={<EyeIcon />}
-                                  onClick={() => onView(approval.id)}
+                                  onClick={() => onView(item.id)}
                                 />
                               </Tooltip>
                             )}
                           </React.Fragment>
                         )}
-                        {approval.isArchived && canWrite && (
+                        {item.isArchived && canWrite && (
                           <Tooltip value="Unarchive">
                             <IconButton
                               icon={<CheckIcon />}
-                              onClick={() => setRestoreId(approval.id)}
+                              onClick={() => setRestoreCourtTimeId(item.id)}
                             />
                           </Tooltip>
                         )}
@@ -237,53 +252,53 @@ export const AccessCardStaffMaster = ({
           )}
 
           {!isLoading &&
-            filteredApprovals !== null &&
-            filteredApprovals.length === 0 && (
+            filteredCourtTimes !== null &&
+            filteredCourtTimes.length === 0 && (
               <Alert
                 className="mt-1"
-                message="No access card staff mapping found."
+                message="No Court Time records found."
                 severity={AlertSeverity.SUCCESS}
               />
             )}
 
-          {!isLoading && filteredApprovals !== null && <Pagination />}
+          {!isLoading && filteredCourtTimes !== null && <Pagination />}
         </Paper>
       </Dashboard.Page>
 
       {filterModal && (
-        <FilterModal
+        <CourtTimeFilterModal
           defaultFilters={filters}
           onFilter={setFilters}
           onClose={() => setFilterModal(false)}
         />
       )}
 
-      {deleteId !== null && (
+      {deleteCourtTimeId !== null && (
         <DeleteModal
           serviceInput={{
             sessionId,
-            id: deleteId,
+            id: deleteCourtTimeId,
           }}
-          title="ARCHIVE ACCESS CARD STAFF"
-          message="Do you really want to archive this access card staff record?"
-          serviceMaker={makeDeleteAccessCardStaffMasterService}
-          onDelete={loadApprovals}
-          onClose={() => setDeleteId(null)}
+          title="ARCHIVE COURT TIME SLOT"
+          message="Do you really want to archive this Court Time record?"
+          serviceMaker={makeDeleteCourtTimeMasterService}
+          onDelete={loadCourtTimes}
+          onClose={() => setDeleteCourtTimeId(null)}
         />
       )}
 
-      {restoreId !== null && (
+      {restoreCourtTimeId !== null && (
         <DeleteModal
           serviceInput={{
             sessionId,
             isRestore: true,
-            id: restoreId,
+            id: restoreCourtTimeId,
           }}
-          title="UNARCHIVE ACCESS CARD STAFF"
-          message="Do you really want to unarchive this access card staff record?"
-          serviceMaker={makeDeleteAccessCardStaffMasterService}
-          onDelete={loadApprovals}
-          onClose={() => setRestoreId(null)}
+          title="UNARCHIVE COURT TIME SLOT "
+          message="Do you really want to unarchive this Court Time record?"
+          serviceMaker={makeDeleteCourtTimeMasterService}
+          onDelete={loadCourtTimes}
+          onClose={() => setRestoreCourtTimeId(null)}
         />
       )}
     </Dashboard.Content>

@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { ModuleName } from "@/types/user";
 import { AlertSeverity } from "@/types/alert";
-import { AccessCardStaffFilters } from "./types";
+import { CourtBookingFilters } from "./types";
 
 import { Tooltip } from "@/components/base/tooltip";
 import { Table } from "@/components/base/table";
@@ -30,55 +30,58 @@ import { FilterIcon } from "@/components/icons/filter-icon";
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
 
-import { makeGetAccessCardStaffMasterService } from "@/services/get-access-card-staff-master-service";
-import { makeDeleteAccessCardStaffMasterService } from "@/services/delete-access-card-staff-master-service";
+import { makeGetCourtBookingMasterService } from "@/services/get-court-booking-master-service";
+import { makeDeleteCourtBookingMasterService } from "@/services/delete-court-booking-master-service";
 
-// Property Management Approval Master Data Type Definition
-export type AccessCardStaffItem = {
+export type CourtBookingItem = {
   id: string;
-  staffRole: string;
   projectCode: string;
+  maxBooking: number;
+  pendingSlot: boolean;
+  advanceBooking: number;
   isActive: boolean;
   isArchived?: boolean;
 };
 
-type AccessCardStaffMasterProps = {
+type CourtBookingMasterProps = {
   sessionId: string;
   onCreate?: () => void;
   onView?: (id: string) => void;
   onBack?: () => void;
 };
 
-// ─── List Component ──────────────────────────────────────────────────────────
-
-export const AccessCardStaffMaster = ({
+export const CourtBookingMaster = ({
   sessionId,
   onCreate,
   onView,
   onBack,
-}: AccessCardStaffMasterProps): JSX.Element => {
+}: CourtBookingMasterProps): JSX.Element => {
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "access-card-staff-master"
+    "CourtBooking-master"
   );
 
-  const [staffs, setStaffs] = React.useState<AccessCardStaffItem[] | null>(
+  const [projectVenues, setCourtBookings] = React.useState<CourtBookingItem[] | null>(
     null
   );
-  const [filters, setFilters] = React.useState<AccessCardStaffFilters>({});
+  const [filters, setFilters] = React.useState<CourtBookingFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteId, setDeleteId] = React.useState<string | null>(null);
-  const [restoreId, setRestoreId] = React.useState<string | null>(null);
+  const [deleteCourtBookingId, setDeleteCourtBookingId] = React.useState<string | null>(
+    null
+  );
+  const [restoreCourtBookingId, setRestoreCourtBookingId] = React.useState<
+    string | null
+  >(null);
 
   const handleSuccess = React.useCallback((data: unknown) => {
-    const list = data as AccessCardStaffItem[];
-    setStaffs(list || []);
+    const list = data as CourtBookingItem[];
+    setCourtBookings(list || []);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
     isLoadingDefault: true,
-    serviceMaker: makeGetAccessCardStaffMasterService,
+    serviceMaker: makeGetCourtBookingMasterService,
     onSuccess: handleSuccess,
   });
 
@@ -87,65 +90,69 @@ export const AccessCardStaffMaster = ({
     [filters]
   );
 
-  const loadApprovals = React.useCallback(() => {
+  const loadCourtBookings = React.useCallback(() => {
     submit({ sessionId, isArchived: showArchived });
   }, [sessionId, showArchived, submit]);
 
   React.useEffect(() => {
-    loadApprovals();
-  }, [loadApprovals]);
+    loadCourtBookings();
+  }, [loadCourtBookings]);
 
-  const filteredApprovals = React.useMemo(() => {
-    if (staffs === null) return null;
-    return staffs.filter((current) => {
+  const filteredCourtBookings = React.useMemo(() => {
+    if (projectVenues === null) return null;
+    return projectVenues.filter((current) => {
       let predicate = true;
-      
-      if (filters.staffRole) {
-        predicate =
-          predicate &&
-          current.staffRole
-            .toString()
-            .toLowerCase()
-            .includes(filters.staffRole.toString().toLowerCase());
-      }
+
       if (filters.projectCode) {
         predicate =
           predicate &&
           current.projectCode
-            .toLowerCase()
+            ?.toLowerCase()
             .includes(filters.projectCode.toLowerCase());
+      }
+      if (filters.maxBooking) {
+        predicate =
+          predicate &&
+          Number(current.maxBooking) === Number(filters.maxBooking);
+      }
+      if (filters.advanceBooking) {
+        predicate =
+          predicate &&
+          Number(current.advanceBooking) === Number(filters.advanceBooking);
+      }
+      if (typeof filters.pendingSlot !== "undefined") {
+        predicate = predicate && current.pendingSlot === filters.pendingSlot;
       }
       if (typeof filters.isActive !== "undefined") {
         predicate = predicate && current.isActive === filters.isActive;
       }
+
       return predicate;
     });
-  }, [staffs, filters]);
+  }, [projectVenues, filters]);
 
   return (
     <Dashboard.Content>
-      {/* Updated Form Name / Title */}
-      <Actionbar title="ACCESS CARD STAFF ">
+      <Actionbar title="COURT BOOKING RULE MASTER">
         {onBack && (
           <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
         )}
         <Button
           label="FILTER"
           icon={<FilterIcon />}
-          isDisabled={isLoading}
+          isDisabled={Boolean(isLoading)}
           onClick={() => setFilterModal(true)}
         />
         <Button
           label="RELOAD"
-          isDisabled={isLoading}
-          onClick={loadApprovals}
+          isDisabled={Boolean(isLoading)}
+          onClick={loadCourtBookings}
         />
-        {/* FIXED: Write permission check (removed exclamation mark) */}
         {canWrite && onCreate && (
           <Button
             label="CREATE"
             icon={<PlusIcon />}
-            isDisabled={isLoading}
+            isDisabled={Boolean(isLoading)}
             onClick={onCreate}
           />
         )}
@@ -153,7 +160,7 @@ export const AccessCardStaffMaster = ({
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="Property Management Approval" />
+          <Paper.Title value="court Booking Rule Master" />
 
           {alertData !== null &&
             alertData.severity !== AlertSeverity.SUCCESS && (
@@ -164,40 +171,51 @@ export const AccessCardStaffMaster = ({
             )}
 
           {isLoading && (
-            <LoadingFeedback feedback="Loading Property Managemnt Approval, please wait." />
+            <LoadingFeedback feedback="Loading court booking records, please wait." />
           )}
 
-          {!isLoading && filteredApprovals !== null && (
+          {!isLoading && filteredCourtBookings !== null && (
             <Table
               head={
                 <Table.Row>
-                  <Table.Header value="ACCESS CARD ID" />
                   <Table.Header value="PROJECT CODE" />
-                  <Table.Header value="STAFF USER / ROLE" />
+                  <Table.Header value="MAX BOOKING DURATION" />
+                  <Table.Header value="ADVANCE BOOKING DAYS" />
+                  <Table.Header value="PENDING SLOT BOOKING" />
                   <Table.Header value="STATUS" />
                   <Table.Header />
                 </Table.Row>
               }
               body={
                 <Map
-                  items={filteredApprovals || []}
-                  renderItem={(approval) => (
-                    <Table.Row key={approval.id}>
-                      <Table.Cell>{approval.id}</Table.Cell>
-                      <Table.Cell>{approval.projectCode}</Table.Cell>
-                      <Table.Cell>{approval.staffRole}</Table.Cell>
+                  items={filteredCourtBookings || []}
+                  renderItem={(rule) => (
+                    <Table.Row key={rule.id}>
+                      <Table.Cell>{rule.projectCode}</Table.Cell>
+                      <Table.Cell>{rule.maxBooking}</Table.Cell>
+                      <Table.Cell>{rule.advanceBooking}</Table.Cell>
                       <Table.Cell>
                         <Badge
-                          value={approval.isActive ? "Active" : "Inactive"}
+                          value={rule.pendingSlot ? "YES" : "NO"}
                           color={
-                            approval.isActive
+                            rule.pendingSlot
+                              ? Badge.Color.GREEN
+                              : Badge.Color.RED
+                          }
+                        />
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Badge
+                          value={rule.isActive ? "Active" : "Inactive"}
+                          color={
+                            rule.isActive
                               ? Badge.Color.GREEN
                               : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
                       <Table.Cell align={Table.Align.RIGHT}>
-                        {!approval.isArchived && (
+                        {!rule.isArchived && (
                           <React.Fragment>
                             {canWrite && (
                               <Tooltip value="Archive">
@@ -205,7 +223,7 @@ export const AccessCardStaffMaster = ({
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
                                   onClick={() =>
-                                    setDeleteId(approval.id)
+                                    setDeleteCourtBookingId(rule.id)
                                   }
                                 />
                               </Tooltip>
@@ -214,17 +232,17 @@ export const AccessCardStaffMaster = ({
                               <Tooltip value="Show / Edit">
                                 <IconButton
                                   icon={<EyeIcon />}
-                                  onClick={() => onView(approval.id)}
+                                  onClick={() => onView(rule.id)}
                                 />
                               </Tooltip>
                             )}
                           </React.Fragment>
                         )}
-                        {approval.isArchived && canWrite && (
+                        {rule.isArchived && canWrite && (
                           <Tooltip value="Unarchive">
                             <IconButton
                               icon={<CheckIcon />}
-                              onClick={() => setRestoreId(approval.id)}
+                              onClick={() => setRestoreCourtBookingId(rule.id)}
                             />
                           </Tooltip>
                         )}
@@ -237,16 +255,16 @@ export const AccessCardStaffMaster = ({
           )}
 
           {!isLoading &&
-            filteredApprovals !== null &&
-            filteredApprovals.length === 0 && (
+            filteredCourtBookings !== null &&
+            filteredCourtBookings.length === 0 && (
               <Alert
                 className="mt-1"
-                message="No access card staff mapping found."
+                message="No Court Booking found."
                 severity={AlertSeverity.SUCCESS}
               />
             )}
 
-          {!isLoading && filteredApprovals !== null && <Pagination />}
+          {!isLoading && filteredCourtBookings !== null && <Pagination />}
         </Paper>
       </Dashboard.Page>
 
@@ -258,32 +276,32 @@ export const AccessCardStaffMaster = ({
         />
       )}
 
-      {deleteId !== null && (
+      {deleteCourtBookingId !== null && (
         <DeleteModal
           serviceInput={{
             sessionId,
-            id: deleteId,
+            id: deleteCourtBookingId,
           }}
-          title="ARCHIVE ACCESS CARD STAFF"
-          message="Do you really want to archive this access card staff record?"
-          serviceMaker={makeDeleteAccessCardStaffMasterService}
-          onDelete={loadApprovals}
-          onClose={() => setDeleteId(null)}
+          title="ARCHIVE COURT BOOKING RULE"
+          message="Do you really want to archive this Court Booking record?"
+          serviceMaker={makeDeleteCourtBookingMasterService}
+          onDelete={loadCourtBookings}
+          onClose={() => setDeleteCourtBookingId(null)}
         />
       )}
 
-      {restoreId !== null && (
+      {restoreCourtBookingId !== null && (
         <DeleteModal
           serviceInput={{
             sessionId,
             isRestore: true,
-            id: restoreId,
+            id: restoreCourtBookingId,
           }}
-          title="UNARCHIVE ACCESS CARD STAFF"
-          message="Do you really want to unarchive this access card staff record?"
-          serviceMaker={makeDeleteAccessCardStaffMasterService}
-          onDelete={loadApprovals}
-          onClose={() => setRestoreId(null)}
+          title="UNARCHIVE COURT BOOKING RULE"
+          message="Do you really want to unarchive this Court Booking record?"
+          serviceMaker={makeDeleteCourtBookingMasterService}
+          onDelete={loadCourtBookings}
+          onClose={() => setRestoreCourtBookingId(null)}
         />
       )}
     </Dashboard.Content>

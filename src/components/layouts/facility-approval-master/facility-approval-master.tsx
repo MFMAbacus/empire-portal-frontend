@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { ModuleName } from "@/types/user";
 import { AlertSeverity } from "@/types/alert";
-import { AccessCardStaffFilters } from "./types";
+import { FacilityApprovalFilters } from "./types";
 
 import { Tooltip } from "@/components/base/tooltip";
 import { Table } from "@/components/base/table";
@@ -30,19 +30,19 @@ import { FilterIcon } from "@/components/icons/filter-icon";
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
 
-import { makeGetAccessCardStaffMasterService } from "@/services/get-access-card-staff-master-service";
-import { makeDeleteAccessCardStaffMasterService } from "@/services/delete-access-card-staff-master-service";
+import { makeGetFacilityApprovalMasterService } from "@/services/get-facility-approval-master-service";
+import { makeDeleteFacilityApprovalMasterService } from "@/services/delete-facility-approval-master-service";
 
-// Property Management Approval Master Data Type Definition
-export type AccessCardStaffItem = {
+// facility Approval Master Data Type Definition
+export type FacilityApprovalItem = {
   id: string;
-  staffRole: string;
+  approverRole: string;
   projectCode: string;
   isActive: boolean;
   isArchived?: boolean;
 };
 
-type AccessCardStaffMasterProps = {
+type FacilityApprovalMasterProps = {
   sessionId: string;
   onCreate?: () => void;
   onView?: (id: string) => void;
@@ -51,34 +51,34 @@ type AccessCardStaffMasterProps = {
 
 // ─── List Component ──────────────────────────────────────────────────────────
 
-export const AccessCardStaffMaster = ({
+export const FacilityApprovalMaster = ({
   sessionId,
   onCreate,
   onView,
   onBack,
-}: AccessCardStaffMasterProps): JSX.Element => {
+}: FacilityApprovalMasterProps): JSX.Element => {
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "access-card-staff-master"
+    "property-management-approval-master"
   );
 
-  const [staffs, setStaffs] = React.useState<AccessCardStaffItem[] | null>(
+  const [approvals, setApprovals] = React.useState<FacilityApprovalItem[] | null>(
     null
   );
-  const [filters, setFilters] = React.useState<AccessCardStaffFilters>({});
+  const [filters, setFilters] = React.useState<FacilityApprovalFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
   const [restoreId, setRestoreId] = React.useState<string | null>(null);
 
   const handleSuccess = React.useCallback((data: unknown) => {
-    const list = data as AccessCardStaffItem[];
-    setStaffs(list || []);
+    const list = data as FacilityApprovalItem[];
+    setApprovals(list || []);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
     isLoadingDefault: true,
-    serviceMaker: makeGetAccessCardStaffMasterService,
+    serviceMaker: makeGetFacilityApprovalMasterService,
     onSuccess: handleSuccess,
   });
 
@@ -96,17 +96,17 @@ export const AccessCardStaffMaster = ({
   }, [loadApprovals]);
 
   const filteredApprovals = React.useMemo(() => {
-    if (staffs === null) return null;
-    return staffs.filter((current) => {
+    if (approvals === null) return null;
+    return approvals.filter((current) => {
       let predicate = true;
       
-      if (filters.staffRole) {
+      if (filters.approverRole) {
         predicate =
           predicate &&
-          current.staffRole
+          current.approverRole
             .toString()
             .toLowerCase()
-            .includes(filters.staffRole.toString().toLowerCase());
+            .includes(filters.approverRole.toString().toLowerCase());
       }
       if (filters.projectCode) {
         predicate =
@@ -120,12 +120,12 @@ export const AccessCardStaffMaster = ({
       }
       return predicate;
     });
-  }, [staffs, filters]);
+  }, [approvals, filters]);
 
   return (
     <Dashboard.Content>
       {/* Updated Form Name / Title */}
-      <Actionbar title="ACCESS CARD STAFF ">
+      <Actionbar title="APPROVAL MANAGEMENT APPROVAL">
         {onBack && (
           <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
         )}
@@ -153,7 +153,7 @@ export const AccessCardStaffMaster = ({
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="Property Management Approval" />
+          <Paper.Title value="Facility Approval" />
 
           {alertData !== null &&
             alertData.severity !== AlertSeverity.SUCCESS && (
@@ -171,9 +171,9 @@ export const AccessCardStaffMaster = ({
             <Table
               head={
                 <Table.Row>
-                  <Table.Header value="ACCESS CARD ID" />
+                  <Table.Header value="APPROVAL ID" />
                   <Table.Header value="PROJECT CODE" />
-                  <Table.Header value="STAFF USER / ROLE" />
+                  <Table.Header value="APPROVER USER / ROLE" />
                   <Table.Header value="STATUS" />
                   <Table.Header />
                 </Table.Row>
@@ -185,7 +185,7 @@ export const AccessCardStaffMaster = ({
                     <Table.Row key={approval.id}>
                       <Table.Cell>{approval.id}</Table.Cell>
                       <Table.Cell>{approval.projectCode}</Table.Cell>
-                      <Table.Cell>{approval.staffRole}</Table.Cell>
+                      <Table.Cell>{approval.approverRole}</Table.Cell>
                       <Table.Cell>
                         <Badge
                           value={approval.isActive ? "Active" : "Inactive"}
@@ -241,7 +241,7 @@ export const AccessCardStaffMaster = ({
             filteredApprovals.length === 0 && (
               <Alert
                 className="mt-1"
-                message="No access card staff mapping found."
+                message="No property management approval found."
                 severity={AlertSeverity.SUCCESS}
               />
             )}
@@ -264,9 +264,9 @@ export const AccessCardStaffMaster = ({
             sessionId,
             id: deleteId,
           }}
-          title="ARCHIVE ACCESS CARD STAFF"
-          message="Do you really want to archive this access card staff record?"
-          serviceMaker={makeDeleteAccessCardStaffMasterService}
+          title="ARCHIVE FACILITY APPROVAL"
+          message="Do you really want to archive this facility approval record?"
+          serviceMaker={makeDeleteFacilityApprovalMasterService}
           onDelete={loadApprovals}
           onClose={() => setDeleteId(null)}
         />
@@ -279,9 +279,9 @@ export const AccessCardStaffMaster = ({
             isRestore: true,
             id: restoreId,
           }}
-          title="UNARCHIVE ACCESS CARD STAFF"
-          message="Do you really want to unarchive this access card staff record?"
-          serviceMaker={makeDeleteAccessCardStaffMasterService}
+          title="UNARCHIVE FACILITY APPROVAL"
+          message="Do you really want to unarchive this facility approval record?"
+          serviceMaker={makeDeleteFacilityApprovalMasterService}
           onDelete={loadApprovals}
           onClose={() => setRestoreId(null)}
         />

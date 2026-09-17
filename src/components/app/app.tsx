@@ -151,6 +151,26 @@ import { ProjectCourtMaster } from "../layouts/project-court-master";
 import { CreateProjectCourtMaster } from "../layouts/create-project-court-master";
 import { EditProjectCourtMaster } from "../layouts/edit-project-court-master";
 
+import { CourtOperatingMaster } from "../layouts/court-operating-master";
+import { CreateCourtOperatingMaster } from "../layouts/create-court-operating-master";
+import { EditCourtOperatingMaster } from "../layouts/edit-court-operating-master";
+
+import { CourtTimeMaster } from "../layouts/court-time-master";
+import { CreateCourtTimeMaster } from "../layouts/create-court-time-master";
+import { EditCourtTimeMaster } from "../layouts/edit-court-time-master";
+
+import { FacilityApprovalMaster } from "../layouts/facility-approval-master";
+import { CreateFacilityApprovalMaster } from "../layouts/create-facility-approval-master";
+import { EditFacilityApprovalMaster } from "../layouts/edit-facility-approval-master";
+
+import { CourtBlockingMaster } from "../layouts/court-blocking-master";
+import { CreateCourtBlockingMaster } from "../layouts/create-court-blocking-master";
+import { EditCourtBlockingMaster } from "../layouts/edit-court-blocking-master";
+
+import { CourtBookingMaster } from "../layouts/court-booking-master";
+import { CreateCourtBookingMaster } from "../layouts/create-court-booking-master";
+import { EditCourtBookingMaster } from "../layouts/edit-court-booking-master";
+
 // import { CommonStatusMaster } from "../layouts/master-form/common-status-master";
 // import { PaymentMethodMaster } from "../layouts/master-form/payment-method-master";
 // import { ResturantStaffMaster } from "../layouts/master-form/resturant-staff-master";
@@ -1078,7 +1098,126 @@ export const App = (): JSX.Element => {
           onBack={() => setCurrentPage("project-court-master")}
         />
       )}
-  
+      {currentPage === "court-operating-master" && (
+        <CourtOperatingMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-court-operating-master")}
+          onView={(courtoperatingId) => {
+            setId(courtoperatingId);
+            setCurrentPage("edit-court-operating-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-court-operating-master" && (
+        <CreateCourtOperatingMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("court-operating-master")}
+        />
+      )}
+      {currentPage === "edit-court-operating-master" && id && (
+        <EditCourtOperatingMaster
+          sessionId={session.id}
+          id={id}
+          onBack={() => setCurrentPage("court-operating-master")}
+        />
+      )}
+      {currentPage === "court-time-master" && (
+        <CourtTimeMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-court-time-master")}
+          onView={(courtTimeId) => {
+            setId(courtTimeId);
+            setCurrentPage("edit-court-time-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-court-time-master" && (
+        <CreateCourtTimeMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("court-time-master")}
+        />
+      )}
+      {currentPage === "edit-court-time-master" && id && (
+        <EditCourtTimeMaster
+          sessionId={session.id}
+          id={id}
+          onBack={() => setCurrentPage("court-time-master")}
+        />
+      )}
+      {currentPage === "facility-approval-master" && (
+        <FacilityApprovalMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-facility-approval-master")}
+          onView={(id) => {
+            setId(id);
+            setCurrentPage("edit-facility-approval-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-facility-approval-master" && (
+        <CreateFacilityApprovalMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("facility-approval-master")}
+        />
+      )}
+      {currentPage === "edit-facility-approval-master" && id && (
+        <EditFacilityApprovalMaster
+          sessionId={session.id}
+          Id={id}
+          onBack={() => setCurrentPage("facility-approval-master")}
+        />
+      )}
+      {currentPage === "court-blocking-master" && (
+        <CourtBlockingMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-court-blocking-master")}
+          onView={(blockId) => {
+            setId(blockId);
+            setCurrentPage("edit-court-blocking-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-court-blocking-master" && (
+        <CreateCourtBlockingMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("court-blocking-master")}
+        />
+      )}
+      {currentPage === "edit-court-blocking-master" && id && (
+        <EditCourtBlockingMaster
+          sessionId={session.id}
+          blockId={id}
+          onBack={() => setCurrentPage("court-blocking-master")}
+        />
+      )}
+      {currentPage === "court-booking-master" && (
+        <CourtBookingMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-court-booking-master")}
+          onView={(id) => {
+            setId(id);
+            setCurrentPage("edit-court-booking-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-court-booking-master" && (
+        <CreateCourtBookingMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("court-booking-master")}
+        />
+      )}
+      {currentPage === "edit-court-booking-master" && id && (
+        <EditCourtBookingMaster
+          sessionId={session.id}
+          id={id}
+          onBack={() => setCurrentPage("court-booking-master")}
+        />
+      )}
     </Dashboard>
   );
 };
@@ -1245,11 +1384,13 @@ const topbarNavItemPageMap: { [page: string]: string } = {
   "project-venue-master": "masterforms",
   "reservation-rule-master": "masterforms",
   "court-master": "masterforms",
-  "court-operating-hours-master": "masterforms",
-  "court-time-slots-master": "masterforms",
+  "court-operating-master": "masterforms",
+  "court-time-master": "masterforms",
+  "facility-approver-master": "masterforms",
   "court-blocking-master": "masterforms",
   "project-court-master": "masterforms",
-  "booking-rules-master": "masterforms",
+  "court-booking-master": "masterforms",
+  
   "guest-approval-master": "masterforms",
   "move-approval-master": "masterforms",
   "card-processing-master": "masterforms",

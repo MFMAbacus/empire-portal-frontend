@@ -171,7 +171,7 @@ export const PropertyManagementApprovalMaster = ({
             <Table
               head={
                 <Table.Row>
-                  <Table.Header value="APPROVAL MANAGEMNT ID" />
+                  <Table.Header value="APPROVAL MANAGEMENT ID" />
                   <Table.Header value="PROJECT CODE" />
                   <Table.Header value="COORDINATOR USER / ROLE" />
                   <Table.Header value="STATUS" />

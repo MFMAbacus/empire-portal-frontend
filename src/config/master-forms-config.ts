@@ -221,13 +221,13 @@ export const MASTER_FORM_CATEGORIES: MasterFormCategory[] = [
         badgeColor: "green",
       },
       {
-        id: "court-operating-hours-master",
+        id: "court-operating-master",
         title: "Court Operating Hours",
         description: "Set daily availability schedules for sports courts.",
         badgeColor: "cyan",
       },
       {
-        id: "court-time-slots-master",
+        id: "court-time-master",
         title: "Court Time Slots",
         description: "Define duration and timing for court session bookings.",
         badgeColor: "indigo",
@@ -245,10 +245,16 @@ export const MASTER_FORM_CATEGORIES: MasterFormCategory[] = [
         badgeColor: "purple",
       },
       {
-        id: "booking-rules-master",
+        id: "court-booking-master",
         title: "Booking Rules",
         description: "Set advance booking limits and cancellation rules.",
         badgeColor: "yellow",
+      },
+      {
+        id: "facility-approval-master",
+        title: "Facility Approval Mapping",
+        description: "Manage facility approvals and permissions.",
+        badgeColor: "cyan",
       },
     ],
   },
