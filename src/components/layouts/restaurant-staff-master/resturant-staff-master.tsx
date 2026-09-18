@@ -1,0 +1,311 @@
+import * as React from "react";
+
+import { ModuleName } from "@/types/user";
+import { AlertSeverity } from "@/types/alert";
+import { RestaurantStaffFilters } from "./types";
+
+import { Tooltip } from "@/components/base/tooltip";
+import { Table } from "@/components/base/table";
+import { Map } from "@/components/base/map";
+import { IconButton } from "@/components/base/icon-button";
+import { Button } from "@/components/base/button";
+import { Paper } from "@/components/base/paper";
+import { Pagination } from "@/components/base/pagination";
+import { Alert } from "@/components/base/alert";
+import { LoadingFeedback } from "@/components/base/loading-feedback";
+import { Badge } from "@/components/base/badge";
+
+import { Dashboard } from "@/components/layouts/dashboard";
+import { Actionbar } from "@/components/layouts/action-bar";
+import { DeleteModal } from "@/components/layouts/delete-modal";
+import { FilterModal } from "./filter-modal";
+
+import { PlusIcon } from "@/components/icons/plus-icon";
+import { EyeIcon } from "@/components/icons/eye-icon";
+import { ArchiveIcon } from "@/components/icons/archive-icon";
+import { CheckIcon } from "@/components/icons/check-icon";
+import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
+import { FilterIcon } from "@/components/icons/filter-icon";
+
+import { useForm } from "@/hooks/use-form";
+import { usePermission } from "@/hooks/use-permission";
+
+import { makeGetRestaurantStaffMasterService } from "@/services/get-restaurant-staff-master-service";
+import { makeDeleteRestaurantStaffMasterService } from "@/services/delete-restaurant-staff-master-service";
+
+// Property Management Approval Master Data Type Definition
+export type RestaurantStaffItem = {
+  id: string;
+  approverRole: string;
+  role:string;
+  venueId:string;
+  projectCode: string;
+  isActive: boolean;
+  isArchived?: boolean;
+};
+
+type RestaurantStaffMasterProps = {
+  sessionId: string;
+  onCreate?: () => void;
+  onView?: (id: string) => void;
+  onBack?: () => void;
+};
+
+// ─── List Component ──────────────────────────────────────────────────────────
+
+export const RestaurantStaffMaster = ({
+  sessionId,
+  onCreate,
+  onView,
+  onBack,
+}: RestaurantStaffMasterProps): JSX.Element => {
+  const { checkSubSection } = usePermission();
+  const { canWrite } = checkSubSection(
+    ModuleName.MASTER_FORMS,
+    "restaurant-staff-master"
+  );
+
+  const [approvals, setApprovals] = React.useState<RestaurantStaffItem[] | null>(
+    null
+  );
+  const [filters, setFilters] = React.useState<RestaurantStaffFilters>({});
+  const [filterModal, setFilterModal] = React.useState<boolean>(false);
+  const [deleteId, setDeleteId] = React.useState<string | null>(null);
+  const [restoreId, setRestoreId] = React.useState<string | null>(null);
+
+  const handleSuccess = React.useCallback((data: unknown) => {
+    const list = data as RestaurantStaffItem[];
+    setApprovals(list || []);
+  }, []);
+
+  const { isLoading, alertData, submit } = useForm({
+    isLoadingDefault: true,
+    serviceMaker: makeGetRestaurantStaffMasterService,
+    onSuccess: handleSuccess,
+  });
+
+  const showArchived = React.useMemo(
+    () => Boolean(filters.showArchived),
+    [filters]
+  );
+
+  const loadApprovals = React.useCallback(() => {
+    submit({ sessionId, isArchived: showArchived });
+  }, [sessionId, showArchived, submit]);
+
+  React.useEffect(() => {
+    loadApprovals();
+  }, [loadApprovals]);
+
+  const filteredApprovals = React.useMemo(() => {
+    if (approvals === null) return null;
+    return approvals.filter((current) => {
+      let predicate = true;
+      
+      if (filters.approverRole) {
+        predicate =
+          predicate &&
+          current.approverRole
+            .toString()
+            .toLowerCase()
+            .includes(filters.approverRole.toString().toLowerCase());
+      }
+      if (filters.projectCode) {
+        predicate =
+          predicate &&
+          current.projectCode
+            .toLowerCase()
+            .includes(filters.projectCode.toLowerCase());
+      }
+      if (filters.venueId) {
+        predicate =
+          predicate &&
+          current.venueId
+            .toLowerCase()
+            .includes(filters.venueId.toLowerCase());
+      }
+      if (filters.role) {
+        predicate =
+          predicate &&
+          current.role
+            .toLowerCase()
+            .includes(filters.role.toLowerCase());
+      }
+      if (typeof filters.isActive !== "undefined") {
+        predicate = predicate && current.isActive === filters.isActive;
+      }
+      return predicate;
+    });
+  }, [approvals, filters]);
+
+  return (
+    <Dashboard.Content>
+      {/* Updated Form Name / Title */}
+      <Actionbar title="RESTAURANT STAFF MAPPING">
+        {onBack && (
+          <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
+        )}
+        <Button
+          label="FILTER"
+          icon={<FilterIcon />}
+          isDisabled={isLoading}
+          onClick={() => setFilterModal(true)}
+        />
+        <Button
+          label="RELOAD"
+          isDisabled={isLoading}
+          onClick={loadApprovals}
+        />
+        {/* FIXED: Write permission check (removed exclamation mark) */}
+        {canWrite && onCreate && (
+          <Button
+            label="CREATE"
+            icon={<PlusIcon />}
+            isDisabled={isLoading}
+            onClick={onCreate}
+          />
+        )}
+      </Actionbar>
+
+      <Dashboard.Page>
+        <Paper>
+          <Paper.Title value="Restaurant Staff " />
+
+          {alertData !== null &&
+            alertData.severity !== AlertSeverity.SUCCESS && (
+              <Alert
+                message={alertData.message}
+                severity={alertData.severity}
+              />
+            )}
+
+          {isLoading && (
+            <LoadingFeedback feedback="Loading Restaurant Staff, please wait." />
+          )}
+
+          {!isLoading && filteredApprovals !== null && (
+            <Table
+              head={
+                <Table.Row>
+                  <Table.Header value="APPROVAL MANAGEMENT ID" />
+                  <Table.Header value="STAFF USER / ROLE" />
+                  <Table.Header value="PROJECT CODE" />
+                  <Table.Header value="VENUE ID" />
+                  <Table.Header value="ROLE" />
+                  <Table.Header value="STATUS" />
+                  <Table.Header />
+                </Table.Row>
+              }
+              body={
+                <Map
+                  items={filteredApprovals || []}
+                  renderItem={(approval) => (
+                    <Table.Row key={approval.id}>
+                      <Table.Cell>{approval.id}</Table.Cell>
+                      <Table.Cell>{approval.approverRole}</Table.Cell>
+                      <Table.Cell>{approval.projectCode}</Table.Cell>
+                      <Table.Cell>{approval.venueId}</Table.Cell>
+                      <Table.Cell>{approval.role}</Table.Cell>
+                      <Table.Cell>
+                        <Badge
+                          value={approval.isActive ? "Active" : "Inactive"}
+                          color={
+                            approval.isActive
+                              ? Badge.Color.GREEN
+                              : Badge.Color.RED
+                          }
+                        />
+                      </Table.Cell>
+                      <Table.Cell align={Table.Align.RIGHT}>
+                        {!approval.isArchived && (
+                          <React.Fragment>
+                            {canWrite && (
+                              <Tooltip value="Archive">
+                                <IconButton
+                                  color={IconButton.Color.RED}
+                                  icon={<ArchiveIcon />}
+                                  onClick={() =>
+                                    setDeleteId(approval.id)
+                                  }
+                                />
+                              </Tooltip>
+                            )}
+                            {onView && (
+                              <Tooltip value="Show / Edit">
+                                <IconButton
+                                  icon={<EyeIcon />}
+                                  onClick={() => onView(approval.id)}
+                                />
+                              </Tooltip>
+                            )}
+                          </React.Fragment>
+                        )}
+                        {approval.isArchived && canWrite && (
+                          <Tooltip value="Unarchive">
+                            <IconButton
+                              icon={<CheckIcon />}
+                              onClick={() => setRestoreId(approval.id)}
+                            />
+                          </Tooltip>
+                        )}
+                      </Table.Cell>
+                    </Table.Row>
+                  )}
+                />
+              }
+            />
+          )}
+
+          {!isLoading &&
+            filteredApprovals !== null &&
+            filteredApprovals.length === 0 && (
+              <Alert
+                className="mt-1"
+                message="No Restaurant Staff found."
+                severity={AlertSeverity.SUCCESS}
+              />
+            )}
+
+          {!isLoading && filteredApprovals !== null && <Pagination />}
+        </Paper>
+      </Dashboard.Page>
+
+      {filterModal && (
+        <FilterModal
+          defaultFilters={filters}
+          onFilter={setFilters}
+          onClose={() => setFilterModal(false)}
+        />
+      )}
+
+      {deleteId !== null && (
+        <DeleteModal
+          serviceInput={{
+            sessionId,
+            id: deleteId,
+          }}
+          title="ARCHIVE RESTAURANT STAFF"
+          message="Do you really want to archive this restaurant staff record?"
+          serviceMaker={makeDeleteRestaurantStaffMasterService}
+          onDelete={loadApprovals}
+          onClose={() => setDeleteId(null)}
+        />
+      )}
+
+      {restoreId !== null && (
+        <DeleteModal
+          serviceInput={{
+            sessionId,
+            isRestore: true,
+            id: restoreId,
+          }}
+          title="UNARCHIVE RESTAURANT STAFF"
+          message="Do you really want to unarchive this restaurant staff record?"
+          serviceMaker={makeDeleteRestaurantStaffMasterService}
+          onDelete={loadApprovals}
+          onClose={() => setRestoreId(null)}
+        />
+      )}
+    </Dashboard.Content>
+  );
+};

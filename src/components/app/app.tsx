@@ -67,6 +67,10 @@ import { EmailTemplateMaster } from "../layouts/email-template-master";
 import { CreateEmailTemplateMaster } from "../layouts/create-email-template-master";
 import { EditEmailTemplateMaster } from "../layouts/edit-email-template-master";
 
+import { CommonStatusMaster } from "../layouts/common-status-master";
+import { CreateCommonStatusMaster } from "../layouts/create-common-status-master";
+import { EditCommonStatusMaster } from "../layouts/edit-common-status-master";
+
 import { GateMaster } from "../layouts/gate-master";
 import { CreateGateMaster } from "../layouts/create-gate-master";
 import { EditGateMaster } from "../layouts/edit-gate-master";
@@ -138,6 +142,10 @@ import { EditVenueOperatingMaster } from "../layouts/edit-venue-operating-master
 import { MenuMaster } from "../layouts/menu-master";
 import { CreateMenuMaster } from "../layouts/create-menu-master";
 import { EditMenuMaster } from "../layouts/edit-menu-master";
+
+import { RestaurantStaffMaster } from "../layouts/restaurant-staff-master";
+import { CreateRestaurantStaffMaster } from "../layouts/create-restaurant-staff-master";
+import { EditRestaurantStaffMaster } from "../layouts/edit-restaurant-staff-master";
 
 import { ReservationRuleMaster } from "../layouts/reservation-rule-master";
 import { CreateReservationRuleMaster } from "../layouts/create-reservation-rule-master";
@@ -587,13 +595,30 @@ export const App = (): JSX.Element => {
         />
       )}
 
-      {/*
       {currentPage === "common-status-master" && (
-        <CommonStatusMaster 
-          sessionId={session.id} 
-          onBack={() => setCurrentPage("masterforms")} 
+        <CommonStatusMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-common-status-master")}
+          onView={(statusId) => {
+            setId(statusId);
+            setCurrentPage("edit-common-status-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
         />
-      )} */}
+      )}
+      {currentPage === "create-common-status-master" && (
+        <CreateCommonStatusMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("common-status-master")}
+        />
+      )}
+      {currentPage === "edit-common-status-master" && id && (
+        <EditCommonStatusMaster
+          sessionId={session.id}
+          statusId={id}
+          onBack={() => setCurrentPage("common-status-master")}
+        />
+      )}
       {currentPage === "gate-master" && (
         <GateMaster
           sessionId={session.id}
@@ -1048,6 +1073,31 @@ export const App = (): JSX.Element => {
           sessionId={session.id}
           id={id}
           onBack={() => setCurrentPage("reservation-rule-master")}
+        />
+      )}
+      
+      {currentPage === "restaurant-staff-master" && (
+        <RestaurantStaffMaster
+          sessionId={session.id}
+          onCreate={() => setCurrentPage("create-restaurant-staff-master")}
+          onView={(id) => {
+            setId(id);
+            setCurrentPage("edit-restaurant-staff-master");
+          }}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "create-restaurant-staff-master" && (
+        <CreateRestaurantStaffMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("restaurant-staff-master")}
+        />
+      )}
+      {currentPage === "edit-restaurant-staff-master" && id && (
+        <EditRestaurantStaffMaster
+          sessionId={session.id}
+          Id={id}
+          onBack={() => setCurrentPage("restaurant-staff-master")}
         />
       )}
       {currentPage === "court-master" && (

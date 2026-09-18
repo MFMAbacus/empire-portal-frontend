@@ -191,8 +191,8 @@ export const MASTER_FORM_CATEGORIES: MasterFormCategory[] = [
         badgeColor: "teal",
       },
       {
-        id: "staff-mapping-master",
-        title: "Staff Mapping",
+        id: "restaurant-staff-master",
+        title: "Restaurant Staff Mapping",
         description: "Assign kitchen and service staff to venue locations.",
         badgeColor: "indigo",
       },
