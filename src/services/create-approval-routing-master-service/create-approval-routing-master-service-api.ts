@@ -15,6 +15,7 @@ export class CreateApprovalRoutingMasterServiceApi extends Service<Input> {
   public async execute(input: Input): Promise<ServiceOutput> {
     const {
       sessionId,
+      id, // Record target primary key (e.g. database ID)
       routingId,
       module,
       projectCode,
@@ -25,11 +26,13 @@ export class CreateApprovalRoutingMasterServiceApi extends Service<Input> {
       isEdit,
     } = input as any;
 
-    const isUpdating = Boolean(isEdit || routingId);
-    
-    // API URL updated to approval-routing-master using routingId
-    const url = isUpdating && routingId
-      ? `${apiUrl}/approval-routing-master/${routingId}?sessionId=${sessionId}`
+    // Database record primary key target selection (Id prioritized over routingId)
+    const targetRecordId = id || routingId;
+    const isUpdating = Boolean(isEdit || targetRecordId);
+
+    // API URL formulation
+    const url = isUpdating && targetRecordId
+      ? `${apiUrl}/approval-routing-master/${targetRecordId}?sessionId=${sessionId}`
       : `${apiUrl}/approval-routing-master?sessionId=${sessionId}`;
 
     const method = isUpdating ? "PATCH" : "POST";

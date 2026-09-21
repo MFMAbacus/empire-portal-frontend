@@ -73,7 +73,6 @@ export const CreateVehicleTypeMaster = ({
           isDisabled={
             isLoading ||
             !vehicleTypeId ||
-            !vehicleType ||
             isSuccess
           }
           onClick={handleSubmit}

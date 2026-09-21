@@ -190,7 +190,7 @@ export const CreateAccessCardMaster = ({
           setResidentList(items);
         }
       } catch (error) {
-        console.error("Failed to fetch resident master details:", error);
+        console.error("Failed to fetch access card details:", error);
       } finally {
         if (isMounted) setIsLoadingResidents(false);
       }

@@ -11,6 +11,9 @@ import { PriorityListInput } from "../priority-list-input";
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
 
+import { usePermission } from "@/hooks/use-permission";
+import { ModuleName } from "@/types/user"; // Agar ModuleName import nahi hai
+
 import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
 import { CheckIcon } from "@/components/icons/check-icon";
 import { SpinnerIcon } from "@/components/icons/spinner-icon";
@@ -25,6 +28,7 @@ import { GetSessionServiceApi } from "@/services/get-session-service";
 
 // PriorityListInput se TaskPriority type import karein
 import { TaskPriority } from "@/types/task";
+import { RoleListInput } from "../role-list-input";
 
 type CreateApprovalRoutingMasterProps = {
   sessionId: string;
@@ -55,19 +59,27 @@ export const CreateApprovalRoutingMaster = ({
   sessionId,
   onBack,
 }: CreateApprovalRoutingMasterProps): JSX.Element => {
+  const { checkModule } = usePermission();
+  const { canWrite } = checkModule(ModuleName.USER_MANAGEMENT);
   // Multi-select state for modules (Array of selected module keys)
   const [selectedModules, setSelectedModules] = React.useState<string[]>([]);
   const [moduleOptions, setModuleOptions] = React.useState<string[]>([]);
-  const [isLoadingSession, setIsLoadingSession] = React.useState<boolean>(false);
+  const [isLoadingSession, setIsLoadingSession] =
+    React.useState<boolean>(false);
 
   const [projectCode, setProjectCode] = React.useState<string>("");
-  const [approverRole, setApproverRole] = React.useState<string>("");
+  const [approverRole, setApproverRole] = React.useState<string | null>(null);
 
   // Approval Level state matching TaskPriority type
-  const [approvalLevel, setApprovalLevel] = React.useState<TaskPriority | undefined>(undefined);
+  const [approvalLevel, setApprovalLevel] = React.useState<
+    TaskPriority | undefined
+  >(undefined);
 
-  const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>([]);
-  const [isLoadingProperties, setIsLoadingProperties] = React.useState<boolean>(false);
+  const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>(
+    [],
+  );
+  const [isLoadingProperties, setIsLoadingProperties] =
+    React.useState<boolean>(false);
 
   // Users State
   const [userList, setUserList] = React.useState<UserItem[]>([]);
@@ -86,14 +98,19 @@ export const CreateApprovalRoutingMaster = ({
     const fetchSessionData = async () => {
       setIsLoadingSession(true);
       try {
-        const response: any = await sessionService.execute({ sessionId } as any);
+        const response: any = await sessionService.execute({
+          sessionId,
+        } as any);
 
         if (isMounted && response?.data?.permissions) {
           const permissions = response.data.permissions;
           const extractedList: string[] = [];
 
           const formatKey = (key: string) =>
-            key.replace(/([A-Z])/g, " $1").replace(/-/g, " ").trim();
+            key
+              .replace(/([A-Z])/g, " $1")
+              .replace(/-/g, " ")
+              .trim();
 
           Object.keys(permissions).forEach((parentKey) => {
             const parent = permissions[parentKey];
@@ -143,7 +160,9 @@ export const CreateApprovalRoutingMaster = ({
 
         if (isMounted && response) {
           const rawData = response.data || response;
-          const items: PropertyMasterItem[] = Array.isArray(rawData) ? rawData : [];
+          const items: PropertyMasterItem[] = Array.isArray(rawData)
+            ? rawData
+            : [];
           setPropertyList(items);
         }
       } catch (error) {
@@ -180,8 +199,8 @@ export const CreateApprovalRoutingMaster = ({
           const rawData = Array.isArray(response.data)
             ? response.data
             : Array.isArray(response)
-            ? response
-            : [];
+              ? response
+              : [];
 
           setUserList(rawData);
         }
@@ -237,7 +256,7 @@ export const CreateApprovalRoutingMaster = ({
     setSelectedModules((prev) =>
       prev.indexOf(moduleName) !== -1
         ? prev.filter((item) => item !== moduleName)
-        : [...prev, moduleName]
+        : [...prev, moduleName],
     );
   };
 
@@ -251,7 +270,9 @@ export const CreateApprovalRoutingMaster = ({
   const userOptions = React.useMemo(() => {
     const names = userList
       .map((user) => {
-        const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+        const fullName = [user.firstName, user.lastName]
+          .filter(Boolean)
+          .join(" ");
         return fullName || user.jobTitle || user.email || user.id;
       })
       .filter((name): name is string => Boolean(name));
@@ -312,7 +333,8 @@ export const CreateApprovalRoutingMaster = ({
                     <Map
                       items={moduleOptions}
                       renderItem={(modName) => {
-                        const isChecked = selectedModules.indexOf(modName) !== -1;
+                        const isChecked =
+                          selectedModules.indexOf(modName) !== -1;
                         return (
                           <ListInput.Item
                             key={modName}
@@ -334,7 +356,9 @@ export const CreateApprovalRoutingMaster = ({
                 className="w-100"
                 label="Project Code"
                 value={projectCode || undefined}
-                placeholder={isLoadingProperties ? "Loading..." : "Select project code"}
+                placeholder={
+                  isLoadingProperties ? "Loading..." : "Select project code"
+                }
                 hasError={typeof validation["projectCode"] !== "undefined"}
                 isDisabled={isLoading || isSuccess || isLoadingProperties}
               >
@@ -369,7 +393,7 @@ export const CreateApprovalRoutingMaster = ({
 
             {/* Approver Role / User Dropdown */}
             <Grid.Cell size={Grid.CellSize.S3}>
-              <ListInput
+              {/* <ListInput
                 className="w-100"
                 label="Approver Role / User"
                 value={approverRole || undefined}
@@ -403,7 +427,16 @@ export const CreateApprovalRoutingMaster = ({
                     />
                   </React.Fragment>
                 )}
-              </ListInput>
+              </ListInput> */}
+              <RoleListInput
+                className="w-100"
+                role={approverRole}
+                feedback={validation["approverRole"]}
+                hasError={typeof validation["approverRole"] !== "undefined"}
+                onChange={setApproverRole}
+                sessionId={sessionId}
+                isDisabled={isLoading || isSuccess || !canWrite}
+              />
             </Grid.Cell>
           </Grid>
 

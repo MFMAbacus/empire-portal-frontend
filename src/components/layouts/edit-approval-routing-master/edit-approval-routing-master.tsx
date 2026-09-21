@@ -27,6 +27,7 @@ import { makeCreateApprovalRoutingMasterService } from "@/services/create-approv
 import { GetPropertyMasterServiceApi } from "@/services/get-property-master-service";
 import { GetUserServiceApi } from "@/services/get-user-service";
 import { GetSessionServiceApi } from "@/services/get-session-service";
+import { RoleListInput } from "../role-list-input";
 
 type EditApprovalRoutingMasterProps = {
   sessionId: string;
@@ -65,7 +66,7 @@ export const EditApprovalRoutingMaster = ({
   const [isLoadingSession, setIsLoadingSession] = React.useState<boolean>(false);
 
   const [projectCode, setProjectCode] = React.useState<string>("");
-  const [approverRole, setApproverRole] = React.useState<string>("");
+  const [approverRole, setApproverRole] = React.useState<string | null>(null);
   const [approvalLevel, setApprovalLevel] = React.useState<TaskPriority | undefined>(undefined);
   const [isActive, setIsActive] = React.useState<boolean>(true);
 
@@ -432,7 +433,7 @@ export const EditApprovalRoutingMaster = ({
 
               {/* Approver Role / User Dropdown */}
               <Grid.Cell size={Grid.CellSize.S3}>
-                <ListInput
+                {/* <ListInput
                   className="w-100"
                   label="Approver Role / User"
                   value={approverRole || undefined}
@@ -466,7 +467,16 @@ export const EditApprovalRoutingMaster = ({
                       />
                     </React.Fragment>
                   )}
-                </ListInput>
+                </ListInput> */}
+                <RoleListInput
+                                className="w-100"
+                                role={approverRole}
+                                feedback={validation["approverRole"]}
+                                hasError={typeof validation["approverRole"] !== "undefined"}
+                                onChange={setApproverRole}
+                                sessionId={sessionId}
+                                isDisabled={isLoading || isSuccess}
+                              />
               </Grid.Cell>
             </Grid>
 

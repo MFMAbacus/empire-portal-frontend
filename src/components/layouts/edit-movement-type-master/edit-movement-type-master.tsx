@@ -20,6 +20,8 @@ import { useTimeout } from "@/hooks/use-timeout";
 import { useForm } from "@/hooks/use-form";
 import { AlertSeverity } from "@/types/alert";
 
+import { usePermission } from "@/hooks/use-permission";
+import { ModuleName, SubSectionName } from "@/types/user";
 import { makeGetMovementTypeMasterService } from "@/services/get-movement-type-master-service";
 import { makeCreateMovementTypeMasterService } from "@/services/create-movement-type-master-service";
 
@@ -47,6 +49,12 @@ export const EditMovementTypeMaster = ({
 
   const { startTimeout } = useTimeout();
 
+  const { checkSubSection } = usePermission();
+    const subSectionPermission = checkSubSection(
+      ModuleName.MASTER_FORMS,
+      "movement-type-master" as SubSectionName
+    );
+  const canWrite = Boolean(subSectionPermission?.canWrite);
   // Initial Movement Type Data Fetching
   React.useEffect(() => {
     let isMounted = true;
@@ -108,6 +116,7 @@ export const EditMovementTypeMaster = ({
   return (
     <Dashboard.Content>
       <Actionbar title="EDIT MOVEMENT TYPE MASTER">
+        {canWrite && (
         <Button
           label="SAVE"
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
@@ -120,6 +129,7 @@ export const EditMovementTypeMaster = ({
           }
           onClick={handleSubmit}
         />
+        )}
         <Button label="GO BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
       </Actionbar>
 

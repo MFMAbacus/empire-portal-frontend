@@ -145,7 +145,7 @@ export const MovementTypeMaster = ({
           isDisabled={isLoading}
           onClick={loadMovementTypes}
         />
-        {!canWrite && onCreate && (
+        {canWrite && onCreate && (
           <Button
             label="CREATE"
             icon={<PlusIcon />}

@@ -5,7 +5,7 @@ export type Input = {
   routingId?: string;
   module: string;
   projectCode: string;
-  approverRole: string;
+  approverRole: string | null;
   approvalLevel: string;
   isActive: boolean;
   //serviceType?: BuyServiceCategoryNames[] | null;

@@ -8,6 +8,7 @@ import { ListInput } from "@/components/base/list-input";
 import { Grid } from "@/components/base/grid";
 import { Checkbox } from "@/components/base/checkbox";
 import { Alert } from "@/components/base/alert";
+import { useSession } from "@/hooks/use-session"; // Aapke folder layout ke mutabiq path
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -50,13 +51,16 @@ export const CreateResidentMaster = ({
   sessionId,
   onBack,
 }: CreateResidentMasterProps): JSX.Element => {
+  const { session } = useSession();
   const [residentId, setResidentId] = React.useState<string>("");
   const [name, setName] = React.useState<string>("");
   const [email, setEmail] = React.useState<string>("");
   const [mobileNo, setMobileNo] = React.useState<number | undefined>(undefined);
-  const [loginUserId, setLoginUserId] = React.useState<string>("");
+// Extract user ID from session
+  const currentUserId = session?.userId || (session as any)?.user?.id || (session as any)?.id || "";
+  const [loginUserId, setLoginUserId] = React.useState<string>(currentUserId);
   const [residentType, setResidentType] = React.useState<string>("");
-
+  
   const [apartmentId, setApartmentId] = React.useState<string>("");
   const [apartmentList, setApartmentList] = React.useState<ApartmentMasterItem[]>([]);
   const [isLoadingApartments, setIsLoadingApartments] = React.useState<boolean>(false);
@@ -69,6 +73,26 @@ export const CreateResidentMaster = ({
   const [isSuccess, setIsSuccess] = React.useState<boolean>(false);
 
   const { startTimeout } = useTimeout();
+
+ // Update effect jab session load ho jaye
+  React.useEffect(() => {
+    if (currentUserId) {
+      setLoginUserId(currentUserId);
+    }
+  }, [currentUserId]);
+  // Validations
+  const isEmailValid = React.useMemo(() => {
+    if (!email) return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }, [email]);
+
+  const isMobileNoValid = React.useMemo(() => {
+    if (mobileNo === undefined) return false;
+    const mobileStr = mobileNo.toString();
+    // 10 digits exact check (Requirement ke mutabiq aap range bhi de sakte hain, e.g., mobileStr.length >= 10 && mobileStr.length <= 11)
+    return mobileStr.length === 10;
+  }, [mobileNo]);
 
   // Fetch Property Master list from API
   React.useEffect(() => {
@@ -161,6 +185,8 @@ export const CreateResidentMaster = ({
   });
 
   const handleSubmit = React.useCallback(() => {
+    if (!isEmailValid || !isMobileNoValid) return;
+
     submit({
       sessionId,
       residentId,
@@ -184,6 +210,8 @@ export const CreateResidentMaster = ({
     apartmentId,
     projectCode,
     isActive,
+    isEmailValid,
+    isMobileNoValid,
     submit,
   ]);
 
@@ -211,22 +239,25 @@ export const CreateResidentMaster = ({
     return Array.from(new Set(ids));
   }, [filteredApartments]);
 
+  const isFormInvalid =
+    isLoading ||
+    !residentId ||
+    !name ||
+    !email ||
+    !isEmailValid ||
+    mobileNo === undefined ||
+    !isMobileNoValid ||
+    !apartmentId ||
+    !projectCode ||
+    isSuccess;
+
   return (
     <Dashboard.Content>
       <Actionbar title="CREATE RESIDENT MASTER">
         <Button
           label="SAVE"
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
-          isDisabled={
-            isLoading ||
-            !residentId ||
-            !name ||
-            !email ||
-            mobileNo === undefined ||
-            !apartmentId ||
-            !projectCode ||
-            isSuccess
-          }
+          isDisabled={isFormInvalid}
           onClick={handleSubmit}
         />
         <Button label="GO BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
@@ -272,7 +303,10 @@ export const CreateResidentMaster = ({
                 label="Email"
                 placeholder="Enter email address"
                 value={email}
-                hasError={typeof validation["email"] !== "undefined"}
+                hasError={
+                  typeof validation["email"] !== "undefined" ||
+                  (email.length > 0 && !isEmailValid)
+                }
                 isDisabled={isLoading || isSuccess}
                 onChange={setEmail}
               />
@@ -282,13 +316,18 @@ export const CreateResidentMaster = ({
               <TextInput
                 className="w-100"
                 label="Mobile No."
-                placeholder="Enter mobile number"
+                placeholder="Enter 10-digit mobile number"
                 value={mobileNo !== undefined ? mobileNo.toString() : ""}
-                hasError={typeof validation["mobileNo"] !== "undefined"}
+                hasError={
+                  typeof validation["mobileNo"] !== "undefined" ||
+                  (mobileNo !== undefined && !isMobileNoValid)
+                }
                 isDisabled={isLoading || isSuccess}
                 onChange={(val) => {
                   const cleaned = val.replace(/[^0-9]/g, "");
-                  setMobileNo(cleaned ? Number(cleaned) : undefined);
+                  // Maximum 10 digits restrict karne ke liye (Aap requirement ke mutabiq slice length change kar sakte hain)
+                  const limited = cleaned.slice(0, 10);
+                  setMobileNo(limited ? Number(limited) : undefined);
                 }}
               />
             </Grid.Cell>
@@ -326,7 +365,7 @@ export const CreateResidentMaster = ({
                           isActive={projectCode === code}
                           onClick={() => {
                             setProjectCode(code);
-                            setApartmentId(""); // Project change hone par apartment ID reset
+                            setApartmentId("");
                             onClose();
                           }}
                         />

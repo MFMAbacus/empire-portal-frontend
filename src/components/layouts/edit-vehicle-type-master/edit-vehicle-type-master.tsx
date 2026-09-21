@@ -113,7 +113,6 @@ export const EditVehicleTypeMaster = ({
             isLoading ||
             isFetching ||
             !vehicleTypeCode ||
-            !vehicleType ||
             isSuccess
           }
           onClick={handleSubmit}

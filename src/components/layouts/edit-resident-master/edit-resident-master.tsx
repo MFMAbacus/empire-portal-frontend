@@ -78,6 +78,19 @@ export const EditResidentMaster = ({
 
   const { startTimeout } = useTimeout();
 
+  // Validations
+  const isEmailValid = React.useMemo(() => {
+    if (!email) return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }, [email]);
+
+  const isMobileNoValid = React.useMemo(() => {
+    if (!mobileNo) return false;
+    // Standard 10-digit validation check
+    return mobileNo.length === 10;
+  }, [mobileNo]);
+
   // Fetch Property Master List for Dropdown
   React.useEffect(() => {
     let isMounted = true;
@@ -171,7 +184,12 @@ export const EditResidentMaster = ({
           setResidentCode(item.residentId || item.id || "");
           setName(item.name || "");
           setEmail(item.email || "");
-          setMobileNo(item.mobileNo ? String(item.mobileNo) : "");
+          
+          // Mobile number cleanup if numerical value loaded from DB
+          const rawMobile = item.mobileNo ? String(item.mobileNo) : "";
+          const cleanedMobile = rawMobile.replace(/[^0-9]/g, "").slice(0, 10);
+          setMobileNo(cleanedMobile);
+
           setApartmentId(item.apartmentId || "");
           setProjectCode(item.projectCode || "");
           setLoginUserId(item.loginUserId || "");
@@ -204,6 +222,8 @@ export const EditResidentMaster = ({
   });
 
   const handleSubmit = React.useCallback(() => {
+    if (!isEmailValid || !isMobileNoValid) return;
+
     submit({
       sessionId,
       id: residentId,              // Target Record Primary Key
@@ -229,6 +249,8 @@ export const EditResidentMaster = ({
     loginUserId,
     residentType,
     isActive,
+    isEmailValid,
+    isMobileNoValid,
     submit,
   ]);
 
@@ -248,24 +270,27 @@ export const EditResidentMaster = ({
     return Array.from(new Set(ids));
   }, [apartmentList]);
 
+  const isFormInvalid =
+    isLoading ||
+    isFetching ||
+    !residentCode ||
+    !name ||
+    !email ||
+    !isEmailValid ||
+    !mobileNo ||
+    !isMobileNoValid ||
+    !apartmentId ||
+    !projectCode ||
+    !residentType ||
+    isSuccess;
+
   return (
     <Dashboard.Content>
       <Actionbar title="EDIT RESIDENT MASTER">
         <Button
           label="SAVE"
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
-          isDisabled={
-            isLoading ||
-            isFetching ||
-            !residentCode ||
-            !name ||
-            !email ||
-            !mobileNo ||
-            !apartmentId ||
-            !projectCode ||
-            !residentType ||
-            isSuccess
-          }
+          isDisabled={isFormInvalid}
           onClick={handleSubmit}
         />
         <Button label="GO BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
@@ -320,7 +345,10 @@ export const EditResidentMaster = ({
                   label="Email"
                   placeholder="Enter email address"
                   value={email}
-                  hasError={typeof validation["email"] !== "undefined"}
+                  hasError={
+                    typeof validation["email"] !== "undefined" ||
+                    (email.length > 0 && !isEmailValid)
+                  }
                   isDisabled={isLoading || isSuccess}
                   onChange={setEmail}
                 />
@@ -331,16 +359,24 @@ export const EditResidentMaster = ({
                 <TextInput
                   className="w-100"
                   label="Mobile No."
-                  placeholder="Enter mobile number"
+                  placeholder="Enter 10-digit mobile number"
                   value={mobileNo}
-                  hasError={typeof validation["mobileNo"] !== "undefined"}
+                  hasError={
+                    typeof validation["mobileNo"] !== "undefined" ||
+                    (mobileNo.length > 0 && !isMobileNoValid)
+                  }
                   isDisabled={isLoading || isSuccess}
-                  onChange={setMobileNo}
+                  onChange={(val) => {
+                    const cleaned = val.replace(/[^0-9]/g, "");
+                    const limited = cleaned.slice(0, 10);
+                    setMobileNo(limited);
+                  }}
                 />
               </Grid.Cell>
             </Grid>
+
             <Grid>
-             {/* Field 6: Project Code Dropdown */}
+              {/* Field 5: Project Code Dropdown */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <ListInput
                   className="w-100"
@@ -379,8 +415,7 @@ export const EditResidentMaster = ({
                 </ListInput>
               </Grid.Cell>
 
-            
-              {/* Field 5: Apartment ID Dropdown */}
+              {/* Field 6: Apartment ID Dropdown */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <ListInput
                   className="w-100"
@@ -419,7 +454,6 @@ export const EditResidentMaster = ({
                 </ListInput>
               </Grid.Cell>
 
-             
               {/* Field 7: Login User ID */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <TextInput

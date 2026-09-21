@@ -78,7 +78,7 @@ export const EditUser = ({
   const [isCachier, setIsCachier] = React.useState<boolean>(false);
 
   const [profilePicture, setProfilePicture] = React.useState<string | null>(
-    null
+    null,
   );
 
   const [serviceType, setServiceType] = React.useState<
@@ -93,7 +93,7 @@ export const EditUser = ({
   const [isSuccess, setIsSuccess] = React.useState<boolean>(false);
 
   const [permissions, setPermissions] = React.useState<UserPermissions>(
-    PermissionHelper.createDefaultPermissions()
+    PermissionHelper.createDefaultPermissions(),
   );
 
   const { fetchNewSession } = useSession();
@@ -113,6 +113,7 @@ export const EditUser = ({
     setFirstName(user.firstName);
     setLastName(user.lastName);
     setEmail(user.email);
+    setRole(user.role);
     setPhoneNumber(user.phoneNumber || "");
     setDepartmentId(user.departmentId);
     setSalespersonId(user.salespersonId);
@@ -170,6 +171,7 @@ export const EditUser = ({
       firstName,
       lastName,
       email,
+      role,
       phoneNumber: phoneNumber !== "" ? phoneNumber : null,
       departmentId,
       employeeId,
@@ -189,6 +191,7 @@ export const EditUser = ({
     firstName,
     lastName,
     email,
+    role,
     phoneNumber,
     departmentId,
     employeeId,
@@ -363,16 +366,16 @@ export const EditUser = ({
           </Grid>
           <Grid>
             <Grid.Cell size={Grid.CellSize.S3}>
-                          <RoleListInput
-                            className="w-100"
-                            role={role}
-                            feedback={validation["role"]}
-                            hasError={typeof validation["role"] !== "undefined"}
-                            onChange={setRole}
-                            sessionId={sessionId}
-                            isDisabled={isLoading || isSuccess}
-                          />
-                        </Grid.Cell>
+              <RoleListInput
+                className="w-100"
+                role={role}
+                feedback={validation["role"]}
+                hasError={typeof validation["role"] !== "undefined"}
+                onChange={setRole}
+                sessionId={sessionId}
+                isDisabled={isLoading || isSuccess}
+              />
+            </Grid.Cell>
             <Grid.Cell size={Grid.CellSize.S3}>
               <PasswordInput
                 className="w-100"

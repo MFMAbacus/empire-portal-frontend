@@ -29,7 +29,8 @@ import { PermissionsEditor } from "@/components/layouts/permissions-editor/permi
 import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
 import { CheckIcon } from "@/components/icons/check-icon";
 import { SpinnerIcon } from "@/components/icons/spinner-icon";
-
+import { usePermission } from "@/hooks/use-permission";
+import { ModuleName } from "@/types/user"; // Agar ModuleName import nahi hai
 import { useTimeout } from "@/hooks/use-timeout";
 import { useForm } from "@/hooks/use-form";
 
@@ -48,6 +49,8 @@ export const CreateUser = ({
   sessionId,
   onBack,
 }: CreateUserProps): JSX.Element => {
+  const { checkModule } = usePermission();
+  const { canWrite } = checkModule(ModuleName.USER_MANAGEMENT);
   const [firstName, setFirstName] = React.useState<string>("");
 
   const [lastName, setLastName] = React.useState<string>("");
@@ -289,7 +292,7 @@ export const CreateUser = ({
                 hasError={typeof validation["role"] !== "undefined"}
                 onChange={setRole}
                 sessionId={sessionId}
-                isDisabled={isLoading || isSuccess}
+                isDisabled={isLoading || isSuccess|| !canWrite}
               />
             </Grid.Cell>
             <Grid.Cell size={Grid.CellSize.S3}>

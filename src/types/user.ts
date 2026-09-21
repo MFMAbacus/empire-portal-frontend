@@ -5,7 +5,7 @@ export enum ModuleName {
   CUSTOMERS = "customers",
   INVENTORY = "inventory",
   ANNOUNCEMENTS = "announcements",
-  USER_MANAGEMENT = "user-management",
+  USER_MANAGEMENT = "userManagement",
   WELCOMESCREEN_MEDIA = "welcomescreenMedia",
   COLLECTION = "collection",
   TRANSACTIONS = "transactions",
@@ -158,6 +158,7 @@ export type User = {
   firstName: string;
   lastName: string;
   email: string;
+  role:string |null;
   phoneNumber: string | null;
   departmentId: string | null;
   employeeId: string | null;
