@@ -25,6 +25,7 @@ import { makeGetGuardAccountMappingMasterService } from "@/services/get-guard-ac
 import { makeCreateGuardAccountMappingMasterService } from "@/services/create-guard-account-mapping-master-service";
 import { GetPropertyMasterServiceApi } from "@/services/get-property-master-service";
 import { GetGateMasterServiceApi } from "@/services/get-gate-master-service";
+import { GetUserServiceApi } from "@/services/get-user-service";
 
 type EditGuardAccountMappingMasterProps = {
   sessionId: string;
@@ -43,6 +44,21 @@ type GateMasterItem = {
   id?: string;
   gateId?: string;
   gateName?: string;
+  projectCode?: string;
+  projectId?: string;
+  location?: string;
+  [key: string]: any;
+};
+
+type UserItem = {
+  _id?: string;
+  id?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  jobTitle?: string;
+  role?: string;
+  employeeId?: string;
   [key: string]: any;
 };
 
@@ -68,6 +84,9 @@ export const EditGuardAccountMappingMaster = ({
   // Gate Dropdown Data
   const [gateList, setGateList] = React.useState<GateMasterItem[]>([]);
   const [isLoadingGates, setIsLoadingGates] = React.useState<boolean>(false);
+
+  const [userList, setUserList] = React.useState<UserItem[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] =React.useState<boolean>(false);
 
   const [isFetching, setIsFetching] = React.useState<boolean>(true);
   const [isSuccess, setIsSuccess] = React.useState<boolean>(false);
@@ -137,7 +156,7 @@ export const EditGuardAccountMappingMaster = ({
           setGateList(items);
         }
       } catch (err) {
-        console.error("Failed to fetch apartment master list:", err);
+        console.error("Failed to fetch gate master list:", err);
       } finally {
         if (isMounted) {
           setIsLoadingGates(false);
@@ -156,6 +175,46 @@ export const EditGuardAccountMappingMaster = ({
   // Initial Guard Account Mapping Data Fetching
   React.useEffect(() => {
     let isMounted = true;
+    const userService = new GetUserServiceApi();
+    const fetchUsers = async () => {
+      setIsLoadingUsers(true);
+      try {
+        const response = await userService.execute({
+          sessionId,
+          userId: "",
+        } as any);
+
+        if (isMounted && response) {
+          const rawData: UserItem[] = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray(response)
+              ? response
+              : [];
+
+          setUserList(rawData);
+        }
+      } catch (error) {
+        console.error(
+          "Failed to fetch users list:",
+          error
+        );
+      } finally {
+        if (isMounted) {
+          setIsLoadingUsers(false);
+        }
+      }
+    };
+    fetchUsers();
+
+    return () => {
+      isMounted = false;
+      userService.abort();
+    };
+  }, [sessionId]);
+
+  React.useEffect(() => {
+    let isMounted = true;
+
     setIsFetching(true);
 
     const getGuardService = makeGetGuardAccountMappingMasterService();
@@ -236,15 +295,45 @@ export const EditGuardAccountMappingMaster = ({
     return Array.from(new Set(ids));
   }, [gateList]);
 
+  const userOptions = React.useMemo(() => {
+    const names = userList
+      .filter((user) => {
+        const role = user.role || user.jobTitle || "";
+
+        return role.toLowerCase() === "guard";
+      })
+      .map((user) => {
+        const fullName = [
+          user.firstName,
+          user.lastName,
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        return (
+          fullName ||
+          user.jobTitle ||
+          user.email ||
+          user.id
+        );
+      })
+      .filter(
+        (name): name is string => Boolean(name)
+      );
+
+    return Array.from(new Set(names));
+  }, [userList]);
+
   return (
     <Dashboard.Content>
       <Actionbar title="EDIT GUARD ACCOUNT MAPPING MASTER">
         <Button
           label="SAVE"
-          icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
+          icon={isLoading ? (<SpinnerIcon />) : (<CheckIcon />)}
           isDisabled={
             isLoading ||
             isFetching ||
+            isLoadingUsers ||
             !guardAccountCode ||
             !guardUserId ||
             !gateId ||
@@ -288,15 +377,36 @@ export const EditGuardAccountMappingMaster = ({
 
               {/* Field 2: Guard User Id */}
               <Grid.Cell size={Grid.CellSize.S3}>
-                <TextInput
+                <ListInput
                   className="w-100"
-                  label="Guard User Id"
-                  placeholder="Enter guard user id"
-                  value={guardUserId}
+                  label="Guard User ID"
+                  value={guardUserId || undefined}
+                  placeholder={isLoadingUsers? "Loading...": "Select guard User Id"}
                   hasError={typeof validation["guardUserId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
-                  onChange={setGuardUserId}
-                />
+                  isDisabled={isLoading ||isSuccess ||isLoadingUsers}
+                >
+                  {(onClose) => (
+                    <React.Fragment>
+                      <ListInput.Item
+                        label="None"
+                        isActive={guardUserId === ""}
+                        onClick={() => {setGuardUserId("");onClose();}}
+                      />
+                      <Map
+                        items={userOptions}
+                        renderItem={(userName) => (
+                          <ListInput.Item
+                            key={userName}
+                            label={userName}
+                            isActive={guardUserId ===userName}
+                            onClick={() => {setGuardUserId(userName);
+                              onClose();}}
+                          />
+                        )}
+                      />
+                    </React.Fragment>
+                  )}
+                </ListInput>
               </Grid.Cell>
               {/* Field 6: Project Code Dropdown */}
               <Grid.Cell size={Grid.CellSize.S3}>
@@ -358,13 +468,13 @@ export const EditGuardAccountMappingMaster = ({
                       />
                       <Map
                         items={uniqueGateIds}
-                        renderItem={(aptId) => (
+                        renderItem={(gateIdOption) => (
                           <ListInput.Item
-                            key={aptId}
-                            label={aptId}
-                            isActive={gateId === aptId}
+                            key={gateIdOption}
+                            label={gateIdOption}
+                            isActive={gateId ===gateIdOption}
                             onClick={() => {
-                              setGateId(aptId);
+                              setGateId(gateIdOption);
                               onClose();
                             }}
                           />

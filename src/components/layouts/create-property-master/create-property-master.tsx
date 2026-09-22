@@ -93,10 +93,10 @@ export const CreatePropertyMaster = ({
                 onChange={setProjectCode}
               />
             </Grid.Cell>
-          </Grid>
+          
 
           {/* Field 2: Project Name */}
-          <Grid>
+          
             <Grid.Cell size={Grid.CellSize.S3}>
               <TextInput
                 className="w-100"
@@ -108,10 +108,10 @@ export const CreatePropertyMaster = ({
                 onChange={setProjectName}
               />
             </Grid.Cell>
-          </Grid>
+          
 
           {/* Field 3: Property Name */}
-          <Grid>
+          
             <Grid.Cell size={Grid.CellSize.S3}>
               <TextInput
                 className="w-100"

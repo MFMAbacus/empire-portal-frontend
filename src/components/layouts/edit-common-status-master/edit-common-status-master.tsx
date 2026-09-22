@@ -264,34 +264,7 @@ export const EditCommonStatusMaster = ({
                 />
               </Grid.Cell>
 
-              {/* Single-Select Status Name Dropdown */}
-              <Grid.Cell size={Grid.CellSize.S4}>
-                <ListInput
-                  className="w-100"
-                  label="Status Name"
-                  value={statusName || undefined}
-                  placeholder="Select status name"
-                  hasError={typeof validation["statusName"] !== "undefined"}
-                  feedback={validation["statusName"]}
-                  isDisabled={isLoading || isSuccess}
-                >
-                  {() => (
-                    <Map
-                      items={STATUS_NAME}
-                      renderItem={(item) => (
-                        <ListInput.Item
-                          key={item}
-                          label={item}
-                          isActive={statusName === item}
-                          onClick={() => setStatusName(item)}
-                        />
-                      )}
-                    />
-                  )}
-                </ListInput>
-              </Grid.Cell>
-
-              {/* Multi-Select Module Dropdown */}
+{/* Multi-Select Module Dropdown */}
               <Grid.Cell size={Grid.CellSize.S4}>
                 <ListInput
                   className="w-100"
@@ -328,6 +301,34 @@ export const EditCommonStatusMaster = ({
                   )}
                 </ListInput>
               </Grid.Cell>
+              {/* Single-Select Status Name Dropdown */}
+              <Grid.Cell size={Grid.CellSize.S4}>
+                <ListInput
+                  className="w-100"
+                  label="Status Name"
+                  value={statusName || undefined}
+                  placeholder="Select status name"
+                  hasError={typeof validation["statusName"] !== "undefined"}
+                  feedback={validation["statusName"]}
+                  isDisabled={isLoading || isSuccess}
+                >
+                  {() => (
+                    <Map
+                      items={STATUS_NAME}
+                      renderItem={(item) => (
+                        <ListInput.Item
+                          key={item}
+                          label={item}
+                          isActive={statusName === item}
+                          onClick={() => setStatusName(item)}
+                        />
+                      )}
+                    />
+                  )}
+                </ListInput>
+              </Grid.Cell>
+
+              
             </Grid>
 
             {/* Row 2: Sequence */}
