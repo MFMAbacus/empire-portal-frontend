@@ -5,5 +5,6 @@ export type Input = {
   palletNumber?: string;
   model?: string;
   type?: string;
+  vehicleTypeName:string;
   color?: string;
 };

@@ -155,7 +155,7 @@ export const CreateAccessCardMaster = ({
           setApartmentList(items);
         }
       } catch (error) {
-        console.error("Failed to fetch apartment master details:", error);
+        console.error("Failed to fetch access card details:", error);
       } finally {
         if (isMounted) setIsLoadingApartments(false);
       }

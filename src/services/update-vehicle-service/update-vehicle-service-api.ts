@@ -20,6 +20,7 @@ export class UpdateVehicleServiceApi extends Service<Input> {
       palletNumber,
       model,
       type,
+      vehicleTypeName,
       color,
     } = input;
 
@@ -33,6 +34,7 @@ export class UpdateVehicleServiceApi extends Service<Input> {
         palletNumber,
         model,
         type,
+        vehicleTypeName,
         color,
       }),
       mode: 'cors',

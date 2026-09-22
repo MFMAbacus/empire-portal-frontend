@@ -34,10 +34,10 @@ import { PlusIcon } from "@/components/icons/plus-icon";
 import { useForm } from "@/hooks/use-form";
 import { useTimeout } from "@/hooks/use-timeout";
 
-import { UsePermissionContext } from "@/context/PermissionContext";
 
 import { makeGetCustomerService } from "@/services/get-customer-service";
 import { makeUpdateCustomerService } from "@/services/update-customer-service";
+import { makeGetVehicleTypeMasterService } from "@/services/get-vehicle-type-master-service";
 import { usePermission } from "@/hooks/use-permission";
 import { ModuleName } from "@/types/user";
 
@@ -45,6 +45,14 @@ type EditCustomerProps = {
   sessionId: string;
   customerId: string;
   onBack: () => void;
+};
+
+type VehicleTypeItem = {
+  id?: string;
+  vehicleTypeId?: string;
+  vehicleType?: string;
+  name?: string;
+  [key: string]: any;
 };
 
 export const EditCustomer = ({
@@ -80,6 +88,9 @@ export const EditCustomer = ({
     React.useState<string>("");
 
   const [vehicles, setVehicles] = React.useState<Vehicle[]>([]);
+  const [vehicleTypeList, setVehicleTypeList] = React.useState<
+    VehicleTypeItem[]
+  >([]);
 
   const [isGetSuccess, setIsGetSuccess] = React.useState<boolean>(false);
 
@@ -127,6 +138,45 @@ export const EditCustomer = ({
   React.useEffect(() => {
     loadCustomer();
   }, [loadCustomer]);
+
+  // Vehicle Type Master Service using useForm pattern
+  const handleVehicleTypeMasterSuccess = React.useCallback((data: unknown) => {
+    const items: VehicleTypeItem[] = Array.isArray(data)
+      ? data
+      : (data as any)?.data && Array.isArray((data as any).data)
+      ? (data as any).data
+      : [];
+    setVehicleTypeList(items);
+  }, []);
+
+  const { submit: fetchVehicleTypeMaster } = useForm({
+    serviceMaker: makeGetVehicleTypeMasterService,
+    onSuccess: handleVehicleTypeMasterSuccess,
+  });
+
+  React.useEffect(() => {
+    fetchVehicleTypeMaster({
+      sessionId,
+      isArchived: false,
+    });
+  }, [sessionId, fetchVehicleTypeMaster]);
+
+  // Plain JS Object lookup (Avoids class collision with Base Map component)
+  const vehicleTypeMap = React.useMemo<Record<string, string>>(() => {
+    const mapObj: Record<string, string> = {};
+
+    vehicleTypeList.forEach((item) => {
+      const id = item.vehicleTypeId || item.id;
+      const label = item.vehicleType || item.name || id;
+
+      // Ensure id and label are non-nullable strings before setting key
+      if (id && label) {
+        mapObj[id] = label;
+      }
+    });
+
+    return mapObj;
+  }, [vehicleTypeList]);
 
   const { startTimeout } = useTimeout();
 
@@ -394,12 +444,17 @@ export const EditCustomer = ({
               <Map
                 items={vehicles}
                 renderItem={(item) => {
+                  const rawTypeId =
+                    (item as any).vehicleTypeId || item.type || "";
+                  const vehicleTypeName =
+                    vehicleTypeMap[rawTypeId] || item.type || "-";
+
                   return (
-                    <Table.Row>
+                    <Table.Row key={item.id}>
                       <Table.Cell>{item.id}</Table.Cell>
                       <Table.Cell>{item.palletNumber}</Table.Cell>
                       <Table.Cell>{item.model}</Table.Cell>
-                      <Table.Cell>{item.type}</Table.Cell>
+                      <Table.Cell>{vehicleTypeName}</Table.Cell>
                       <Table.Cell>{item.color}</Table.Cell>
                       <Table.Cell align={Table.Align.RIGHT}>
                         {canWrite && (

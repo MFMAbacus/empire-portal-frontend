@@ -3,6 +3,7 @@ export type Vehicle = {
   palletNumber: string;
   model: string;
   type: string;
+  vehicleTypeName: string;
   color: string;
 };
 

@@ -15,6 +15,9 @@ import {useTimeout} from '@/hooks/use-timeout';
 import {useForm} from '@/hooks/use-form';
 
 import {makeEditVehicleService} from '@/services/update-vehicle-service';
+import { GetVehicleTypeMasterServiceApi } from "@/services/get-vehicle-type-master-service";
+import { ListInput } from "@/components/base/list-input";
+import { Map } from "@/components/base/map";
 
 type EditVehicleModalProps = {
   sessionId: string;
@@ -22,6 +25,18 @@ type EditVehicleModalProps = {
   vehicle: Vehicle;
   onSuccess: () => void;
   onClose: () => void;
+};
+
+type VehicleTypeItem = {
+  id?: string;
+  vehicleTypeId?: string;
+  vehicleType?: string;
+  [key: string]: any;
+};
+
+type VehicleOption = {
+  id: string;
+  label: string;
 };
 
 export const EditVehicleModal = ({
@@ -44,8 +59,10 @@ export const EditVehicleModal = ({
   const [
     type,
     setType,
-  ] = React.useState<string>(vehicle.type);
+  ] = React.useState<string>((vehicle as any).vehicleTypeId || vehicle.type || "");
 
+  const [vehicleList, setVehicleList] = React.useState<VehicleTypeItem[]>([]);
+  const [isLoadingVehicles, setIsLoadingVehicles] = React.useState<boolean>(false);
   const [
     color,
     setColor,
@@ -82,6 +99,74 @@ export const EditVehicleModal = ({
     onSuccess: handleSuccess,
   });
 
+  // Fetch Vehicle Type Master List
+  React.useEffect(() => {
+    let isMounted = true;
+    const service = new GetVehicleTypeMasterServiceApi();
+
+    const fetchVehicleMaster = async () => {
+      setIsLoadingVehicles(true);
+      try {
+        const response = await service.execute({
+          sessionId,
+          isArchived: false,
+        } as any);
+
+        if (isMounted && response && response.data) {
+          const items: VehicleTypeItem[] = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray(response)
+              ? response
+              : [];
+
+          setVehicleList(items);
+        }
+      } catch (error) {
+        console.error("Failed to fetch vehicle type master details:", error);
+      } finally {
+        if (isMounted) {
+          setIsLoadingVehicles(false);
+        }
+      }
+    };
+
+    fetchVehicleMaster();
+
+    return () => {
+      isMounted = false;
+      service.abort();
+    };
+  }, [sessionId]);
+
+  // Options Mapping (Unique ID & Label)
+  const vehicleTypeOptions = React.useMemo<VehicleOption[]>(() => {
+    const optionsMap: Record<string, string> = {};
+
+    vehicleList.forEach((item) => {
+      const id = item.vehicleTypeId || item.id;
+      const label = item.vehicleType || item.name || item.vehicleTypeName || id;
+
+      if (id && !optionsMap[id]) {
+        optionsMap[id] = label;
+      }
+    });
+
+    return Object.keys(optionsMap).map((id) => ({
+      id,
+      label: optionsMap[id],
+    }));
+  }, [vehicleList]);
+
+  // Selected Option finding dynamically
+  const selectedOption = React.useMemo(() => {
+    return vehicleTypeOptions.find((opt) => opt.id === type);
+  }, [vehicleTypeOptions, type]);
+
+  // Auto Compute Name: Selected Option Label -> Fallback to initial Vehicle prop name
+  const computedVehicleTypeName = selectedOption
+    ? selectedOption.label
+    : (vehicle as any).vehicleType || (vehicle as any).vehicleTypeName || "";
+
   const handleSubmit = React.useCallback(() => {
     submit({
       sessionId,
@@ -89,6 +174,7 @@ export const EditVehicleModal = ({
       id: vehicle.id,
       palletNumber,
       model,
+      vehicleTypeName: computedVehicleTypeName,
       type,
       color,
     });
@@ -98,6 +184,7 @@ export const EditVehicleModal = ({
     palletNumber,
     model,
     type,
+    computedVehicleTypeName,
     color,
     vehicle,
     submit,
@@ -148,18 +235,41 @@ export const EditVehicleModal = ({
         </Grid>
         <Grid>
           <Grid.Cell size={Grid.CellSize.S12}>
-            <TextInput
+            <ListInput
               className='w-100'
               label='Type'
-              value={type}
-              feedback={validation['type']}
-              placeholder='Enter type.'
-              hasError={typeof validation['type'] !== 'undefined'}
-              hasInitialFocus
-              isRequired
-              isDisabled={isLoading || isSuccess}
-              onChange={setType}
-            />
+              value={computedVehicleTypeName || undefined}
+              placeholder={isLoadingVehicles ? "Loading..." : "Select type"}
+              hasError={typeof validation['type'] !== 'undefined' ||typeof validation['vehicleTypeName'] !== 'undefined'}
+              isDisabled={isLoading || isSuccess || isLoadingVehicles}
+            >
+              {(onCloseModal) => (
+                <React.Fragment>
+                  <ListInput.Item
+                    label="None"
+                    isActive={type === ""}
+                    onClick={() => {
+                      setType("");
+                      onCloseModal();
+                    }}
+                  />
+                  <Map
+                    items={vehicleTypeOptions}
+                    renderItem={(item: VehicleOption) => (
+                      <ListInput.Item
+                        key={item.id}
+                        label={item.label}
+                        isActive={type === item.id}
+                        onClick={() => {
+                          setType(item.id);
+                          onCloseModal();
+                        }}
+                      />
+                    )}
+                  />
+                </React.Fragment>
+              )}
+            </ListInput>
           </Grid.Cell>
         </Grid>
         <Grid>
