@@ -179,9 +179,15 @@ import { CourtBookingMaster } from "../layouts/court-booking-master";
 import { CreateCourtBookingMaster } from "../layouts/create-court-booking-master";
 import { EditCourtBookingMaster } from "../layouts/edit-court-booking-master";
 
-// import { CommonStatusMaster } from "../layouts/master-form/common-status-master";
+import { GuestApprovalMaster } from "../layouts/guest-approval-master";
+import { MoveApprovalMaster } from "../layouts/move-approval-master";
+import { CardProcessingMaster } from "../layouts/card-processing-master";
+import { RestaurantReservationApprovalMaster } from "../layouts/restaurant-reservation-approval-master";
+import { CourtApprovalMaster } from "../layouts/court-approval-master";
+import { RequestHistoryMaster } from "../layouts/request-history-master";
+import { AuditLogsMaster } from "../layouts/audit-logs-master";
+
 // import { PaymentMethodMaster } from "../layouts/master-form/payment-method-master";
-// import { ResturantStaffMaster } from "../layouts/master-form/resturant-staff-master";
 
 export const App = (): JSX.Element => {
   const { session, isLoading, storeSession, destroySession, permissions } =
@@ -1266,6 +1272,48 @@ export const App = (): JSX.Element => {
           sessionId={session.id}
           id={id}
           onBack={() => setCurrentPage("court-booking-master")}
+        />
+      )}
+      {currentPage === "guest-approval-master" && (
+        <GuestApprovalMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "move-approval-master" && (
+        <MoveApprovalMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "card-processing-master" && (
+        <CardProcessingMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "restaurant-reservation-approval-master" && (
+        <RestaurantReservationApprovalMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "court-approval-master" && (
+        <CourtApprovalMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "request-history-master" && (
+        <RequestHistoryMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("masterforms")}
+        />
+      )}
+      {currentPage === "audit-logs-master" && (
+        <AuditLogsMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("masterforms")}
         />
       )}
     </Dashboard>
