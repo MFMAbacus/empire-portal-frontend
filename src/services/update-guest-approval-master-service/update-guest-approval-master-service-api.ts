@@ -5,10 +5,14 @@ import { apiUrl } from '@/config';
 export type UpdateGuestApprovalInput = {
   sessionId: string;
   id: string;
+  _id?: string;
   status: string;
+  approvalStatus?: string;
   assignedGateId?: string;
   rejectionReason?: string;
   qrCodeUrl?: string;
+  qrCode?: string;
+  [key: string]: any;
 };
 
 export class UpdateGuestApprovalMasterServiceApi extends Service<UpdateGuestApprovalInput> {
