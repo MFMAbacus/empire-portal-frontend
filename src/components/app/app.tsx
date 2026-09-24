@@ -178,7 +178,7 @@ import { EditCourtBlockingMaster } from "../layouts/edit-court-blocking-master";
 import { CourtBookingMaster } from "../layouts/court-booking-master";
 import { CreateCourtBookingMaster } from "../layouts/create-court-booking-master";
 import { EditCourtBookingMaster } from "../layouts/edit-court-booking-master";
-
+import { GuestApprovalHistoryMaster } from "../layouts/guest-approval-history-master";
 import { GuestApprovalMaster } from "../layouts/guest-approval-master";
 import { MoveApprovalMaster } from "../layouts/move-approval-master";
 import { CardProcessingMaster } from "../layouts/card-processing-master";
@@ -222,11 +222,7 @@ export const App = (): JSX.Element => {
                 <Topbar.NavItem
                   key={topbarNavItem.id}
                   id={topbarNavItem.id}
-                  isAccess={
-                    topbarNavItem.id === "masterforms"
-                      ? true
-                      : canReadModule(topbarNavItem.moduleName as ModuleName)
-                  }
+                  isAccess={canReadModule(topbarNavItem.moduleName as ModuleName)}
                   title={topbarNavItem.title}
                   isActive={
                     topbarNavItemPageMap[currentPage] === topbarNavItem.id
@@ -1273,11 +1269,17 @@ export const App = (): JSX.Element => {
           id={id}
           onBack={() => setCurrentPage("court-booking-master")}
         />
+      )}{currentPage === "guest-approval-history-master" && (
+        <GuestApprovalHistoryMaster
+          sessionId={session.id}
+          onBack={() => setCurrentPage("guest-approval-master")}
+        />
       )}
       {currentPage === "guest-approval-master" && (
         <GuestApprovalMaster
           sessionId={session.id}
           onBack={() => setCurrentPage("masterforms")}
+          onHistory={() => setCurrentPage("guest-approval-history-master")}
         />
       )}
       {currentPage === "move-approval-master" && (

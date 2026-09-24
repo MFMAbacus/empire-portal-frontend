@@ -43,6 +43,8 @@ type ApartmentMasterItem = {
   id?: string;
   apartmentId?: string;
   apartmentNo?: string;
+  projectCode?: string;
+  projectId?: string;
   [key: string]: any;
 };
 
@@ -87,7 +89,6 @@ export const EditResidentMaster = ({
 
   const isMobileNoValid = React.useMemo(() => {
     if (!mobileNo) return false;
-    // Standard 10-digit validation check
     return mobileNo.length === 10;
   }, [mobileNo]);
 
@@ -185,7 +186,6 @@ export const EditResidentMaster = ({
           setName(item.name || "");
           setEmail(item.email || "");
           
-          // Mobile number cleanup if numerical value loaded from DB
           const rawMobile = item.mobileNo ? String(item.mobileNo) : "";
           const cleanedMobile = rawMobile.replace(/[^0-9]/g, "").slice(0, 10);
           setMobileNo(cleanedMobile);
@@ -254,21 +254,46 @@ export const EditResidentMaster = ({
     submit,
   ]);
 
-  // Unique Project Codes for Dropdown
-  const uniqueProjectCodes = React.useMemo(() => {
-    const codes = propertyList
-      .map((item) => item.projectCode)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Extract unique properties safely without Object.values()
+  const uniqueProperties = React.useMemo(() => {
+    const lookup: { [key: string]: PropertyMasterItem } = {};
+    const result: PropertyMasterItem[] = [];
+
+    propertyList.forEach((item) => {
+      if (item.projectCode && !lookup[item.projectCode]) {
+        lookup[item.projectCode] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [propertyList]);
 
-  // Unique Apartment IDs/Codes for Dropdown
-  const uniqueApartmentIds = React.useMemo(() => {
-    const ids = apartmentList
-      .map((item) => item.apartmentId || item.id)
-      .filter((id): id is string => Boolean(id));
-    return Array.from(new Set(ids));
-  }, [apartmentList]);
+  // Screen par selected project code ka display text set karne ke liye (Code > Name)
+  const selectedProjectDisplay = React.useMemo(() => {
+    const found = propertyList.find((p) => p.projectCode === projectCode);
+    if (!found) return "";
+    return found.projectName
+      ? `${found.projectCode} > ${found.projectName}`
+      : found.projectCode || "";
+  }, [propertyList, projectCode]);
+
+  // Selected projectCode ke relative Apartments filter karein
+  const filteredApartments = React.useMemo(() => {
+    if (!projectCode) return [];
+    return apartmentList.filter(
+      (item) => item.projectCode === projectCode || item.projectId === projectCode
+    );
+  }, [apartmentList, projectCode]);
+
+  // Screen par selected apartment ka display text set karne ke liye (Apartment No > Apartment ID)
+  const selectedApartmentDisplay = React.useMemo(() => {
+    const found = filteredApartments.find((a) => a.apartmentId === apartmentId);
+    if (!found) return "";
+    return found.apartmentNo
+      ? `${found.apartmentNo} > ${found.apartmentId}`
+      : found.apartmentId || "";
+  }, [filteredApartments, apartmentId]);
 
   const isFormInvalid =
     isLoading ||
@@ -381,7 +406,7 @@ export const EditResidentMaster = ({
                 <ListInput
                   className="w-100"
                   label="Project Code"
-                  value={projectCode || undefined}
+                  value={selectedProjectDisplay || undefined}
                   placeholder={isLoadingProperties ? "Loading..." : "Select project code"}
                   hasError={typeof validation["projectCode"] !== "undefined"}
                   isDisabled={isLoading || isSuccess || isLoadingProperties}
@@ -393,22 +418,32 @@ export const EditResidentMaster = ({
                         isActive={projectCode === ""}
                         onClick={() => {
                           setProjectCode("");
+                          setApartmentId("");
                           onClose();
                         }}
                       />
                       <Map
-                        items={uniqueProjectCodes}
-                        renderItem={(code) => (
-                          <ListInput.Item
-                            key={code}
-                            label={code}
-                            isActive={projectCode === code}
-                            onClick={() => {
-                              setProjectCode(code);
-                              onClose();
-                            }}
-                          />
-                        )}
+                        items={uniqueProperties}
+                        renderItem={(property) => {
+                          const displayLabel = property.projectName
+                            ? `${property.projectCode} > ${property.projectName}`
+                            : property.projectCode || "";
+
+                          return (
+                            <ListInput.Item
+                              key={property.projectCode}
+                              label={displayLabel}
+                              isActive={projectCode === property.projectCode}
+                              onClick={() => {
+                                if (property.projectCode) {
+                                  setProjectCode(property.projectCode);
+                                  setApartmentId("");
+                                }
+                                onClose();
+                              }}
+                            />
+                          );
+                        }}
                       />
                     </React.Fragment>
                   )}
@@ -420,10 +455,16 @@ export const EditResidentMaster = ({
                 <ListInput
                   className="w-100"
                   label="Apartment ID"
-                  value={apartmentId || undefined}
-                  placeholder={isLoadingApartments ? "Loading..." : "Select apartment ID"}
+                  value={selectedApartmentDisplay || undefined}
+                  placeholder={
+                    !projectCode
+                      ? "Select project code first"
+                      : isLoadingApartments
+                      ? "Loading..."
+                      : "Select apartment ID"
+                  }
                   hasError={typeof validation["apartmentId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess || isLoadingApartments}
+                  isDisabled={isLoading || isSuccess || isLoadingApartments || !projectCode}
                 >
                   {(onClose) => (
                     <React.Fragment>
@@ -436,18 +477,26 @@ export const EditResidentMaster = ({
                         }}
                       />
                       <Map
-                        items={uniqueApartmentIds}
-                        renderItem={(aptId) => (
-                          <ListInput.Item
-                            key={aptId}
-                            label={aptId}
-                            isActive={apartmentId === aptId}
-                            onClick={() => {
-                              setApartmentId(aptId);
-                              onClose();
-                            }}
-                          />
-                        )}
+                        items={filteredApartments}
+                        renderItem={(apartment) => {
+                          const displayLabel = apartment.apartmentNo
+                            ? `${apartment.apartmentNo} > ${apartment.apartmentId}`
+                            : apartment.apartmentId || "";
+
+                          return (
+                            <ListInput.Item
+                              key={apartment.id || apartment.apartmentId}
+                              label={displayLabel}
+                              isActive={apartmentId === apartment.apartmentId}
+                              onClick={() => {
+                                if (apartment.apartmentId) {
+                                  setApartmentId(apartment.apartmentId);
+                                }
+                                onClose();
+                              }}
+                            />
+                          );
+                        }}
                       />
                     </React.Fragment>
                   )}

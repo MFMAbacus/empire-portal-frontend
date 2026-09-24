@@ -32,6 +32,7 @@ import { usePermission } from "@/hooks/use-permission";
 
 import { makeGetApprovalRoutingMasterService } from "@/services/get-approval-routing-master-service";
 import { makeDeleteApprovalRoutingMasterService } from "@/services/delete-approval-routing-master-service";
+import { makeGetUserRoleService } from "@/services/get-role-service";
 
 export type ApprovalRoutingItem = {
   id: string;
@@ -66,6 +67,7 @@ export const ApprovalRoutingMaster = ({
   const [routings, setRoutings] = React.useState<ApprovalRoutingItem[] | null>(
     null
   );
+  const [rolesList, setRolesList] = React.useState<any[]>([]);
   const [filters, setFilters] = React.useState<ApprovalRoutingFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
   const [deleteRoutingId, setDeleteRoutingId] = React.useState<string | null>(
@@ -80,10 +82,21 @@ export const ApprovalRoutingMaster = ({
     setRoutings(list || []);
   }, []);
 
+  const handleRolesSuccess = React.useCallback((data: unknown) => {
+    const rawItems = (data as any)?.data || (data as any)?.records || data;
+    const items = Array.isArray(rawItems) ? rawItems : [];
+    setRolesList(items);
+  }, []);
+
   const { isLoading, alertData, submit } = useForm({
     isLoadingDefault: true,
     serviceMaker: makeGetApprovalRoutingMasterService,
     onSuccess: handleSuccess,
+  });
+
+  const rolesForm = useForm({
+    serviceMaker: makeGetUserRoleService,
+    onSuccess: handleRolesSuccess,
   });
 
   const showArchived = React.useMemo(
@@ -97,7 +110,21 @@ export const ApprovalRoutingMaster = ({
 
   React.useEffect(() => {
     loadRoutings();
-  }, [loadRoutings]);
+    rolesForm.submit({ sessionId });
+  }, [loadRoutings, sessionId]);
+
+  const getRoleName = React.useCallback(
+    (roleIdOrName: string) => {
+      const found = rolesList.find(
+        (r) =>
+          r.id === roleIdOrName ||
+          r.roleId === roleIdOrName ||
+          r._id === roleIdOrName
+      );
+      return found ? found.roleName || found.name || roleIdOrName : roleIdOrName;
+    },
+    [rolesList]
+  );
 
   const filteredRoutings = React.useMemo(() => {
     if (routings === null) return null;
@@ -125,11 +152,15 @@ export const ApprovalRoutingMaster = ({
             .includes(filters.projectCode.toLowerCase());
       }
       if (filters.approverRole) {
+        const resolvedRoleName = getRoleName(current.approverRole);
         predicate =
           predicate &&
-          current.approverRole
+          (current.approverRole
             ?.toLowerCase()
-            .includes(filters.approverRole.toLowerCase());
+            .includes(filters.approverRole.toLowerCase()) ||
+            resolvedRoleName
+              ?.toLowerCase()
+              .includes(filters.approverRole.toLowerCase()));
       }
       if (filters.approvalLevel) {
         predicate =
@@ -143,7 +174,7 @@ export const ApprovalRoutingMaster = ({
       }
       return predicate;
     });
-  }, [routings, filters]);
+  }, [routings, filters, getRoleName]);
 
   return (
     <Dashboard.Content>
@@ -209,7 +240,7 @@ export const ApprovalRoutingMaster = ({
                       <Table.Cell>{item.routingId}</Table.Cell>
                       <Table.Cell>{item.module}</Table.Cell>
                       <Table.Cell>{item.projectCode}</Table.Cell>
-                      <Table.Cell>{item.approverRole}</Table.Cell>
+                      <Table.Cell>{getRoleName(item.approverRole)}</Table.Cell>
                       <Table.Cell>{item.approvalLevel}</Table.Cell>
                       <Table.Cell>
                         <Badge

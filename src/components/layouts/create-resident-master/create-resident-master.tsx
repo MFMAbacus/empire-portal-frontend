@@ -8,7 +8,7 @@ import { ListInput } from "@/components/base/list-input";
 import { Grid } from "@/components/base/grid";
 import { Checkbox } from "@/components/base/checkbox";
 import { Alert } from "@/components/base/alert";
-import { useSession } from "@/hooks/use-session"; // Aapke folder layout ke mutabiq path
+import { useSession } from "@/hooks/use-session";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -56,7 +56,7 @@ export const CreateResidentMaster = ({
   const [name, setName] = React.useState<string>("");
   const [email, setEmail] = React.useState<string>("");
   const [mobileNo, setMobileNo] = React.useState<number | undefined>(undefined);
-// Extract user ID from session
+
   const currentUserId = session?.userId || (session as any)?.user?.id || (session as any)?.id || "";
   const [loginUserId, setLoginUserId] = React.useState<string>(currentUserId);
   const [residentType, setResidentType] = React.useState<string>("");
@@ -74,13 +74,12 @@ export const CreateResidentMaster = ({
 
   const { startTimeout } = useTimeout();
 
- // Update effect jab session load ho jaye
   React.useEffect(() => {
     if (currentUserId) {
       setLoginUserId(currentUserId);
     }
   }, [currentUserId]);
-  // Validations
+
   const isEmailValid = React.useMemo(() => {
     if (!email) return false;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -215,13 +214,29 @@ export const CreateResidentMaster = ({
     submit,
   ]);
 
-  // Extract unique project codes for dropdown options
-  const uniqueProjectCodes = React.useMemo(() => {
-    const codes = propertyList
-      .map((item) => item.projectCode)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Extract unique properties safely without Object.values()
+  const uniqueProperties = React.useMemo(() => {
+    const lookup: { [key: string]: PropertyMasterItem } = {};
+    const result: PropertyMasterItem[] = [];
+
+    propertyList.forEach((item) => {
+      if (item.projectCode && !lookup[item.projectCode]) {
+        lookup[item.projectCode] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [propertyList]);
+
+  // Screen par selected project code ka display text set karne ke liye (Code > Name)
+  const selectedProjectDisplay = React.useMemo(() => {
+    const found = propertyList.find((p) => p.projectCode === projectCode);
+    if (!found) return "";
+    return found.projectName
+      ? `${found.projectCode} > ${found.projectName}`
+      : found.projectCode || "";
+  }, [propertyList, projectCode]);
 
   // Selected projectCode ke relative Apartments filter karein
   const filteredApartments = React.useMemo(() => {
@@ -231,13 +246,14 @@ export const CreateResidentMaster = ({
     );
   }, [apartmentList, projectCode]);
 
-  // Extract unique apartment IDs filtered apartments list me se
-  const uniqueApartmentIds = React.useMemo(() => {
-    const ids = filteredApartments
-      .map((item) => item.apartmentId)
-      .filter((id): id is string => Boolean(id));
-    return Array.from(new Set(ids));
-  }, [filteredApartments]);
+  // Screen par selected apartment ka display text set karne ke liye (Apartment No > Apartment ID)
+  const selectedApartmentDisplay = React.useMemo(() => {
+    const found = filteredApartments.find((a) => a.apartmentId === apartmentId);
+    if (!found) return "";
+    return found.apartmentNo
+      ? `${found.apartmentId} > ${found.apartmentNo}`
+      : found.apartmentId || "";
+  }, [filteredApartments, apartmentId]);
 
   const isFormInvalid =
     isLoading ||
@@ -325,7 +341,6 @@ export const CreateResidentMaster = ({
                 isDisabled={isLoading || isSuccess}
                 onChange={(val) => {
                   const cleaned = val.replace(/[^0-9]/g, "");
-                  // Maximum 10 digits restrict karne ke liye (Aap requirement ke mutabiq slice length change kar sakte hain)
                   const limited = cleaned.slice(0, 10);
                   setMobileNo(limited ? Number(limited) : undefined);
                 }}
@@ -340,7 +355,7 @@ export const CreateResidentMaster = ({
               <ListInput
                 className="w-100"
                 label="Project Code"
-                value={projectCode || undefined}
+                value={selectedProjectDisplay || undefined}
                 placeholder={isLoadingProperties ? "Loading..." : "Select project code"}
                 hasError={typeof validation["projectCode"] !== "undefined"}
                 isDisabled={isLoading || isSuccess || isLoadingProperties}
@@ -357,31 +372,39 @@ export const CreateResidentMaster = ({
                       }}
                     />
                     <Map
-                      items={uniqueProjectCodes}
-                      renderItem={(code) => (
-                        <ListInput.Item
-                          key={code}
-                          label={code}
-                          isActive={projectCode === code}
-                          onClick={() => {
-                            setProjectCode(code);
-                            setApartmentId("");
-                            onClose();
-                          }}
-                        />
-                      )}
+                      items={uniqueProperties}
+                      renderItem={(property) => {
+                        const displayLabel = property.projectName
+                          ? `${property.projectCode} > ${property.projectName}`
+                          : property.projectCode || "";
+
+                        return (
+                          <ListInput.Item
+                            key={property.projectCode}
+                            label={displayLabel}
+                            isActive={projectCode === property.projectCode}
+                            onClick={() => {
+                              if (property.projectCode) {
+                                setProjectCode(property.projectCode);
+                                setApartmentId("");
+                              }
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </React.Fragment>
                 )}
               </ListInput>
             </Grid.Cell>
 
-            {/* Apartment ID Dropdown */}
+            {/* Apartment ID Dropdown (Shows Apartment No > Apartment ID, sends only Apartment ID) */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <ListInput
                 className="w-100"
                 label="Apartment ID"
-                value={apartmentId || undefined}
+                value={selectedApartmentDisplay || undefined}
                 placeholder={
                   !projectCode
                     ? "Select project code first"
@@ -403,18 +426,26 @@ export const CreateResidentMaster = ({
                       }}
                     />
                     <Map
-                      items={uniqueApartmentIds}
-                      renderItem={(id) => (
-                        <ListInput.Item
-                          key={id}
-                          label={id}
-                          isActive={apartmentId === id}
-                          onClick={() => {
-                            setApartmentId(id);
-                            onClose();
-                          }}
-                        />
-                      )}
+                      items={filteredApartments}
+                      renderItem={(apartment) => {
+                        const displayLabel = apartment.apartmentNo
+                          ? `${apartment.apartmentNo} > ${apartment.apartmentId}`
+                          : apartment.apartmentId || "";
+
+                        return (
+                          <ListInput.Item
+                            key={apartment.id || apartment.apartmentId}
+                            label={displayLabel}
+                            isActive={apartmentId === apartment.apartmentId}
+                            onClick={() => {
+                              if (apartment.apartmentId) {
+                                setApartmentId(apartment.apartmentId); // Payload gets strictly the ID
+                              }
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </React.Fragment>
                 )}

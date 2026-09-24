@@ -164,19 +164,21 @@ export const PermissionsEditor = ({
             false
           );
         } else if (moduleName === "masterForms") {
-          updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "property-master", false, false);
-          updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "apartment-master", false, false);
-          updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "resident-master", false, false);
-          updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "role-master", false, false);
-          updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "approval-routing-master", false, false);
-          updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "email-template-master", false, false);
-          updated = PermissionHelper.setSubSectionPermission(updated, "masterForms", "common-status-master", false, false);
+          masterformsSubSections.forEach((sub) => {
+            updated = PermissionHelper.setSubSectionPermission(
+              updated,
+              "masterForms",
+              sub.id,
+              false,
+              false,
+            );
+          });
         }
       }
 
       onChange(updated);
     },
-    [permissions, onChange]
+    [permissions, onChange],
   );
 
   const handleSubSectionChange = React.useCallback(
@@ -1113,7 +1115,7 @@ const masterformsSubSections: PermissionItem[] = [
   { id: "property-master", title: "Project / Property Master" },
   { id: "apartment-master", title: "Apartment / Unit Master " },
   { id: "resident-master", title: "Resident Master  " },
-  { id: "role-master", title: "User / Role Master " },
+  // { id: "role-master", title: "User / Role Master " },
   { id: "approval-routing-master", title: "Approval Routing Master " },
   { id: "email-template-master", title: "Email Template Master" },
   { id: "common-status-master", title: "Common Status Master" },
@@ -1125,7 +1127,30 @@ const masterformsSubSections: PermissionItem[] = [
   { id: "movement-type-master", title: "Movement Type Master" },
   { id: "item-type-master", title: "Material /Item Type Master" },
   { id: "movement-rule-master", title: "Movement Rule Master" },
-  { id: "property-management-approval-master", title: "Property Management Approval Master" },
-  { id: "vehicle-type-master", title: "Vehicle Type Master" },
+  { id: "property-management-approval-master", title: "Property Management Approval Master"},
   { id: "access-card-master", title: "Access Card Master" },
+  { id: "card-replacement-reason-master",title: "Card Replacement Reason Master"},
+  { id: "replacement-fee-master", title: "Replacement Fee Master" },
+  { id: "delivery-sla-master", title: "Delivery SLA Configuration Master" },
+  { id: "access-card-staff-master", title: "Access Card Staff Master" },
+  { id: "venue-master", title: "Resturant / Cafe Master" },
+  { id: "project-venue-master", title: "Project Venue Master" },
+  { id: "venue-operating-master", title: "Venue Operating Hours Master" },
+  { id: "menu-master", title: "Menu Master" },
+  { id: "restaurant-staff-master", title: "Resturant Staff Mapping" },
+  { id: "reservation-rule-master", title: "Reservation Slot Rule" },
+  { id: "court-master", title: "Sports Court Master" },
+  { id: "project-court-master", title: "Project Court Master" },
+  { id: "court-operating-master", title: "Court Operating Hours Master" },
+  { id: "court-time-master", title: "Court Time Slot Master" },
+  { id: "court-blocking-master", title: "Court Blocking Master" },
+  { id: "court-booking-master", title: "Court Booking Rule Master" },
+  { id: "facility-approval-master", title: "Facility Approver Mapping" },
+  { id: "guest-approval-master", title: "Guest Approval" },
+  { id: "move-approval-master", title: "Move Approval" },
+  { id: "card-processing-master", title: "Card Processing" },
+  { id: "restaurant-reservation-approval-master",title: "Restaurant Reservation Approval"},
+  { id: "court-approval-master", title: "Court Approval" },
+  { id: "request-history-master", title: "Request History" },
+  { id: "audit-logs-master", title: "Audit Logs" },
 ];

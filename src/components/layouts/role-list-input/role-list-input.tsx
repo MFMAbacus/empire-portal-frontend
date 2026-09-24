@@ -113,7 +113,7 @@ export const RoleListInput = (props: RoleListInputProps): JSX.Element => {
                       key={record.id || record.roleId || record.roleName}
                       label={displayLabel}
                       onClick={() => {
-                        onChange(record.roleName || record.roleId || record.id || null, record);
+                        onChange(record.id || record.roleId || record.roleName || null, record);
                         onClose();
                       }}
                       isActive={isRecordActive}

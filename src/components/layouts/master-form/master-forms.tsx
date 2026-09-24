@@ -40,8 +40,8 @@ export const MasterForms = (props: MasterFormsProps): JSX.Element => {
   const [isLoading] = React.useState<boolean>(false);
   const [alertData] = React.useState<{ message: string; severity: AlertSeverity } | null>(null);
 
-  const { canWriteModule } = usePermission();
-  const canEdit = canWriteModule(ModuleName.MASTER_FORMS);
+  // 1. usePermission se canReadSubSection nikal lein
+  const { canReadSubSection } = usePermission();
 
   const handleCardClick = (itemId: string) => {
     if (onNavigate) {
@@ -64,28 +64,42 @@ export const MasterForms = (props: MasterFormsProps): JSX.Element => {
 
         {!isLoading && (
           <div className={cls['master-container']}>
-            {MASTER_FORM_CATEGORIES.map((category) => (
-              <div key={category.id} className={cls['master-section']}>
-                <div className={cls['master-section__header']}>
-                  <div className={cls['master-section__title-group']}>
-                    <FolderIcon className={cls['master-section__icon']} />
-                    <span className={cls['master-section__title']}>{category.title}</span>
-                  </div>
-                  <span className={cls['master-section__count']}>{category.items.length} Modules</span>
-                </div>
+            {MASTER_FORM_CATEGORIES.map((category) => {
+              // 2. Har category ke items ko user permissions ke hisaab se filter karein
+              const filteredItems = category.items.filter((item) =>
+                canReadSubSection(ModuleName.MASTER_FORMS, item.id)
+              );
+              
 
-                <div className={cls['master-grid']}>
-                  {category.items.map((item) => (
-                    <MasterFormBox
-                      key={item.id}
-                      item={item}
-                      canEdit={canEdit}
-                      onClick={() => handleCardClick(item.id)}
-                    />
-                  ))}
+              // Agar us category mein koi bhi item visible nahi hai, toh poori category hide kar dein
+              if (filteredItems.length === 0) {
+                return null;
+              }
+
+              return (
+                <div key={category.id} className={cls['master-section']}>
+                  <div className={cls['master-section__header']}>
+                    <div className={cls['master-section__title-group']}>
+                      <FolderIcon className={cls['master-section__icon']} />
+                      <span className={cls['master-section__title']}>{category.title}</span>
+                    </div>
+                    {/* Yahan filteredItems ki length dikha sakte hain */}
+                    <span className={cls['master-section__count']}>{filteredItems.length} Modules</span>
+                  </div>
+
+                  <div className={cls['master-grid']}>
+                    {filteredItems.map((item) => (
+                      <MasterFormBox
+                        key={item.id}
+                        item={item}
+                        canEdit={true} // Aap yahan canWriteSubSection("masterForms", item.id) bhi use kar sakte hain
+                        onClick={() => handleCardClick(item.id)}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Dashboard.Page>

@@ -74,11 +74,13 @@ type GateMasterItem = {
 type GuestApprovalMasterProps = {
   sessionId: string;
   onBack?: () => void;
+  onHistory?: () => void;
 };
 
 export const GuestApprovalMaster = ({
   sessionId,
   onBack,
+  onHistory,
 }: GuestApprovalMasterProps): JSX.Element => {
   const [requests, setRequests] = React.useState<GuestAccessRequest[]>([]);
   const [selectedRequest, setSelectedRequest] =
@@ -150,7 +152,6 @@ export const GuestApprovalMaster = ({
       rawList = gateList;
     }
 
-    // Normalizing objects to strictly satisfy MapProps expected interface
     return rawList.map((item, index) => {
       const resolvedId = item.id || item.gateId || `gate-${index}`;
       return {
@@ -163,7 +164,7 @@ export const GuestApprovalMaster = ({
     });
   }, [approveModal, gateList, projectCode]);
 
-  // Response Data Mapping
+  // Response Data Mapping & Filtering ONLY Pending requests
   const handleSuccess = React.useCallback((data: unknown) => {
     const rawData = (data as any)?.data || data || [];
 
@@ -192,7 +193,12 @@ export const GuestApprovalMaster = ({
       };
     });
 
-    setRequests(mappedList);
+    // Sirf wahi requests filter karein jinka status "Pending" ho
+    const pendingList = mappedList.filter(
+      (item: GuestAccessRequest) => item.status === "Pending"
+    );
+
+    setRequests(pendingList);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
@@ -302,6 +308,9 @@ export const GuestApprovalMaster = ({
   return (
     <Dashboard.Content>
       <Actionbar title="GUEST ACCESS APPROVAL & PROCESSING">
+        {onHistory && (
+          <Button label="HISTORY" onClick={onHistory} />
+        )}
         {onBack && (
           <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
         )}
@@ -310,8 +319,8 @@ export const GuestApprovalMaster = ({
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="Guest Access Requests (Gate Assignment)" />
-
+          <Paper.Title value="Pending Guest Access Requests (Gate Assignment)" />
+        
           {feedback && (
             <Alert
               className="mb-1"
@@ -329,7 +338,7 @@ export const GuestApprovalMaster = ({
             )}
 
           {isLoading && (
-            <LoadingFeedback feedback="Fetching guest approval requests from Live API..." />
+            <LoadingFeedback feedback="Fetching pending guest approval requests..." />
           )}
 
           {!isLoading && (
@@ -464,38 +473,9 @@ export const GuestApprovalMaster = ({
                 <strong>Status:</strong> {selectedRequest.status}
               </div>
 
-              {/* Approval Routing & Security Coordinator Mapping Context */}
-              {selectedRequest.approvalRouting && selectedRequest.approvalRouting.length > 0 && (
-                <div style={{ gridColumn: "span 2", background: "#f8f9fa", padding: "10px", borderRadius: "6px" }}>
-                  <strong>Approval Routing (Configured Approver Role):</strong>
-                  <ul style={{ margin: "4px 0 0 16px" }}>
-                    {selectedRequest.approvalRouting.map((ar, idx) => (
-                      <li key={idx}>Role: {ar.role} {ar.level ? `(Level: ${ar.level})` : ""}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {selectedRequest.securityCoordinators && selectedRequest.securityCoordinators.length > 0 && (
-                <div style={{ gridColumn: "span 2", background: "#eef6ff", padding: "10px", borderRadius: "6px" }}>
-                  <strong>Security Coordinator Mapping (Project Notification Target):</strong>
-                  <ul style={{ margin: "4px 0 0 16px" }}>
-                    {selectedRequest.securityCoordinators.map((sc, idx) => (
-                      <li key={idx}>Coordinator Role: {sc.role} (Project: {sc.projectCode})</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
               {selectedRequest.comments && (
                 <div style={{ gridColumn: "span 2" }}>
                   <strong>Resident Comments:</strong> {selectedRequest.comments}
-                </div>
-              )}
-              {selectedRequest.rejectionReason && (
-                <div style={{ gridColumn: "span 2", color: "red" }}>
-                  <strong>Rejection Reason:</strong>{" "}
-                  {selectedRequest.rejectionReason}
                 </div>
               )}
             </div>

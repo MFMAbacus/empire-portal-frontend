@@ -9,10 +9,12 @@ import { useClickAway } from "@/hooks/use-click-away";
 import { UsePermissionContext } from "@/context/PermissionContext";
 import logoPng from "@/assets/images/logo.png";
 
+import { usePermission } from "@/hooks/use-permission";
 import { clsx } from "@/utility/clsx";
 import { MASTER_FORM_CATEGORIES } from "@/config/master-forms-config";
 
 import cls from "./topbar.module.scss";
+import { ModuleName } from "@/types/user";
 
 type TopbarProps = {
   children: React.ReactNode;
@@ -324,7 +326,7 @@ const TopbarNavItem = ({
   });
 
   const isMasterForms = id === "masterforms";
-
+  const { canReadSubSection } = usePermission();
   const handleMouseEnter = () => {
     if (!isMasterForms) return;
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
@@ -399,29 +401,44 @@ const TopbarNavItem = ({
           ])}
         >
           <div className={cls["topbar-mega__grid"]}>
-            {MASTER_FORM_CATEGORIES.map((cat) => (
-              <div key={cat.id} className={cls["topbar-mega__column"]}>
-                <div className={cls["topbar-mega__column-title"]}>
-                  {cat.title}
+            {MASTER_FORM_CATEGORIES.map((cat) => {
+              // Har category ke items ko permission ke mutabiq filter karein
+              const filteredSubItems = cat.items
+                .map((subItem) => ({
+                  ...subItem,
+                  hasAccess: canReadSubSection(ModuleName.MASTER_FORMS, subItem.id),
+                }))
+                .filter((subItem) => subItem.hasAccess);
+
+              // Agar category ke andar koi bhi item accessible nahi hai, toh yeh column hide kar dein
+              if (filteredSubItems.length === 0) {
+                return null;
+              }
+
+              return (
+                <div key={cat.id} className={cls["topbar-mega__column"]}>
+                  <div className={cls["topbar-mega__column-title"]}>
+                    {cat.title}
+                  </div>
+                  <ul className={cls["topbar-mega__list"]}>
+                    {filteredSubItems.map((subItem) => (
+                      <li key={subItem.id}>
+                        <button
+                          type="button"
+                          className={cls["topbar-mega__item-button"]}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSubItemClick(subItem.id);
+                          }}
+                        >
+                          {subItem.title}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className={cls["topbar-mega__list"]}>
-                  {cat.items.map((subItem) => (
-                    <li key={subItem.id}>
-                      <button
-                        type="button"
-                        className={cls["topbar-mega__item-button"]}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSubItemClick(subItem.id);
-                        }}
-                      >
-                        {subItem.title}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
