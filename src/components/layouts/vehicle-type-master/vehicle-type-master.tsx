@@ -272,6 +272,7 @@ export const VehicleTypeMaster = ({
             id: restoreId,
           }}
           title="UNARCHIVE VEHICLE TYPE"
+          isRestore= {true}
           message="Do you really want to unarchive this vehicle type record?"
           serviceMaker={makeDeleteVehicleTypeMasterService}
           onDelete={loadVehicleTypes}

@@ -280,6 +280,7 @@ export const DeliverySLAMaster = ({
             id: restoreId,
           }}
           title="UNARCHIVE DELIVERY SLA CONFIGURATION"
+          isRestore= {true}
           message="Do you really want to unarchive this delivery sla configuration record?"
           serviceMaker={makeDeleteDeliverySLAMasterService}
           onDelete={loadApprovals}

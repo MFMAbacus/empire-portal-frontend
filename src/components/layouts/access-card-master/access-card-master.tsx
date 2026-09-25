@@ -335,6 +335,7 @@ export const AccessCardMaster = ({
             cardId: restoreCardId,
           }}
           title="UNARCHIVE ACCESS CARD"
+          isRestore= {true}
           message="Do you really want to unarchive this access card record?"
           serviceMaker={makeDeleteAccessCardMasterService}
           onDelete={loadAccessCards}

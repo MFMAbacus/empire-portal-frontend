@@ -282,6 +282,7 @@ export const MovementTypeMaster = ({
             movementTypeId: restoreMovementTypeId,
           }}
           title="UNARCHIVE MOVEMENT TYPE"
+          isRestore= {true}
           message="Do you really want to unarchive this movement type record?"
           serviceMaker={makeDeleteMovementTypeMasterService}
           onDelete={loadMovementTypes}

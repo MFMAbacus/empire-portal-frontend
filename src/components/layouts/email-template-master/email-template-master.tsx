@@ -298,6 +298,7 @@ export const EmailTemplateMaster = ({
             templateCode: restoreTemplateCode,
           }}
           title="UNARCHIVE EMAIL TEMPLATE"
+          isRestore= {true}
           message="Do you really want to unarchive this email template record?"
           serviceMaker={makeDeleteEmailTemplateMasterService}
           onDelete={loadEmailTemplates}

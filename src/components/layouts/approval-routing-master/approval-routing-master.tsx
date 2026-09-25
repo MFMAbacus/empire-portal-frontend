@@ -336,6 +336,7 @@ export const ApprovalRoutingMaster = ({
             routingId: restoreRoutingId,
           }}
           title="UNARCHIVE APPROVAL ROUTING"
+          isRestore= {true}
           message="Do you really want to unarchive this approval routing record?"
           serviceMaker={makeDeleteApprovalRoutingMasterService}
           onDelete={loadRoutings}

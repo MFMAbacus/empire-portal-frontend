@@ -430,7 +430,7 @@ export const Requests = ({
           }}
           title="UNARCHIVE REQUEST"
           message="Do you really want to unarchive this request ?"
-          isRestore
+          isRestore= {true}
           serviceMaker={makeDeleteRequestService}
           onDelete={loadRequests}
           onClose={() => setRestoreRequestId(null)}

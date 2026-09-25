@@ -280,6 +280,7 @@ export const FacilityApprovalMaster = ({
             id: restoreId,
           }}
           title="UNARCHIVE FACILITY APPROVAL"
+          isRestore= {true}
           message="Do you really want to unarchive this facility approval record?"
           serviceMaker={makeDeleteFacilityApprovalMasterService}
           onDelete={loadApprovals}

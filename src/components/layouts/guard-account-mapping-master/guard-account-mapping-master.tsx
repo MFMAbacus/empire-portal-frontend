@@ -307,6 +307,7 @@ export const GuardAccountMappingMaster = ({
             guardAccountId: restoreGuardAccountId,
           }}
           title="UNARCHIVE GUARD ACCOUNT MAPPING"
+          isRestore= {true}
           message="Do you really want to unarchive this guard record?"
           serviceMaker={makeDeleteGuardAccountMappingMasterService}
           onDelete={loadGuards}

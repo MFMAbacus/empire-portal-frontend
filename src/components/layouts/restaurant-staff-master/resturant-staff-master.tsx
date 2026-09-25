@@ -285,6 +285,7 @@ export const RestaurantStaffMaster = ({
             id: deleteId,
           }}
           title="ARCHIVE RESTAURANT STAFF"
+          isRestore= {true}
           message="Do you really want to archive this restaurant staff record?"
           serviceMaker={makeDeleteRestaurantStaffMasterService}
           onDelete={loadApprovals}

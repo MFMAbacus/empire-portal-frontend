@@ -280,6 +280,7 @@ export const AccessCardStaffMaster = ({
             id: restoreId,
           }}
           title="UNARCHIVE ACCESS CARD STAFF"
+          isRestore= {true}
           message="Do you really want to unarchive this access card staff record?"
           serviceMaker={makeDeleteAccessCardStaffMasterService}
           onDelete={loadApprovals}

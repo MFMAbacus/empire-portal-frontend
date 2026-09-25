@@ -295,6 +295,7 @@ export const ItemTypeMaster = ({
             itemTypeId: restoreItemTypeId,
           }}
           title="UNARCHIVE ITEM TYPE"
+          isRestore= {true}
           message="Do you really want to unarchive this item type record?"
           serviceMaker={makeDeleteItemTypeMasterService}
           onDelete={loadItemTypes}

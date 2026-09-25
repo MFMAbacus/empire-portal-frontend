@@ -307,6 +307,7 @@ export const ReplacementFeeMaster = ({
             feeId: restoreFeeId,
           }}
           title="UNARCHIVE REPLACEMENT FEE"
+          isRestore= {true}
           message="Do you really want to unarchive this replacement fee record?"
           serviceMaker={makeDeleteReplacementFeeMasterService}
           onDelete={loadReplacementFees}

@@ -292,6 +292,7 @@ export const ProjectVenueMaster = ({
             id: restoreProjectVenueId,
           }}
           title="UNARCHIVE PROJECT VENUE"
+          isRestore= {true}
           message="Do you really want to unarchive this Project Venue record?"
           serviceMaker={makeDeleteProjectVenueMasterService}
           onDelete={loadProjectVenues}

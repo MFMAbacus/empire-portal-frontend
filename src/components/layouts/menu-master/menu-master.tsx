@@ -302,6 +302,7 @@ export const MenuMaster = ({
             menuId: restoreMenuId,
           }}
           title="UNARCHIVE MENU"
+          isRestore= {true}
           message="Do you really want to unarchive this menu record?"
           serviceMaker={makeDeleteMenuMasterService}
           onDelete={loadMenus}

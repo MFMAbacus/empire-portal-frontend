@@ -292,6 +292,7 @@ export const ProjectCourtMaster = ({
             id: restoreProjectCourtId,
           }}
           title="UNARCHIVE PROJECT VENUE"
+          isRestore= {true}
           message="Do you really want to unarchive this Project Court record?"
           serviceMaker={makeDeleteProjectCourtMasterService}
           onDelete={loadProjectCourts}

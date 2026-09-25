@@ -398,7 +398,7 @@ export const Tasks = ({
           }}
           title="UNARCHIVE TASK"
           message="Do you really want to unarchive this task ?"
-          isRestore
+          isRestore= {true}
           serviceMaker={makeDeleteTaskService}
           onDelete={loadTasks}
           onClose={() => setRestoreTaskId(null)}

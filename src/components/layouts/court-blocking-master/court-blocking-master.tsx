@@ -313,6 +313,7 @@ export const CourtBlockingMaster = ({
             blockId: restoreCourtBlockingId,
           }}
           title="UNARCHIVE COURT BLOCKING"
+          isRestore= {true}
           message="Do you really want to unarchive this court Blocking record?"
           serviceMaker={makeDeleteCourtBlockingMasterService}
           onDelete={loadCourtBlockings}

@@ -258,6 +258,7 @@ export const Users = ({
             userId: restoreUserId,
           }}
           title="UNARCHIVE USER"
+          isRestore= {true}
           message="Do you really want to unarchive this user ?"
           serviceMaker={makeDeleteUserService}
           onDelete={loadUsers}

@@ -312,7 +312,7 @@ export const Meetings = ({
           }}
           title="UNARCHIVE MEETING"
           message="Do you really want to unarchive this meeting ?"
-          isRestore
+          isRestore= {true}
           serviceMaker={makeDeleteMeetingService}
           onDelete={loadMeetings}
           onClose={() => setRestoreMeetingtId(null)}

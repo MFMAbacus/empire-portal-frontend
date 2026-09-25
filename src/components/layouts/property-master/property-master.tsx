@@ -289,6 +289,7 @@ export const PropertyMaster = ({
             propertyId: restorePropertyId,
           }}
           title="UNARCHIVE PROPERTY"
+          isRestore = {true}
           message="Do you really want to unarchive this property record?"
           serviceMaker={makeDeletePropertyMasterService}
           onDelete={loadProperties}

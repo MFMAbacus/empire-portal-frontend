@@ -309,6 +309,7 @@ export const CourtMaster = ({
             courtId: restoreCourtId,
           }}
           title="UNARCHIVE SPORT COURT"
+          isRestore= {true}
           message="Do you really want to unarchive this Court record?"
           serviceMaker={makeDeleteCourtMasterService}
           onDelete={loadCourts}

@@ -292,6 +292,7 @@ export const ReservationRuleMaster = ({
             id: restoreReservationRuleId,
           }}
           title="UNARCHIVE RESERVATION SLOT RULE"
+          isRestore= {true}
           message="Do you really want to unarchive this reservation slot rule record?"
           serviceMaker={makeDeleteReservationRuleMasterService}
           onDelete={loadReservationRules}

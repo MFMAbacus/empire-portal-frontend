@@ -321,6 +321,7 @@ export const QRConfigurationMaster = ({
             qrConfigId: restoreQrConfigId,
           }}
           title="UNARCHIVE QR CONFIGURATION"
+          isRestore= {true}
           message="Do you really want to unarchive this QR configuration record?"
           serviceMaker={makeDeleteQRConfigurationMasterService}
           onDelete={loadQrConfigs}

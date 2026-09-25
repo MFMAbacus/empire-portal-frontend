@@ -16,7 +16,7 @@ export class GetGuestApprovalHistoryMasterServiceApi extends Service<GetGuestApp
 
   public async execute(input: GetGuestApprovalHistoryInput): Promise<ServiceOutput> {
     const { sessionId } = input;
-    const endpoint = `${apiUrl}/guest-approval-master?sessionId=${sessionId}`;
+    const endpoint = `${apiUrl}/guest-approval-request?sessionId=${sessionId}`;
 
     const response = await fetch(endpoint, {
       method: 'GET',

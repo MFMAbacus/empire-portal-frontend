@@ -340,6 +340,7 @@ export const VenueMaster = ({
             venueId: restoreVenueId,
           }}
           title="UNARCHIVE VENUE"
+          isRestore= {true}
           message="Do you really want to unarchive this venue record?"
           serviceMaker={makeDeleteVenueMasterService}
           onDelete={loadVenues}

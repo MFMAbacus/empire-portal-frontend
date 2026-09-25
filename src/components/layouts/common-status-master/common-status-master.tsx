@@ -290,6 +290,7 @@ export const CommonStatusMaster = ({
             statusCode: restoreStatusCode,
           }}
           title="UNARCHIVE COMMON STATUS"
+          isRestore= {true}
           message="Do you really want to unarchive this common status record?"
           serviceMaker={makeDeleteCommonStatusMasterService}
           onDelete={loadCommonStatus}

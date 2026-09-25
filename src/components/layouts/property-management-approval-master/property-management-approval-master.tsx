@@ -280,6 +280,7 @@ export const PropertyManagementApprovalMaster = ({
             id: restoreId,
           }}
           title="UNARCHIVE PROPERTY MANAGEMENT APPROVAL"
+          isRestore= {true}
           message="Do you really want to unarchive this property management approval record?"
           serviceMaker={makeDeletePropertyManagementApprovalMasterService}
           onDelete={loadApprovals}

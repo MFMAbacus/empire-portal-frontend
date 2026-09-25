@@ -309,6 +309,7 @@ export const ApartmentMaster = ({
             apartmentId: restoreApartmentId,
           }}
           title="UNARCHIVE APARTMENT"
+          isRestore= {true}
           message="Do you really want to unarchive this apartment record?"
           serviceMaker={makeDeleteApartmentMasterService}
           onDelete={loadApartments}

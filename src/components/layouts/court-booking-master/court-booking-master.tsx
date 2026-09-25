@@ -298,6 +298,7 @@ export const CourtBookingMaster = ({
             id: restoreCourtBookingId,
           }}
           title="UNARCHIVE COURT BOOKING RULE"
+          isRestore= {true}
           message="Do you really want to unarchive this Court Booking record?"
           serviceMaker={makeDeleteCourtBookingMasterService}
           onDelete={loadCourtBookings}

@@ -280,6 +280,7 @@ export const SecurityCoordinatorMaster = ({
             id: restoreId,
           }}
           title="UNARCHIVE SECURITY COORDINATOR MAPPING"
+          isRestore= {true}
           message="Do you really want to unarchive this security coordinator mapping record?"
           serviceMaker={makeDeleteSecurityCoordinatorMasterService}
           onDelete={loadSecuritys}

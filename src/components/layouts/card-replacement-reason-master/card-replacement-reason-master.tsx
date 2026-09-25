@@ -299,6 +299,7 @@ export const CardReplacementReasonMaster = ({
             reasonId: restoreReasonId,
           }}
           title="UNARCHIVE CARD REPLACEMENT REASON"
+          isRestore= {true}
           message="Do you really want to unarchive this card replacement reason record?"
           serviceMaker={makeDeleteCardReplacementReasonMasterService}
           onDelete={loadCardReplacementReasons}

@@ -295,6 +295,7 @@ export const MovementRuleMaster = ({
             id: restoreRuleId,
           }}
           title="UNARCHIVE MOVEMENT RULE"
+          isRestore= {true}
           message="Do you really want to unarchive this movement rule record?"
           serviceMaker={makeDeleteMovementRuleMasterService}
           onDelete={loadRules}

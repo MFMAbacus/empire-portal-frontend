@@ -295,6 +295,7 @@ export const CourtTimeMaster = ({
             id: restoreCourtTimeId,
           }}
           title="UNARCHIVE COURT TIME SLOT "
+          isRestore= {true}
           message="Do you really want to unarchive this Court Time record?"
           serviceMaker={makeDeleteCourtTimeMasterService}
           onDelete={loadCourtTimes}

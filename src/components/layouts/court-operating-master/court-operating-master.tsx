@@ -310,6 +310,7 @@ export const CourtOperatingMaster = ({
             id: restoreCourtOperatingId,
           }}
           title="UNARCHIVE COURT OPERATING"
+          isRestore= {true}
           message="Do you really want to unarchive this Court Operating record?"
           serviceMaker={makeDeleteCourtOperatingMasterService}
           onDelete={loadCourtOperatings}

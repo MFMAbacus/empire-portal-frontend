@@ -295,6 +295,7 @@ export const GateMaster = ({
             gateId: restoreGateId,
           }}
           title="UNARCHIVE GATE"
+          isRestore= {true}
           message="Do you really want to unarchive this gate record?"
           serviceMaker={makeDeleteGateMasterService}
           onDelete={loadGates}

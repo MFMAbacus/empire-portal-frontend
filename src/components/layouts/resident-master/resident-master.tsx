@@ -337,6 +337,7 @@ export const ResidentMaster = ({
             residentId: restoreResidentId,
           }}
           title="UNARCHIVE RESIDENT"
+          isRestore= {true}
           message="Do you really want to unarchive this resident record?"
           serviceMaker={makeDeleteResidentMasterService}
           onDelete={loadResidents}

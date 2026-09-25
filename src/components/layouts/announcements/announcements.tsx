@@ -377,8 +377,8 @@ export const Announcements = ({
             isRestore: true,
           }}
           title="UNARCHIVE ANNOUNCEMENT"
+          isRestore = {true}
           message="Do you really want to unarchive this announcement ?"
-          isRestore
           serviceMaker={makeDeleteAnnouncementService}
           onDelete={loadAnnouncements}
           onClose={() => setRestoreAnnouncementId(null)}
