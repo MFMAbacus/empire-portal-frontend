@@ -25,7 +25,7 @@ export class UpdateGuestApprovalMasterServiceApi extends Service<UpdateGuestAppr
 
   public async execute(input: UpdateGuestApprovalInput): Promise<ServiceOutput> {
     const { sessionId, id, ...bodyData } = input;
-    const endpoint = `${apiUrl}/guest-approval-master/${id}?sessionId=${sessionId}`;
+    const endpoint = `${apiUrl}/guest-approval-request/${id}?sessionId=${sessionId}`;
 
     const response = await fetch(endpoint, {
       method: 'PATCH',

@@ -56,7 +56,7 @@ export const EditSecurityCoordinatorMaster = ({
   Id,
   onBack,
 }: EditSecurityCoordinatorMasterProps): JSX.Element => {
-  // Security Coordinator Mapping States
+  // Security Coordinator Mapping States (stores user ID now)
   const [coordinatorRole, setCoordinatorRole] = React.useState<string>("");
   const [projectCode, setProjectCode] = React.useState<string>("");
   const [isActive, setIsActive] = React.useState<boolean>(true);
@@ -108,45 +108,45 @@ export const EditSecurityCoordinatorMaster = ({
       propertyService.abort();
     };
   }, [sessionId]);
-// 3. Fetch Users
-    React.useEffect(() => {
-      let isMounted = true;
-      const userService = new GetUserServiceApi();
+// Fetch Users
+  React.useEffect(() => {
+    let isMounted = true;
+    const userService = new GetUserServiceApi();
   
-      const fetchUsers = async () => {
-        setIsLoadingUsers(true);
-        try {
-          const response = await userService.execute({
-            sessionId,
-            userId: "",
-          } as any);
+    const fetchUsers = async () => {
+      setIsLoadingUsers(true);
+      try {
+        const response = await userService.execute({
+          sessionId,
+          userId: "",
+        } as any);
   
-          if (isMounted && response) {
-            const rawData = Array.isArray(response.data)
-              ? response.data
-              : Array.isArray(response)
-              ? response
-              : [];
+        if (isMounted && response) {
+          const rawData = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray(response)
+            ? response
+            : [];
   
-            setUserList(rawData);
-          }
-        } catch (error) {
-          console.error("Failed to fetch users list:", error);
-        } finally {
-          if (isMounted) {
-            setIsLoadingUsers(false);
-          }
+          setUserList(rawData);
         }
-      };
+      } catch (error) {
+        console.error("Failed to fetch users list:", error);
+      } finally {
+        if (isMounted) {
+          setIsLoadingUsers(false);
+        }
+      }
+    };
   
-      fetchUsers();
+    fetchUsers();
   
-      return () => {
-        isMounted = false;
-        userService.abort();
-      };
-    }, [sessionId]);
-  
+    return () => {
+      isMounted = false;
+      userService.abort();
+    };
+  }, [sessionId]);
+
   // Initial Security Coordinator Data Fetching
   React.useEffect(() => {
     let isMounted = true;
@@ -161,6 +161,7 @@ export const EditSecurityCoordinatorMaster = ({
         const item = Array.isArray(data) ? data[0] : data;
 
         if (item) {
+          // This will receive the user ID saved in the database record
           setCoordinatorRole(item.coordinatorRole || "");
           setProjectCode(item.projectCode || "");
           setIsActive(Boolean(item.isActive));
@@ -217,17 +218,29 @@ export const EditSecurityCoordinatorMaster = ({
     return Array.from(new Set(codes));
   }, [propertyList]);
 
+  // Map users into structured objects containing both id and label
   const userOptions = React.useMemo(() => {
-        const names = userList
-          .map((user) => {
-            const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
-            return fullName || user.jobTitle || user.email || user.id;
-          })
-          .filter((name): name is string => Boolean(name));
-        return Array.from(new Set(names));
-      }, [userList]);
-    
-  
+    return userList
+      .map((user) => {
+        const userId = user.id || user._id;
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+        const label = fullName || user.jobTitle || user.email || userId;
+
+        return {
+          id: userId,
+          label: label,
+        };
+      })
+      .filter((item): item is { id: string; label: string } => Boolean(item.id && item.label));
+  }, [userList]);
+
+  // Find the label matching the selected coordinatorRole ID to show in the ListInput field
+  const selectedUserLabel = React.useMemo(() => {
+    if (!coordinatorRole) return undefined;
+    const found = userOptions.find((u) => u.id === coordinatorRole);
+    return found ? found.label : undefined;
+  }, [coordinatorRole, userOptions]);
+
   return (
     <Dashboard.Content>
       <Actionbar title="EDIT SECURITY COORDINATOR MAPPING">
@@ -301,45 +314,44 @@ export const EditSecurityCoordinatorMaster = ({
                 </ListInput>
               </Grid.Cell>
 
-              {/* coordibnator Role / User Dropdown */}
-                                      <Grid.Cell size={Grid.CellSize.S3}>
-                                        <ListInput
-                                          className="w-100"
-                                          label="Approver Role / User"
-                                          value={coordinatorRole || undefined}
-                                          placeholder={isLoadingUsers ? "Loading..." : "Select user or role"}
-                                          hasError={typeof validation["approverRole"] !== "undefined"}
-                                          isDisabled={isLoading || isSuccess || isLoadingUsers}
-                                        >
-                                          {(onClose) => (
-                                            <React.Fragment>
-                                              <ListInput.Item
-                                                label="None"
-                                                isActive={coordinatorRole === ""}
-                                                onClick={() => {
-                                                  setCoordinatorRole("");
-                                                  onClose();
-                                                }}
-                                              />
-                                              <Map
-                                                items={userOptions}
-                                                renderItem={(userName) => (
-                                                  <ListInput.Item
-                                                    key={userName}
-                                                    label={userName}
-                                                    isActive={coordinatorRole === userName}
-                                                    onClick={() => {
-                                                      setCoordinatorRole(userName);
-                                                      onClose();
-                                                    }}
-                                                  />
-                                                )}
-                                              />
-                                            </React.Fragment>
-                                          )}
-                                        </ListInput>
-                                      </Grid.Cell>
-              
+              {/* Approver Role / User Dropdown */}
+              <Grid.Cell size={Grid.CellSize.S3}>
+                <ListInput
+                  className="w-100"
+                  label="Approver Role / User"
+                  value={selectedUserLabel} // Displays the user's name/label on screen
+                  placeholder={isLoadingUsers ? "Loading..." : "Select user or role"}
+                  hasError={typeof validation["approverRole"] !== "undefined"}
+                  isDisabled={isLoading || isSuccess || isLoadingUsers}
+                >
+                  {(onClose) => (
+                    <React.Fragment>
+                      <ListInput.Item
+                        label="None"
+                        isActive={coordinatorRole === ""}
+                        onClick={() => {
+                          setCoordinatorRole("");
+                          onClose();
+                        }}
+                      />
+                      <Map
+                        items={userOptions}
+                        renderItem={(user) => (
+                          <ListInput.Item
+                            key={user.id}
+                            label={user.label}
+                            isActive={coordinatorRole === user.id}
+                            onClick={() => {
+                              setCoordinatorRole(user.id); // Saves the user ID to state/payload
+                              onClose();
+                            }}
+                          />
+                        )}
+                      />
+                    </React.Fragment>
+                  )}
+                </ListInput>
+              </Grid.Cell>
 
               {/* Field 3: Status Checkbox */}
               <Grid.Cell size={Grid.CellSize.S3}>

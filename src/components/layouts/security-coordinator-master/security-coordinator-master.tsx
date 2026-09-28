@@ -29,6 +29,7 @@ import { FilterIcon } from "@/components/icons/filter-icon";
 
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
+import { GetUserServiceApi } from "@/services/get-user-service";
 
 import { makeGetSecurityCoordinatorMasterService } from "@/services/get-security-coordinator-master-service";
 import { makeDeleteSecurityCoordinatorMasterService } from "@/services/delete-security-coordinator-master-service";
@@ -40,6 +41,16 @@ export type SecurityCoordinatorItem = {
   projectCode: string;
   isActive: boolean;
   isArchived?: boolean;
+};
+
+type UserItem = {
+  _id?: string;
+  id?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  jobTitle?: string;
+  [key: string]: any;
 };
 
 type SecurityCoordinatorMasterProps = {
@@ -66,6 +77,9 @@ export const SecurityCoordinatorMaster = ({
   const [securitys, setSecuritys] = React.useState<SecurityCoordinatorItem[] | null>(
     null
   );
+  const [userList, setUserList] = React.useState<UserItem[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = React.useState<boolean>(false);
+
   const [filters, setFilters] = React.useState<SecurityCoordinatorFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
@@ -91,9 +105,60 @@ export const SecurityCoordinatorMaster = ({
     submit({ sessionId, isArchived: showArchived });
   }, [sessionId, showArchived, submit]);
 
+  // Fetch Security Coordinators on mount or filter change
   React.useEffect(() => {
     loadSecuritys();
   }, [loadSecuritys]);
+
+  // Fetch Users List to map IDs to names
+  React.useEffect(() => {
+    let isMounted = true;
+    const userService = new GetUserServiceApi();
+
+    const fetchUsers = async () => {
+      setIsLoadingUsers(true);
+      try {
+        const response = await userService.execute({
+          sessionId,
+          userId: "",
+        } as any);
+
+        if (isMounted && response) {
+          const rawData = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray(response)
+            ? response
+            : [];
+
+          setUserList(rawData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch users list:", error);
+      } finally {
+        if (isMounted) {
+          setIsLoadingUsers(false);
+        }
+      }
+    };
+
+    fetchUsers();
+
+    return () => {
+      isMounted = false;
+      userService.abort();
+    };
+  }, [sessionId]);
+
+  // Helper function to get user name/label from ID
+  const getUserNameById = React.useCallback(
+    (userId: string) => {
+      const user = userList.find((u) => (u.id || u._id) === userId);
+      if (!user) return userId; // Fallback to ID if user not found
+      const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+      return fullName || user.jobTitle || user.email || userId;
+    },
+    [userList]
+  );
 
   const filteredSecuritys = React.useMemo(() => {
     if (securitys === null) return null;
@@ -101,12 +166,12 @@ export const SecurityCoordinatorMaster = ({
       let predicate = true;
       
       if (filters.coordinatorRole) {
+        // Filter by resolved user name or raw ID
+        const resolvedName = getUserNameById(current.coordinatorRole).toLowerCase();
         predicate =
           predicate &&
-          current.coordinatorRole
-            .toString()
-            .toLowerCase()
-            .includes(filters.coordinatorRole.toString().toLowerCase());
+          (resolvedName.includes(filters.coordinatorRole.toString().toLowerCase()) ||
+            current.coordinatorRole.toString().toLowerCase().includes(filters.coordinatorRole.toString().toLowerCase()));
       }
       if (filters.projectCode) {
         predicate =
@@ -120,11 +185,10 @@ export const SecurityCoordinatorMaster = ({
       }
       return predicate;
     });
-  }, [securitys, filters]);
+  }, [securitys, filters, getUserNameById]);
 
   return (
     <Dashboard.Content>
-      {/* Updated Form Name / Title */}
       <Actionbar title="SECURITY COORDINATOR MAPPING">
         {onBack && (
           <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
@@ -140,7 +204,6 @@ export const SecurityCoordinatorMaster = ({
           isDisabled={isLoading}
           onClick={loadSecuritys}
         />
-        {/* FIXED: Write permission check (removed exclamation mark) */}
         {canWrite && onCreate && (
           <Button
             label="CREATE"
@@ -185,7 +248,8 @@ export const SecurityCoordinatorMaster = ({
                     <Table.Row key={security.id}>
                       <Table.Cell>{security.id}</Table.Cell>
                       <Table.Cell>{security.projectCode}</Table.Cell>
-                      <Table.Cell>{security.coordinatorRole}</Table.Cell>
+                      {/* Displays the resolved user name instead of the ID */}
+                      <Table.Cell>{getUserNameById(security.coordinatorRole)}</Table.Cell>
                       <Table.Cell>
                         <Badge
                           value={security.isActive ? "Active" : "Inactive"}

@@ -52,6 +52,7 @@ export const CreateSecurityCoordinatorMaster = ({
   sessionId,
   onBack,
 }: CreateSecurityCoordinatorMasterProps): JSX.Element => {
+  // Store user ID instead of name in coordinatorRole state
   const [coordinatorRole, setCoordinatorRole] = React.useState<string>("");
   
   const [projectCode, setProjectCode] = React.useState<string>("");
@@ -83,7 +84,7 @@ export const CreateSecurityCoordinatorMaster = ({
           // Handle response format variations safely
           const rawData = response.data?.data || response.data || response;
           const items: PropertyMasterItem[] = Array.isArray(rawData) ? rawData : [];
-          
+
           setPropertyList(items);
         }
       } catch (error) {
@@ -103,45 +104,45 @@ export const CreateSecurityCoordinatorMaster = ({
     };
   }, [sessionId]);
 
-  // 3. Fetch Users
-    React.useEffect(() => {
-      let isMounted = true;
-      const userService = new GetUserServiceApi();
+  // Fetch Users
+  React.useEffect(() => {
+    let isMounted = true;
+    const userService = new GetUserServiceApi();
   
-      const fetchUsers = async () => {
-        setIsLoadingUsers(true);
-        try {
-          const response = await userService.execute({
-            sessionId,
-            userId: "",
-          } as any);
+    const fetchUsers = async () => {
+      setIsLoadingUsers(true);
+      try {
+        const response = await userService.execute({
+          sessionId,
+          userId: "",
+        } as any);
   
-          if (isMounted && response) {
-            const rawData = Array.isArray(response.data)
-              ? response.data
-              : Array.isArray(response)
-              ? response
-              : [];
+        if (isMounted && response) {
+          const rawData = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray(response)
+            ? response
+            : [];
   
-            setUserList(rawData);
-          }
-        } catch (error) {
-          console.error("Failed to fetch users list:", error);
-        } finally {
-          if (isMounted) {
-            setIsLoadingUsers(false);
-          }
+          setUserList(rawData);
         }
-      };
+      } catch (error) {
+        console.error("Failed to fetch users list:", error);
+      } finally {
+        if (isMounted) {
+          setIsLoadingUsers(false);
+        }
+      }
+    };
   
-      fetchUsers();
+    fetchUsers();
   
-      return () => {
-        isMounted = false;
-        userService.abort();
-      };
-    }, [sessionId]);
-  
+    return () => {
+      isMounted = false;
+      userService.abort();
+    };
+  }, [sessionId]);
+
 
   const handleSuccess = React.useCallback(() => {
     setIsSuccess(true);
@@ -178,20 +179,31 @@ export const CreateSecurityCoordinatorMaster = ({
     return Array.from(new Set(codes));
   }, [propertyList]);
 
+  // Map users to objects containing both id and display label
   const userOptions = React.useMemo(() => {
-      const names = userList
-        .map((user) => {
-          const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
-          return fullName || user.jobTitle || user.email || user.id;
-        })
-        .filter((name): name is string => Boolean(name));
-      return Array.from(new Set(names));
-    }, [userList]);
+    return userList
+      .map((user) => {
+        const userId = user.id || user._id;
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+        const label = fullName || user.jobTitle || user.email || userId;
+        
+        return {
+          id: userId,
+          label: label,
+        };
+      })
+      .filter((item): item is { id: string; label: string } => Boolean(item.id && item.label));
+  }, [userList]);
   
+  // Find the label corresponding to the currently selected coordinatorRole (ID) to show in the ListInput value
+  const selectedUserLabel = React.useMemo(() => {
+    if (!coordinatorRole) return undefined;
+    const found = userOptions.find((u) => u.id === coordinatorRole);
+    return found ? found.label : undefined;
+  }, [coordinatorRole, userOptions]);
 
   return (
     <Dashboard.Content>
-      {/* Purpose: Routes approval to security team */}
       <Actionbar title="SECURITY COORDINATOR MAPPING">
         <Button
           label="SAVE"
@@ -255,44 +267,44 @@ export const CreateSecurityCoordinatorMaster = ({
               </ListInput>
             </Grid.Cell>
 
-            {/* coordibnator Role / User Dropdown */}
-                        <Grid.Cell size={Grid.CellSize.S3}>
-                          <ListInput
-                            className="w-100"
-                            label="Approver Role / User"
-                            value={coordinatorRole || undefined}
-                            placeholder={isLoadingUsers ? "Loading..." : "Select user or role"}
-                            hasError={typeof validation["approverRole"] !== "undefined"}
-                            isDisabled={isLoading || isSuccess || isLoadingUsers}
-                          >
-                            {(onClose) => (
-                              <React.Fragment>
-                                <ListInput.Item
-                                  label="None"
-                                  isActive={coordinatorRole === ""}
-                                  onClick={() => {
-                                    setCoordinatorRole("");
-                                    onClose();
-                                  }}
-                                />
-                                <Map
-                                  items={userOptions}
-                                  renderItem={(userName) => (
-                                    <ListInput.Item
-                                      key={userName}
-                                      label={userName}
-                                      isActive={coordinatorRole === userName}
-                                      onClick={() => {
-                                        setCoordinatorRole(userName);
-                                        onClose();
-                                      }}
-                                    />
-                                  )}
-                                />
-                              </React.Fragment>
-                            )}
-                          </ListInput>
-                        </Grid.Cell>
+            {/* Approver Role / User Dropdown */}
+            <Grid.Cell size={Grid.CellSize.S3}>
+              <ListInput
+                className="w-100"
+                label="Approver Role / User"
+                value={selectedUserLabel} // Displays the user's name/label in the input
+                placeholder={isLoadingUsers ? "Loading..." : "Select user or role"}
+                hasError={typeof validation["approverRole"] !== "undefined"}
+                isDisabled={isLoading || isSuccess || isLoadingUsers}
+              >
+                {(onClose) => (
+                  <React.Fragment>
+                    <ListInput.Item
+                      label="None"
+                      isActive={coordinatorRole === ""}
+                      onClick={() => {
+                        setCoordinatorRole("");
+                        onClose();
+                      }}
+                    />
+                    <Map
+                      items={userOptions}
+                      renderItem={(user) => (
+                        <ListInput.Item
+                          key={user.id}
+                          label={user.label}
+                          isActive={coordinatorRole === user.id}
+                          onClick={() => {
+                            setCoordinatorRole(user.id); // Saves the ID to state/payload
+                            onClose();
+                          }}
+                        />
+                      )}
+                    />
+                  </React.Fragment>
+                )}
+              </ListInput>
+            </Grid.Cell>
 
             {/* Field 3: Status (Active / Inactive) */}
             <Grid.Cell size={Grid.CellSize.S3}>
