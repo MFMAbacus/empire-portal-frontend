@@ -129,16 +129,33 @@ export const CreateMovementRuleMaster = ({
   ]);
 
   const toggleBlockedDay = (day: string) => {
-  setBlockedDays((prev) =>
-    prev.indexOf(day) !== -1 ? prev.filter((item) => item !== day) : [...prev, day]
-  );
-};
+    setBlockedDays((prev) =>
+      prev.indexOf(day) !== -1 ? prev.filter((item) => item !== day) : [...prev, day],
+    );
+  };
 
-  const uniqueProjectCodes = React.useMemo(() => {
-    const codes = propertyList
-      .map((item) => item.projectCode)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Screen par selected item ka display text set karne ke liye (Code > Name)
+  const selectedProjectDisplay = React.useMemo(() => {
+    const found = propertyList.find((p) => p.projectCode === projectCode);
+    if (!found) return "";
+    return found.projectName
+      ? `${found.projectCode} > ${found.projectName}`
+      : found.projectCode || "";
+  }, [propertyList, projectCode]);
+
+  // Extract unique properties using a plain JS object dictionary
+  const uniqueProperties = React.useMemo(() => {
+    const lookup: { [key: string]: PropertyMasterItem } = {};
+    const result: PropertyMasterItem[] = [];
+
+    propertyList.forEach((item) => {
+      if (item.projectCode && !lookup[item.projectCode]) {
+        lookup[item.projectCode] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [propertyList]);
 
   const blockedDaysDisplayText = React.useMemo(() => {
@@ -180,10 +197,9 @@ export const CreateMovementRuleMaster = ({
               <ListInput
                 className="w-100"
                 label="Project Code"
-                value={projectCode || undefined}
+                value={selectedProjectDisplay || undefined}
                 placeholder={isLoadingProperties ? "Loading..." : "Select project code"}
                 hasError={typeof validation["projectCode"] !== "undefined"}
-                feedback={validation["projectCode"]}
                 isDisabled={isLoading || isSuccess || isLoadingProperties}
               >
                 {(onClose) => (
@@ -197,18 +213,26 @@ export const CreateMovementRuleMaster = ({
                       }}
                     />
                     <Map
-                      items={uniqueProjectCodes}
-                      renderItem={(code) => (
-                        <ListInput.Item
-                          key={code}
-                          label={code}
-                          isActive={projectCode === code}
-                          onClick={() => {
-                            setProjectCode(code);
-                            onClose();
-                          }}
-                        />
-                      )}
+                      items={uniqueProperties}
+                      renderItem={(property) => {
+                        const displayLabel = property.projectName
+                          ? `${property.projectCode} > ${property.projectName}`
+                          : property.projectCode || "";
+
+                        return (
+                          <ListInput.Item
+                            key={property.projectCode}
+                            label={displayLabel}
+                            isActive={projectCode === property.projectCode}
+                            onClick={() => {
+                              if (property.projectCode) {
+                                setProjectCode(property.projectCode); // Payload gets strictly code
+                              }
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </React.Fragment>
                 )}

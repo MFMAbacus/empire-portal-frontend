@@ -66,10 +66,10 @@ export const CreateGuardAccountMappingMaster = ({
   onBack,
 }: CreateGuardAccountMappingMasterProps): JSX.Element => {
   const [guardAccountId, setGuardAccountId] = React.useState<string>("");
-  const [guardUserId, setGuardUserId] = React.useState<string>("");
+  const [guardUserId, setGuardUserId] = React.useState<string>(""); // Stores User ID for payload
   const [deviceId, setDeviceId] = React.useState<string>("");
 
-  const [gateId, setGateId] = React.useState<string>("");
+  const [gateId, setGateId] = React.useState<string>(""); // Stores Gate ID for payload
   const [gateList, setGateList] = React.useState<GateMasterItem[]>([]);
   const [isLoadingGates, setIsLoadingGates] = React.useState<boolean>(false);
 
@@ -239,15 +239,31 @@ export const CreateGuardAccountMappingMaster = ({
     submit,
   ]);
 
-  // Extract unique project codes for dropdown options
-  const uniqueProjectCodes = React.useMemo(() => {
-    const codes = propertyList
-      .map((item) => item.projectCode)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Project display text calculation
+  const selectedProjectDisplay = React.useMemo(() => {
+    const found = propertyList.find((p) => p.projectCode === projectCode);
+    if (!found) return "";
+    return found.projectName
+      ? `${found.projectCode} > ${found.projectName}`
+      : found.projectCode || "";
+  }, [propertyList, projectCode]);
+
+  // Unique properties lookup
+  const uniqueProperties = React.useMemo(() => {
+    const lookup: { [key: string]: PropertyMasterItem } = {};
+    const result: PropertyMasterItem[] = [];
+
+    propertyList.forEach((item) => {
+      if (item.projectCode && !lookup[item.projectCode]) {
+        lookup[item.projectCode] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [propertyList]);
 
-  // Selected projectCode ke relative Gates filter karein
+  // Filter gates based on selected projectCode
   const filteredGates = React.useMemo(() => {
     if (!projectCode) return [];
     return gateList.filter(
@@ -256,31 +272,59 @@ export const CreateGuardAccountMappingMaster = ({
     );
   }, [gateList, projectCode]);
 
-  // Extract unique gate IDs filtered gates list me se
-  const uniqueGateIds = React.useMemo(() => {
-    const ids = filteredGates
-      .map((item) => item.gateId)
-      .filter((id): id is string => Boolean(id));
-    return Array.from(new Set(ids));
-  }, [filteredGates]);
-
-  // Sirf Guard role wale users ko filter karke options banana
+  // Map users to options containing id and display label (Guard role filtered)
   const userOptions = React.useMemo(() => {
-    const names = userList
+    return userList
       .filter((user) => {
         const role = user.role || user.jobTitle || "";
         return role.toLowerCase() === "guard";
       })
       .map((user) => {
+        const userId = user.id || user._id;
         const fullName = [user.firstName, user.lastName]
           .filter(Boolean)
           .join(" ");
-        return fullName || user.jobTitle || user.email || user.id;
-      })
-      .filter((name): name is string => Boolean(name));
+        const label = fullName || user.jobTitle || user.email || userId;
 
-    return Array.from(new Set(names));
+        return {
+          id: userId,
+          label: label,
+        };
+      })
+      .filter((item): item is { id: string; label: string } => Boolean(item.id && item.label));
+
   }, [userList]);
+
+  // Find label for selected guard user ID
+  const selectedUserLabel = React.useMemo(() => {
+    if (!guardUserId) return undefined;
+    const found = userOptions.find((u) => u.id === guardUserId);
+    return found ? found.label : undefined;
+  }, [guardUserId, userOptions]);
+
+  // Gate options with formatted label (GateId > GateName)
+  const gateOptions = React.useMemo(() => {
+    return filteredGates
+      .map((item) => {
+        const gId = item.gateId || item.id;
+        if (!gId) return null;
+        const displayLabel = item.gateName
+          ? `${gId} > ${item.gateName}`
+          : gId;
+        return {
+          id: gId,
+          label: displayLabel,
+        };
+      })
+      .filter((item): item is { id: string; label: string } => Boolean(item));
+  }, [filteredGates]);
+
+  // Find label for selected gate ID
+  const selectedGateDisplay = React.useMemo(() => {
+    if (!gateId) return undefined;
+    const found = gateOptions.find((g) => g.id === gateId);
+    return found ? found.label : gateId;
+  }, [gateId, gateOptions]);
 
   return (
     <Dashboard.Content>
@@ -324,13 +368,14 @@ export const CreateGuardAccountMappingMaster = ({
               />
             </Grid.Cell>
 
+            {/* Guard User ID Dropdown (Displays Name, sends ID) */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <ListInput
                 className="w-100"
                 label="Guard User ID"
-                value={guardUserId || undefined}
+                value={selectedUserLabel}
                 placeholder={
-                  isLoadingUsers ? "Loading..." : "Select guard User Id"
+                  isLoadingUsers ? "Loading..." : "Select guard user"
                 }
                 hasError={typeof validation["guardUserId"] !== "undefined"}
                 isDisabled={isLoading || isSuccess || isLoadingUsers}
@@ -347,13 +392,13 @@ export const CreateGuardAccountMappingMaster = ({
                     />
                     <Map
                       items={userOptions}
-                      renderItem={(userName) => (
+                      renderItem={(user) => (
                         <ListInput.Item
-                          key={userName}
-                          label={userName}
-                          isActive={guardUserId === userName}
+                          key={user.id}
+                          label={user.label}
+                          isActive={guardUserId === user.id}
                           onClick={() => {
-                            setGuardUserId(userName);
+                            setGuardUserId(user.id); // Payload gets User ID
                             onClose();
                           }}
                         />
@@ -369,7 +414,7 @@ export const CreateGuardAccountMappingMaster = ({
               <ListInput
                 className="w-100"
                 label="Project Code"
-                value={projectCode || undefined}
+                value={selectedProjectDisplay || undefined}
                 placeholder={
                   isLoadingProperties ? "Loading..." : "Select project code"
                 }
@@ -383,42 +428,48 @@ export const CreateGuardAccountMappingMaster = ({
                       isActive={projectCode === ""}
                       onClick={() => {
                         setProjectCode("");
-                        setGateId("");
                         onClose();
                       }}
                     />
                     <Map
-                      items={uniqueProjectCodes}
-                      renderItem={(code) => (
-                        <ListInput.Item
-                          key={code}
-                          label={code}
-                          isActive={projectCode === code}
-                          onClick={() => {
-                            setProjectCode(code);
-                            setGateId("");
-                            onClose();
-                          }}
-                        />
-                      )}
+                      items={uniqueProperties}
+                      renderItem={(property) => {
+                        const displayLabel = property.projectName
+                          ? `${property.projectCode} > ${property.projectName}`
+                          : property.projectCode || "";
+
+                        return (
+                          <ListInput.Item
+                            key={property.projectCode}
+                            label={displayLabel}
+                            isActive={projectCode === property.projectCode}
+                            onClick={() => {
+                              if (property.projectCode) {
+                                setProjectCode(property.projectCode);
+                              }
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </React.Fragment>
                 )}
               </ListInput>
             </Grid.Cell>
 
-            {/* Gate ID Dropdown */}
+            {/* Gate ID Dropdown (Displays ID > Name, sends ID) */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <ListInput
                 className="w-100"
                 label="Gate ID"
-                value={gateId || undefined}
+                value={selectedGateDisplay || undefined}
                 placeholder={
                   !projectCode
                     ? "Select project code first"
                     : isLoadingGates
-                      ? "Loading..."
-                      : "Select gate ID"
+                    ? "Loading..."
+                    : "Select gate ID"
                 }
                 hasError={typeof validation["gateId"] !== "undefined"}
                 isDisabled={
@@ -436,14 +487,14 @@ export const CreateGuardAccountMappingMaster = ({
                       }}
                     />
                     <Map
-                      items={uniqueGateIds}
-                      renderItem={(id) => (
+                      items={gateOptions}
+                      renderItem={(gate) => (
                         <ListInput.Item
-                          key={id}
-                          label={id}
-                          isActive={gateId === id}
+                          key={gate.id}
+                          label={gate.label}
+                          isActive={gateId === gate.id}
                           onClick={() => {
-                            setGateId(id);
+                            setGateId(gate.id); // Payload gets Gate ID
                             onClose();
                           }}
                         />

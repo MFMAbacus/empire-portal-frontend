@@ -279,57 +279,102 @@ export const EditGuardAccountMappingMaster = ({
     submit,
   ]);
 
-  // Unique Project Codes for Dropdown
-  const uniqueProjectCodes = React.useMemo(() => {
-    const codes = propertyList
-      .map((item) => item.projectCode)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Unique properties lookup & formatting (`Code > Name`)
+  const uniqueProperties = React.useMemo(() => {
+    const lookup: { [key: string]: PropertyMasterItem } = {};
+    const result: PropertyMasterItem[] = [];
+
+    propertyList.forEach((item) => {
+      if (item.projectCode && !lookup[item.projectCode]) {
+        lookup[item.projectCode] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [propertyList]);
 
-  // Unique gate IDs/Codes for Dropdown
-  const uniqueGateIds = React.useMemo(() => {
-    const ids = gateList
-      .map((item) => item.gateId || item.id)
-      .filter((id): id is string => Boolean(id));
-    return Array.from(new Set(ids));
-  }, [gateList]);
+  // Selected project display text calculation
+  const selectedProjectDisplay = React.useMemo(() => {
+    const found = propertyList.find((p) => p.projectCode === projectCode);
+    if (!found) return "";
+    return found.projectName
+      ? `${found.projectCode} > ${found.projectName}`
+      : found.projectCode || "";
+  }, [propertyList, projectCode]);
 
+  // Filter gates based on selected projectCode
+  const filteredGates = React.useMemo(() => {
+    if (!projectCode) return [];
+    return gateList.filter(
+      (item) =>
+        item.projectCode === projectCode || item.projectId === projectCode
+    );
+  }, [gateList, projectCode]);
+
+  // Gate options with formatted label (`GateId > GateName`)
+  const gateOptions = React.useMemo(() => {
+    return filteredGates
+      .map((item) => {
+        const gId = item.gateId || item.id;
+        if (!gId) return null;
+        const displayLabel = item.gateName ? `${gId} > ${item.gateName}` : gId;
+        return {
+          id: gId,
+          label: displayLabel,
+        };
+      })
+      .filter((item): item is { id: string; label: string } => Boolean(item));
+  }, [filteredGates]);
+
+  // Find label for selected gate ID
+  const selectedGateDisplay = React.useMemo(() => {
+    if (!gateId) return undefined;
+    const found = gateOptions.find((g) => g.id === gateId);
+    return found ? found.label : gateId;
+  }, [gateId, gateOptions]);
+
+  // Guard User Options mapped with Name & ID
   const userOptions = React.useMemo(() => {
-    const names = userList
+    return userList
       .filter((user) => {
         const role = user.role || user.jobTitle || "";
-
         return role.toLowerCase() === "guard";
       })
       .map((user) => {
+        const userId = user.id || user._id;
         const fullName = [
           user.firstName,
           user.lastName,
         ]
           .filter(Boolean)
           .join(" ");
+        const label = fullName ||
+        user.jobTitle ||
+        user.email ||
+        userId;
 
-        return (
-          fullName ||
-          user.jobTitle ||
-          user.email ||
-          user.id
-        );
+        return {
+          id: userId,
+          label: label,
+        };
       })
-      .filter(
-        (name): name is string => Boolean(name)
-      );
-
-    return Array.from(new Set(names));
+      .filter((item): item is { id: string; label: string } => Boolean(item.id && item.label));
   }, [userList]);
+
+  // Find label for selected guard user ID
+  const selectedUserLabel = React.useMemo(() => {
+    if (!guardUserId) return undefined;
+    const found = userOptions.find((u) => u.id === guardUserId);
+    return found ? found.label : undefined;
+  }, [guardUserId, userOptions]);
 
   return (
     <Dashboard.Content>
       <Actionbar title="EDIT GUARD ACCOUNT MAPPING MASTER">
         <Button
           label="SAVE"
-          icon={isLoading ? (<SpinnerIcon />) : (<CheckIcon />)}
+          icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
           isDisabled={
             isLoading ||
             isFetching ||
@@ -380,8 +425,8 @@ export const EditGuardAccountMappingMaster = ({
                 <ListInput
                   className="w-100"
                   label="Guard User ID"
-                  value={guardUserId || undefined}
-                  placeholder={isLoadingUsers? "Loading...": "Select guard User Id"}
+                  value={selectedUserLabel}
+                  placeholder={isLoadingUsers? "Loading...": "Select guard user"}
                   hasError={typeof validation["guardUserId"] !== "undefined"}
                   isDisabled={isLoading ||isSuccess ||isLoadingUsers}
                 >
@@ -394,12 +439,12 @@ export const EditGuardAccountMappingMaster = ({
                       />
                       <Map
                         items={userOptions}
-                        renderItem={(userName) => (
+                        renderItem={(user) => (
                           <ListInput.Item
-                            key={userName}
-                            label={userName}
-                            isActive={guardUserId ===userName}
-                            onClick={() => {setGuardUserId(userName);
+                            key={user.id}
+                            label={user.label}
+                            isActive={guardUserId === user.id}
+                            onClick={() => {setGuardUserId(user.id); // Payload gets User ID
                               onClose();}}
                           />
                         )}
@@ -408,12 +453,12 @@ export const EditGuardAccountMappingMaster = ({
                   )}
                 </ListInput>
               </Grid.Cell>
-              {/* Field 6: Project Code Dropdown */}
+              {/* Field 3: Project Code Dropdown */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <ListInput
                   className="w-100"
                   label="Project Code"
-                  value={projectCode || undefined}
+                  value={selectedProjectDisplay || undefined}
                   placeholder={isLoadingProperties ? "Loading..." : "Select project code"}
                   hasError={typeof validation["projectCode"] !== "undefined"}
                   isDisabled={isLoading || isSuccess || isLoadingProperties}
@@ -425,36 +470,54 @@ export const EditGuardAccountMappingMaster = ({
                         isActive={projectCode === ""}
                         onClick={() => {
                           setProjectCode("");
+                          setGateId(""); // Reset gate if project changes
                           onClose();
                         }}
                       />
                       <Map
-                        items={uniqueProjectCodes}
-                        renderItem={(code) => (
-                          <ListInput.Item
-                            key={code}
-                            label={code}
-                            isActive={projectCode === code}
-                            onClick={() => {
-                              setProjectCode(code);
-                              onClose();
-                            }}
-                          />
-                        )}
+                        items={uniqueProperties}
+                        renderItem={(property) => {
+                          const displayLabel = property.projectName
+                            ? `${property.projectCode} > ${property.projectName}`
+                            : property.projectCode || "";
+
+                          return (
+                            <ListInput.Item
+                              key={property.projectCode}
+                              label={displayLabel}
+                              isActive={projectCode === property.projectCode}
+                              onClick={() => {
+                                if (property.projectCode) {
+                                  setProjectCode(property.projectCode);
+                                  setGateId(""); // Reset gate if project changes
+                                }
+                                onClose();
+                              }}
+                            />
+                          );
+                        }}
                       />
                     </React.Fragment>
                   )}
                 </ListInput>
               </Grid.Cell>
-              {/* Field 5: gate ID Dropdown */}
+              {/* Field 4: Gate ID Dropdown (Displays GateId > GateName, sends GateId) */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <ListInput
                   className="w-100"
                   label="Gate ID"
-                  value={gateId || undefined}
-                  placeholder={isLoadingGates ? "Loading..." : "Select gate ID"}
+                  value={selectedGateDisplay || undefined}
+                  placeholder={
+                    !projectCode
+                      ? "Select project code first"
+                      : isLoadingGates
+                      ? "Loading..."
+                      : "Select gate ID"
+                  }
                   hasError={typeof validation["gateId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess || isLoadingGates}
+                  isDisabled={
+                    isLoading || isSuccess || isLoadingGates || !projectCode
+                  }
                 >
                   {(onClose) => (
                     <React.Fragment>
@@ -467,14 +530,14 @@ export const EditGuardAccountMappingMaster = ({
                         }}
                       />
                       <Map
-                        items={uniqueGateIds}
-                        renderItem={(gateIdOption) => (
+                        items={gateOptions}
+                        renderItem={(gate) => (
                           <ListInput.Item
-                            key={gateIdOption}
-                            label={gateIdOption}
-                            isActive={gateId ===gateIdOption}
+                            key={gate.id}
+                            label={gate.label}
+                            isActive={gateId === gate.id}
                             onClick={() => {
-                              setGateId(gateIdOption);
+                              setGateId(gate.id); // Payload gets Gate ID
                               onClose();
                             }}
                           />
@@ -486,7 +549,7 @@ export const EditGuardAccountMappingMaster = ({
               </Grid.Cell>
             </Grid>
             <Grid>  
-              {/* Field 7: Device ID */}
+              {/* Field 5: Device ID */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <TextInput
                   className="w-100"

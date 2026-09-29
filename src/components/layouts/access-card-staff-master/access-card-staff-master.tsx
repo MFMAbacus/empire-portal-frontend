@@ -153,7 +153,7 @@ export const AccessCardStaffMaster = ({
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="Property Management Approval" />
+          <Paper.Title value="Access Card Staff" />
 
           {alertData !== null &&
             alertData.severity !== AlertSeverity.SUCCESS && (

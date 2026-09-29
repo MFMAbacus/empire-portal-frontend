@@ -171,20 +171,37 @@ export const CreateSecurityCoordinatorMaster = ({
     submit,
   ]);
 
-  // Extract unique project codes for dropdown options
-  const uniqueProjectCodes = React.useMemo(() => {
-    const codes = propertyList
-      .map((item) => item.projectCode)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
-  }, [propertyList]);
+  // Screen par selected item ka display text set karne ke liye (Code > Name)
+  const selectedProjectDisplay = React.useMemo(() => {
+    const found = propertyList.find((p) => p.projectCode === projectCode);
+    if (!found) return "";
+    return found.projectName
+      ? `${found.projectCode} > ${found.projectName}`
+      : found.projectCode || "";
+  }, [propertyList, projectCode]);
 
+  // Extract unique properties using a plain JS object dictionary
+  const uniqueProperties = React.useMemo(() => {
+    const lookup: { [key: string]: PropertyMasterItem } = {};
+    const result: PropertyMasterItem[] = [];
+
+    propertyList.forEach((item) => {
+      if (item.projectCode && !lookup[item.projectCode]) {
+        lookup[item.projectCode] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
+  }, [propertyList]);
   // Map users to objects containing both id and display label
   const userOptions = React.useMemo(() => {
     return userList
       .map((user) => {
         const userId = user.id || user._id;
-        const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+        const fullName = [user.firstName, user.lastName]
+          .filter(Boolean)
+          .join(" ");
         const label = fullName || user.jobTitle || user.email || userId;
         
         return {
@@ -192,7 +209,7 @@ export const CreateSecurityCoordinatorMaster = ({
           label: label,
         };
       })
-      .filter((item): item is { id: string; label: string } => Boolean(item.id && item.label));
+      .filter((item): item is { id: string; label: string } => Boolean(item.id && item.label),);
   }, [userList]);
   
   // Find the label corresponding to the currently selected coordinatorRole (ID) to show in the ListInput value
@@ -233,7 +250,7 @@ export const CreateSecurityCoordinatorMaster = ({
               <ListInput
                 className="w-100"
                 label="Project Code"
-                value={projectCode || undefined}
+                value={selectedProjectDisplay || undefined}
                 placeholder={isLoadingProperties ? "Loading..." : "Select project code"}
                 hasError={typeof validation["projectCode"] !== "undefined"}
                 isDisabled={isLoading || isSuccess || isLoadingProperties}
@@ -249,18 +266,26 @@ export const CreateSecurityCoordinatorMaster = ({
                       }}
                     />
                     <Map
-                      items={uniqueProjectCodes}
-                      renderItem={(code) => (
-                        <ListInput.Item
-                          key={code}
-                          label={code}
-                          isActive={projectCode === code}
-                          onClick={() => {
-                            setProjectCode(code);
-                            onClose();
-                          }}
-                        />
-                      )}
+                      items={uniqueProperties}
+                      renderItem={(property) => {
+                        const displayLabel = property.projectName
+                          ? `${property.projectCode} > ${property.projectName}`
+                          : property.projectCode || "";
+
+                        return (
+                          <ListInput.Item
+                            key={property.projectCode}
+                            label={displayLabel}
+                            isActive={projectCode === property.projectCode}
+                            onClick={() => {
+                              if (property.projectCode) {
+                                setProjectCode(property.projectCode); // Payload gets strictly code
+                              }
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </React.Fragment>
                 )}

@@ -49,6 +49,12 @@ type UserItem = {
   employeeId?: string;
   [key: string]: any;
 };
+
+type UserOptionItem = {
+  id: string;
+  name: string;
+};
+
 const delayAfterSuccess = 1000;
 
 export const EditAccessCardStaffMaster = ({
@@ -56,20 +62,18 @@ export const EditAccessCardStaffMaster = ({
   Id,
   onBack,
 }: EditAccessCardStaffMasterProps): JSX.Element => {
-  // access card staff Mapping States
+  // access card staff Mapping States (staffRole stores user ID)
   const [staffRole, setStaffRole] = React.useState<string>("");
   const [projectCode, setProjectCode] = React.useState<string>("");
   const [isActive, setIsActive] = React.useState<boolean>(true);
 
-  const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>(
-    [],
-  );
-  const [isLoadingProperties, setIsLoadingProperties] =
-    React.useState<boolean>(false);
+  const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>([]);
+  const [isLoadingProperties, setIsLoadingProperties] = React.useState<boolean>(false);
 
   const [isFetching, setIsFetching] = React.useState<boolean>(true);
   const [isSuccess, setIsSuccess] = React.useState<boolean>(false);
   const [fetchError, setFetchError] = React.useState<string | null>(null);
+  
   // Users State
   const [userList, setUserList] = React.useState<UserItem[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = React.useState<boolean>(false);
@@ -91,10 +95,7 @@ export const EditAccessCardStaffMaster = ({
 
         if (isMounted && response) {
           const rawData = response.data?.data || response.data || response;
-          const items: PropertyMasterItem[] = Array.isArray(rawData)
-            ? rawData
-            : [];
-
+          const items: PropertyMasterItem[] = Array.isArray(rawData) ? rawData : [];
           setPropertyList(items);
         }
       } catch (err) {
@@ -113,7 +114,8 @@ export const EditAccessCardStaffMaster = ({
       propertyService.abort();
     };
   }, [sessionId]);
-  // 3. Fetch Users
+
+  // Fetch Users
   React.useEffect(() => {
     let isMounted = true;
     const userService = new GetUserServiceApi();
@@ -130,8 +132,8 @@ export const EditAccessCardStaffMaster = ({
           const rawData = Array.isArray(response.data)
             ? response.data
             : Array.isArray(response)
-              ? response
-              : [];
+            ? response
+            : [];
 
           setUserList(rawData);
         }
@@ -175,8 +177,7 @@ export const EditAccessCardStaffMaster = ({
       .catch((err: any) => {
         if (!isMounted) return;
         setFetchError(
-          err?.message ||
-            "Failed to fetch access card staff details.",
+          err?.message || "Failed to fetch access card staff details."
         );
         setIsFetching(false);
       });
@@ -193,7 +194,6 @@ export const EditAccessCardStaffMaster = ({
     }, delayAfterSuccess);
   }, [startTimeout, onBack]);
 
-  // FIX 2: Updated Service Maker to use Update Service
   const { isLoading, alertData, validation, submit } = useForm({
     serviceMaker: makeCreateAccessCardStaffMasterService,
     onSuccess: handleSuccess,
@@ -204,31 +204,62 @@ export const EditAccessCardStaffMaster = ({
       sessionId,
       id: Id,
       Id,
-      staffRole,
+      staffRole, // Payload sends user ID
       projectCode,
       isActive,
     } as any);
   }, [sessionId, Id, staffRole, projectCode, isActive, submit]);
 
-  // Extract unique project codes for dropdown options
-  const uniqueProjectCodes = React.useMemo(() => {
-    const codes = propertyList
-      .map((item) => item.projectCode)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Screen par selected project ka display text set karne ke liye (Code > Name)
+  const selectedProjectDisplay = React.useMemo(() => {
+    const found = propertyList.find((p) => p.projectCode === projectCode);
+    if (!found) return projectCode;
+    return found.projectName
+      ? `${found.projectCode} > ${found.projectName}`
+      : found.projectCode || "";
+  }, [propertyList, projectCode]);
+
+  // Extract unique properties using a plain JS object dictionary
+  const uniqueProperties = React.useMemo(() => {
+    const lookup: { [key: string]: PropertyMasterItem } = {};
+    const result: PropertyMasterItem[] = [];
+
+    propertyList.forEach((item) => {
+      if (item.projectCode && !lookup[item.projectCode]) {
+        lookup[item.projectCode] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [propertyList]);
 
-  const userOptions = React.useMemo(() => {
-    const names = userList
-      .map((user) => {
-        const fullName = [user.firstName, user.lastName]
-          .filter(Boolean)
-          .join(" ");
-        return fullName || user.jobTitle || user.email || user.id;
-      })
-      .filter((name): name is string => Boolean(name));
-    return Array.from(new Set(names));
+  // User options banayein jisme ID aur Display Name dono hon
+  const userOptions: UserOptionItem[] = React.useMemo(() => {
+    const mapObj: { [key: string]: UserOptionItem } = {};
+    userList.forEach((user) => {
+      const uId = user.id || user._id;
+      if (uId && !mapObj[uId]) {
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+        const displayName = fullName || user.jobTitle || user.email || uId;
+        mapObj[uId] = { id: uId, name: displayName };
+      }
+    });
+
+    const result: UserOptionItem[] = [];
+    for (const key in mapObj) {
+      if (Object.prototype.hasOwnProperty.call(mapObj, key)) {
+        result.push(mapObj[key]);
+      }
+    }
+    return result;
   }, [userList]);
+
+  // Dropdown ke andar selected user ka name show karne ke liye helper
+  const selectedUserDisplay = React.useMemo(() => {
+    const found = userOptions.find((u) => u.id === staffRole);
+    return found ? found.name : staffRole;
+  }, [userOptions, staffRole]);
 
   return (
     <Dashboard.Content>
@@ -270,7 +301,7 @@ export const EditAccessCardStaffMaster = ({
                 <ListInput
                   className="w-100"
                   label="Project Code"
-                  value={projectCode || undefined}
+                  value={selectedProjectDisplay || undefined}
                   placeholder={
                     isLoadingProperties ? "Loading..." : "Select project code"
                   }
@@ -288,30 +319,38 @@ export const EditAccessCardStaffMaster = ({
                         }}
                       />
                       <Map
-                        items={uniqueProjectCodes}
-                        renderItem={(code) => (
-                          <ListInput.Item
-                            key={code}
-                            label={code}
-                            isActive={projectCode === code}
-                            onClick={() => {
-                              setProjectCode(code);
-                              onClose();
-                            }}
-                          />
-                        )}
+                        items={uniqueProperties}
+                        renderItem={(property: PropertyMasterItem) => {
+                          const displayLabel = property.projectName
+                            ? `${property.projectCode} > ${property.projectName}`
+                            : property.projectCode || "";
+
+                          return (
+                            <ListInput.Item
+                              key={property.projectCode}
+                              label={displayLabel}
+                              isActive={projectCode === property.projectCode}
+                              onClick={() => {
+                                if (property.projectCode) {
+                                  setProjectCode(property.projectCode);
+                                }
+                                onClose();
+                              }}
+                            />
+                          );
+                        }}
                       />
                     </React.Fragment>
                   )}
                 </ListInput>
               </Grid.Cell>
 
-              {/* staff Role / User Dropdown */}
+              {/* Staff Role / User Dropdown */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <ListInput
                   className="w-100"
                   label="Staff Role / User"
-                  value={staffRole || undefined}
+                  value={selectedUserDisplay || undefined}
                   placeholder={
                     isLoadingUsers ? "Loading..." : "Select user or role"
                   }
@@ -330,13 +369,13 @@ export const EditAccessCardStaffMaster = ({
                       />
                       <Map
                         items={userOptions}
-                        renderItem={(userName) => (
+                        renderItem={(userOpt: UserOptionItem) => (
                           <ListInput.Item
-                            key={userName}
-                            label={userName}
-                            isActive={staffRole === userName}
+                            key={userOpt.id}
+                            label={userOpt.name}
+                            isActive={staffRole === userOpt.id}
                             onClick={() => {
-                              setStaffRole(userName);
+                              setStaffRole(userOpt.id); // State stores ID for payload
                               onClose();
                             }}
                           />

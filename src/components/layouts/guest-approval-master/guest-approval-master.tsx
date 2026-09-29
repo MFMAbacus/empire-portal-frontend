@@ -73,12 +73,14 @@ type GateMasterItem = {
 
 type GuestApprovalMasterProps = {
   sessionId: string;
+  userId?: string;
   onBack?: () => void;
   onHistory?: () => void;
 };
 
 export const GuestApprovalMaster = ({
   sessionId,
+  userId: propUserId,
   onBack,
   onHistory,
 }: GuestApprovalMasterProps): JSX.Element => {
@@ -97,6 +99,23 @@ export const GuestApprovalMaster = ({
   const [gateId, setGateId] = React.useState<string>("");
   const [gateList, setGateList] = React.useState<GateMasterItem[]>([]);
   const [isLoadingGates, setIsLoadingGates] = React.useState<boolean>(false);
+
+  // Automatically extract userId from props or local storage/session if available
+  const effectiveUserId = React.useMemo(() => {
+    if (propUserId) return propUserId;
+    try {
+      // Common keys where user session / profile might be stored
+      const rawUser = localStorage.getItem("user") || sessionStorage.getItem("user") || localStorage.getItem("userId");
+      if (!rawUser) return undefined;
+      if (rawUser.startsWith("{")) {
+        const parsed = JSON.parse(rawUser);
+        return parsed.id || parsed._id || parsed.userId || parsed.role;
+      }
+      return rawUser;
+    } catch {
+      return undefined;
+    }
+  }, [propUserId]);
 
   // Fetch Gate Master list from API as fallback
   React.useEffect(() => {
@@ -208,9 +227,8 @@ export const GuestApprovalMaster = ({
   });
 
   const loadRequests = React.useCallback(() => {
-    setFeedback(null);
-    submit({ sessionId });
-  }, [sessionId, submit]);
+    submit({ sessionId,  userId: effectiveUserId, });
+  }, [sessionId, effectiveUserId, submit]);
 
   React.useEffect(() => {
     loadRequests();

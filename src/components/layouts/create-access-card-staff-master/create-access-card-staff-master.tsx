@@ -34,6 +34,7 @@ type PropertyMasterItem = {
   projectName?: string;
   [key: string]: any;
 };
+
 type UserItem = {
   _id?: string;
   id?: string;
@@ -45,6 +46,10 @@ type UserItem = {
   [key: string]: any;
 };
 
+type UserOptionItem = {
+  id: string;
+  name: string;
+};
 
 const delayAfterSuccess = 1000;
 
@@ -52,6 +57,7 @@ export const CreateAccessCardStaffMaster = ({
   sessionId,
   onBack,
 }: CreateAccessCardStaffMasterProps): JSX.Element => {
+  // Yahan staffRole mein selected user ki ID store hogi
   const [staffRole, setStaffRole] = React.useState<string>("");
   
   const [projectCode, setProjectCode] = React.useState<string>("");
@@ -60,7 +66,8 @@ export const CreateAccessCardStaffMaster = ({
 
   const [isActive, setIsActive] = React.useState<boolean>(true);
   const [isSuccess, setIsSuccess] = React.useState<boolean>(false);
-// Users State
+  
+  // Users State
   const [userList, setUserList] = React.useState<UserItem[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = React.useState<boolean>(false);
   const { startTimeout } = useTimeout();
@@ -79,10 +86,8 @@ export const CreateAccessCardStaffMaster = ({
         } as any);
 
         if (isMounted && response) {
-          // Handle response format variations safely
           const rawData = response.data?.data || response.data || response;
           const items: PropertyMasterItem[] = Array.isArray(rawData) ? rawData : [];
-          
           setPropertyList(items);
         }
       } catch (error) {
@@ -101,7 +106,8 @@ export const CreateAccessCardStaffMaster = ({
       service.abort();
     };
   }, [sessionId]);
-// 3. Fetch Users
+
+  // Fetch Users
   React.useEffect(() => {
     let isMounted = true;
     const userService = new GetUserServiceApi();
@@ -155,7 +161,7 @@ export const CreateAccessCardStaffMaster = ({
   const handleSubmit = React.useCallback(() => {
     submit({
       sessionId,
-      staffRole,
+      staffRole, // Yeh payload mein user ki ID bhejega
       projectCode,
       isActive,
     });
@@ -167,29 +173,60 @@ export const CreateAccessCardStaffMaster = ({
     submit,
   ]);
 
-  // Extract unique project codes for dropdown options
-  const uniqueProjectCodes = React.useMemo(() => {
-    const codes = propertyList
-      .map((item) => item.projectCode)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Screen par selected project ka display text set karne ke liye
+  const selectedProjectDisplay = React.useMemo(() => {
+    const found = propertyList.find((p) => p.projectCode === projectCode);
+    if (!found) return "";
+    return found.projectName
+      ? `${found.projectCode} > ${found.projectName}`
+      : found.projectCode || "";
+  }, [propertyList, projectCode]);
+
+  // Extract unique properties using a plain JS object dictionary
+  const uniqueProperties = React.useMemo(() => {
+    const lookup: { [key: string]: PropertyMasterItem } = {};
+    const result: PropertyMasterItem[] = [];
+
+    propertyList.forEach((item) => {
+      if (item.projectCode && !lookup[item.projectCode]) {
+        lookup[item.projectCode] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [propertyList]);
 
-  const userOptions = React.useMemo(() => {
-      const names = userList
-        .map((user) => {
-          const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
-          return fullName || user.jobTitle || user.email || user.id;
-        })
-        .filter((name): name is string => Boolean(name));
-      return Array.from(new Set(names));
-    }, [userList]);
-  
+  // User options banayein jisme ID aur Display Name dono hon
+  const userOptions: UserOptionItem[] = React.useMemo(() => {
+    const mapObj: { [key: string]: UserOptionItem } = {};
+    userList.forEach((user) => {
+      const uId = user.id || user._id;
+      if (uId && !mapObj[uId]) {
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+        const displayName = fullName || user.jobTitle || user.email || uId;
+        mapObj[uId] = { id: uId, name: displayName };
+      }
+    });
+
+    const result: UserOptionItem[] = [];
+    for (const key in mapObj) {
+      if (Object.prototype.hasOwnProperty.call(mapObj, key)) {
+        result.push(mapObj[key]);
+      }
+    }
+    return result;
+  }, [userList]);
+
+  // Dropdown ke andar selected user ka name show karne ke liye helper
+  const selectedUserDisplay = React.useMemo(() => {
+    const found = userOptions.find((u) => u.id === staffRole);
+    return found ? found.name : "";
+  }, [userOptions, staffRole]);
 
   return (
     <Dashboard.Content>
-      {/* Purpose: Routes approval to propert team */}
-      <Actionbar title="PROPERTY MANAGEMENT APPROVAL">
+      <Actionbar title="CREATE ACCESS CARD STAFF">
         <Button
           label="SAVE"
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
@@ -210,15 +247,15 @@ export const CreateAccessCardStaffMaster = ({
             <Alert message={alertData.message} severity={alertData.severity} />
           )}
 
-          <Paper.Title value="Property Management Approval Details" />
+          <Paper.Title value="Access Card Staff Details" />
 
-          <Grid>  
+          <Grid>
             {/* Field 1: Project Code */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <ListInput
                 className="w-100"
                 label="Project Code"
-                value={projectCode || undefined}
+                value={selectedProjectDisplay || undefined}
                 placeholder={isLoadingProperties ? "Loading..." : "Select project code"}
                 hasError={typeof validation["projectCode"] !== "undefined"}
                 isDisabled={isLoading || isSuccess || isLoadingProperties}
@@ -234,14 +271,61 @@ export const CreateAccessCardStaffMaster = ({
                       }}
                     />
                     <Map
-                      items={uniqueProjectCodes}
-                      renderItem={(code) => (
+                      items={uniqueProperties}
+                      renderItem={(property) => {
+                        const displayLabel = property.projectName
+                          ? `${property.projectCode} > ${property.projectName}`
+                          : property.projectCode || "";
+
+                        return (
+                          <ListInput.Item
+                            key={property.projectCode}
+                            label={displayLabel}
+                            isActive={projectCode === property.projectCode}
+                            onClick={() => {
+                              if (property.projectCode) {
+                                setProjectCode(property.projectCode);
+                              }
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
+                    />
+                  </React.Fragment>
+                )}
+              </ListInput>
+            </Grid.Cell>
+
+            {/* Staff Role / User Dropdown */}
+            <Grid.Cell size={Grid.CellSize.S3}>
+              <ListInput
+                className="w-100"
+                label="Staff Role / User"
+                value={selectedUserDisplay || undefined}
+                placeholder={isLoadingUsers ? "Loading..." : "Select user or role"}
+                hasError={typeof validation["staffRole"] !== "undefined"}
+                isDisabled={isLoading || isSuccess || isLoadingUsers}
+              >
+                {(onClose) => (
+                  <React.Fragment>
+                    <ListInput.Item
+                      label="None"
+                      isActive={staffRole === ""}
+                      onClick={() => {
+                        setStaffRole("");
+                        onClose();
+                      }}
+                    />
+                    <Map
+                      items={userOptions}
+                      renderItem={(userOpt: UserOptionItem) => (
                         <ListInput.Item
-                          key={code}
-                          label={code}
-                          isActive={projectCode === code}
+                          key={userOpt.id}
+                          label={userOpt.name}
+                          isActive={staffRole === userOpt.id}
                           onClick={() => {
-                            setProjectCode(code);
+                            setStaffRole(userOpt.id); // State mein ID save hogi jo payload mein jayegi
                             onClose();
                           }}
                         />
@@ -251,45 +335,6 @@ export const CreateAccessCardStaffMaster = ({
                 )}
               </ListInput>
             </Grid.Cell>
-
-            {/* Staff Role / User Dropdown */}
-                        <Grid.Cell size={Grid.CellSize.S3}>
-                          <ListInput
-                            className="w-100"
-                            label="Staff Role / User"
-                            value={staffRole || undefined}
-                            placeholder={isLoadingUsers ? "Loading..." : "Select user or role"}
-                            hasError={typeof validation["staffRole"] !== "undefined"}
-                            isDisabled={isLoading || isSuccess || isLoadingUsers}
-                          >
-                            {(onClose) => (
-                              <React.Fragment>
-                                <ListInput.Item
-                                  label="None"
-                                  isActive={staffRole === ""}
-                                  onClick={() => {
-                                    setStaffRole("");
-                                    onClose();
-                                  }}
-                                />
-                                <Map
-                                  items={userOptions}
-                                  renderItem={(userName) => (
-                                    <ListInput.Item
-                                      key={userName}
-                                      label={userName}
-                                      isActive={staffRole === userName}
-                                      onClick={() => {
-                                        setStaffRole(userName);
-                                        onClose();
-                                      }}
-                                    />
-                                  )}
-                                />
-                              </React.Fragment>
-                            )}
-                          </ListInput>
-                        </Grid.Cell>
 
             {/* Field 3: Status (Active / Inactive) */}
             <Grid.Cell size={Grid.CellSize.S3}>

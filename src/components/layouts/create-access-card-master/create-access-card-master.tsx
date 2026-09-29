@@ -242,34 +242,76 @@ export const CreateAccessCardMaster = ({
     submit,
   ]);
 
-  // Unique Project Codes
-  const uniqueProjectCodes = React.useMemo(() => {
-    const codes = propertyList
-      .map((item) => item.projectCode)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Unique Projects with Code and Name for Dropdown Display
+  const uniqueProjects: PropertyMasterItem[] = React.useMemo(() => {
+    const lookup: { [key: string]: PropertyMasterItem } = {};
+    propertyList.forEach((item: PropertyMasterItem) => {
+      if (item.projectCode && !lookup[item.projectCode]) {
+        lookup[item.projectCode] = item;
+      }
+    });
+    const result: PropertyMasterItem[] = [];
+    for (const key in lookup) {
+      if (Object.prototype.hasOwnProperty.call(lookup, key)) {
+        result.push(lookup[key]);
+      }
+    }
+    return result;
   }, [propertyList]);
+
+  // Selected Project Code Display Helper
+  const selectedProjectDisplay = React.useMemo(() => {
+    const found = uniqueProjects.find((p: PropertyMasterItem) => p.projectCode === projectCode);
+    if (!found) return projectCode;
+    return found.projectName ? `${found.projectCode} > ${found.projectName}` : found.projectCode;
+  }, [uniqueProjects, projectCode]);
 
   // Selected Project Code ke relative Apartments filter
   const filteredApartments = React.useMemo(() => {
     if (!projectCode) return [];
     return apartmentList.filter(
-      (item) => item.projectCode === projectCode || item.projectId === projectCode
+      (item: ApartmentMasterItem) => item.projectCode === projectCode || item.projectId === projectCode
     );
   }, [apartmentList, projectCode]);
 
-  const uniqueApartmentIds = React.useMemo(() => {
-    const ids = filteredApartments
-      .map((item) => item.apartmentId)
-      .filter((id): id is string => Boolean(id));
-    return Array.from(new Set(ids));
+  const uniqueApartments: ApartmentMasterItem[] = React.useMemo(() => {
+    const lookup: { [key: string]: ApartmentMasterItem } = {};
+    filteredApartments.forEach((item: ApartmentMasterItem) => {
+      const aptId = item.apartmentId || item.id;
+      if (aptId && !lookup[aptId]) {
+        lookup[aptId] = item;
+      }
+    });
+    const result: ApartmentMasterItem[] = [];
+    for (const key in lookup) {
+      if (Object.prototype.hasOwnProperty.call(lookup, key)) {
+        result.push(lookup[key]);
+      }
+    }
+    return result;
   }, [filteredApartments]);
+
+  // Selected Apartment ID Display Helper
+  const selectedApartmentDisplay = React.useMemo(() => {
+    const found = uniqueApartments.find((a: ApartmentMasterItem) => (a.apartmentId || a.id) === apartmentId);
+    if (!found) return apartmentId;
+    const aId = found.apartmentId || found.id;
+    return found.apartmentNo ? `${aId} - ${found.apartmentNo}` : aId;
+  }, [uniqueApartments, apartmentId]);
 
   // Selected Apartment ID ke relative Residents filter
   const filteredResidents = React.useMemo(() => {
     if (!apartmentId) return [];
-    return residentList.filter((item) => item.apartmentId === apartmentId);
+    return residentList.filter((item: ResidentMasterItem) => item.apartmentId === apartmentId);
   }, [residentList, apartmentId]);
+
+  // Selected Resident ID Display Helper
+  const selectedResidentDisplay = React.useMemo(() => {
+    const found = filteredResidents.find((r: ResidentMasterItem) => (r.residentId || r.id) === residentId);
+    if (!found) return residentId;
+    const rId = found.residentId || found.id;
+    return found.name ? `${rId} - ${found.name}` : rId;
+  }, [filteredResidents, residentId]);
 
   return (
     <Dashboard.Content>
@@ -362,7 +404,7 @@ export const CreateAccessCardMaster = ({
               <ListInput
                 className="w-100"
                 label="Project Code"
-                value={projectCode || undefined}
+                value={selectedProjectDisplay || undefined}
                 placeholder={isLoadingProperties ? "Loading..." : "Select project code"}
                 feedback={validation["projectCode"]}
                 hasError={typeof validation["projectCode"] !== "undefined"}
@@ -381,20 +423,24 @@ export const CreateAccessCardMaster = ({
                       }}
                     />
                     <Map
-                      items={uniqueProjectCodes}
-                      renderItem={(code) => (
-                        <ListInput.Item
-                          key={code}
-                          label={code}
-                          isActive={projectCode === code}
-                          onClick={() => {
-                            setProjectCode(code);
-                            setApartmentId("");
-                            setResidentId("");
-                            onClose();
-                          }}
-                        />
-                      )}
+                      items={uniqueProjects}
+                      renderItem={(proj: PropertyMasterItem) => {
+                        const code = proj.projectCode || "";
+                        const label = proj.projectName ? `${code} > ${proj.projectName}` : code;
+                        return (
+                          <ListInput.Item
+                            key={code}
+                            label={label}
+                            isActive={projectCode === code}
+                            onClick={() => {
+                              setProjectCode(code);
+                              setApartmentId("");
+                              setResidentId("");
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </React.Fragment>
                 )}
@@ -406,7 +452,7 @@ export const CreateAccessCardMaster = ({
               <ListInput
                 className="w-100"
                 label="Apartment ID"
-                value={apartmentId || undefined}
+                value={selectedApartmentDisplay || undefined}
                 placeholder={
                   !projectCode
                     ? "Select project first"
@@ -430,19 +476,23 @@ export const CreateAccessCardMaster = ({
                       }}
                     />
                     <Map
-                      items={uniqueApartmentIds}
-                      renderItem={(id) => (
-                        <ListInput.Item
-                          key={id}
-                          label={id}
-                          isActive={apartmentId === id}
-                          onClick={() => {
-                            setApartmentId(id);
-                            setResidentId("");
-                            onClose();
-                          }}
-                        />
-                      )}
+                      items={uniqueApartments}
+                      renderItem={(apt: ApartmentMasterItem) => {
+                        const aId = apt.apartmentId || apt.id || "";
+                        const aLabel = apt.apartmentNo ? `${aId} - ${apt.apartmentNo}` : aId;
+                        return (
+                          <ListInput.Item
+                            key={aId}
+                            label={aLabel}
+                            isActive={apartmentId === aId}
+                            onClick={() => {
+                              setApartmentId(aId);
+                              setResidentId("");
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </React.Fragment>
                 )}
@@ -454,7 +504,7 @@ export const CreateAccessCardMaster = ({
               <ListInput
                 className="w-100"
                 label="Resident ID"
-                value={residentId || undefined}
+                value={selectedResidentDisplay || undefined}
                 placeholder={
                   !apartmentId
                     ? "Select apartment first"
@@ -478,7 +528,7 @@ export const CreateAccessCardMaster = ({
                     />
                     <Map
                       items={filteredResidents}
-                      renderItem={(res) => {
+                      renderItem={(res: ResidentMasterItem) => {
                         const rId = res.residentId || res.id || "";
                         const rLabel = res.name ? `${rId} - ${res.name}` : rId;
                         return (
@@ -514,7 +564,7 @@ export const CreateAccessCardMaster = ({
                   <React.Fragment>
                     <Map
                       items={CARD_STATUS_OPTIONS}
-                      renderItem={(status) => (
+                      renderItem={(status: string) => (
                         <ListInput.Item
                           key={status}
                           label={status}

@@ -62,6 +62,7 @@ export type GuestAccessRequest = {
 
 type GuestApprovalHistoryMasterProps = {
   sessionId: string;
+  userId?: string; // <--- userId prop add kar diya gaya hai
   onBack?: () => void;
 };
 
@@ -220,6 +221,7 @@ const GuestApprovalHistoryFilterModal = ({
 
 export const GuestApprovalHistoryMaster = ({
   sessionId,
+  userId: propUserId,
   onBack,
 }: GuestApprovalHistoryMasterProps): JSX.Element => {
   const [allRequests, setAllRequests] = React.useState<GuestAccessRequest[]>([]);
@@ -234,6 +236,22 @@ export const GuestApprovalHistoryMaster = ({
   const [filterStartDate, setFilterStartDate] = React.useState<string | null>(null);
   const [filterEndDate, setFilterEndDate] = React.useState<string | null>(null);
   const [filterStatus, setFilterStatus] = React.useState<string | null>(null);
+
+  // Automatically extract userId from props or local storage/session if available
+  const effectiveUserId = React.useMemo(() => {
+    if (propUserId) return propUserId;
+    try {
+      const rawUser = localStorage.getItem("user") || sessionStorage.getItem("user") || localStorage.getItem("userId");
+      if (!rawUser) return undefined;
+      if (rawUser.startsWith("{")) {
+        const parsed = JSON.parse(rawUser);
+        return parsed.id || parsed._id || parsed.userId || parsed.role;
+      }
+      return rawUser;
+    } catch {
+      return undefined;
+    }
+  }, [propUserId]);
 
   // Apply filters helper function with Date Range logic
   const applyFilters = React.useCallback(
@@ -315,8 +333,8 @@ export const GuestApprovalHistoryMaster = ({
 
   const loadHistoryRequests = React.useCallback(() => {
     setFeedback(null);
-    submit({ sessionId });
-  }, [sessionId, submit]);
+    submit({ sessionId,userId: effectiveUserId, });
+  }, [sessionId, effectiveUserId, submit]);
 
   React.useEffect(() => {
     loadHistoryRequests();

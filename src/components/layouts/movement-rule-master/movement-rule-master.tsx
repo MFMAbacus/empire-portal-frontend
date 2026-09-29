@@ -156,7 +156,7 @@ export const MovementRuleMaster = ({
           isDisabled={Boolean(isLoading)}
           onClick={loadRules}
         />
-        {!canWrite && onCreate && (
+        {canWrite && onCreate && (
           <Button
             label="CREATE"
             icon={<PlusIcon />}

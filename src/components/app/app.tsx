@@ -1272,12 +1272,14 @@ export const App = (): JSX.Element => {
       )}{currentPage === "guest-approval-history-master" && (
         <GuestApprovalHistoryMaster
           sessionId={session.id}
+          userId={session.userId || session.role}
           onBack={() => setCurrentPage("guest-approval-master")}
         />
       )}
       {currentPage === "guest-approval-master" && (
         <GuestApprovalMaster
           sessionId={session.id}
+          userId={session.userId || session.role}
           onBack={() => setCurrentPage("masterforms")}
           onHistory={() => setCurrentPage("guest-approval-history-master")}
         />

@@ -34,6 +34,7 @@ type PropertyMasterItem = {
   projectName?: string;
   [key: string]: any;
 };
+
 type UserItem = {
   _id?: string;
   id?: string;
@@ -45,13 +46,13 @@ type UserItem = {
   [key: string]: any;
 };
 
-
 const delayAfterSuccess = 1000;
 
 export const CreatePropertyManagementApprovalMaster = ({
   sessionId,
   onBack,
 }: CreatePropertyManagementApprovalMasterProps): JSX.Element => {
+  // Yahan hum approverRole mein user ki ID store karenge
   const [approverRole, setApproverRole] = React.useState<string>("");
   
   const [projectCode, setProjectCode] = React.useState<string>("");
@@ -60,7 +61,8 @@ export const CreatePropertyManagementApprovalMaster = ({
 
   const [isActive, setIsActive] = React.useState<boolean>(true);
   const [isSuccess, setIsSuccess] = React.useState<boolean>(false);
-// Users State
+  
+  // Users State
   const [userList, setUserList] = React.useState<UserItem[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = React.useState<boolean>(false);
   const { startTimeout } = useTimeout();
@@ -79,10 +81,8 @@ export const CreatePropertyManagementApprovalMaster = ({
         } as any);
 
         if (isMounted && response) {
-          // Handle response format variations safely
           const rawData = response.data?.data || response.data || response;
           const items: PropertyMasterItem[] = Array.isArray(rawData) ? rawData : [];
-          
           setPropertyList(items);
         }
       } catch (error) {
@@ -101,7 +101,8 @@ export const CreatePropertyManagementApprovalMaster = ({
       service.abort();
     };
   }, [sessionId]);
-// 3. Fetch Users
+
+  // Fetch Users
   React.useEffect(() => {
     let isMounted = true;
     const userService = new GetUserServiceApi();
@@ -155,7 +156,7 @@ export const CreatePropertyManagementApprovalMaster = ({
   const handleSubmit = React.useCallback(() => {
     submit({
       sessionId,
-      approverRole,
+      approverRole, // Yeh ab user ki ID bhejega
       projectCode,
       isActive,
     });
@@ -167,28 +168,54 @@ export const CreatePropertyManagementApprovalMaster = ({
     submit,
   ]);
 
-  // Extract unique project codes for dropdown options
-  const uniqueProjectCodes = React.useMemo(() => {
-    const codes = propertyList
-      .map((item) => item.projectCode)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Screen par selected project ka display text set karne ke liye
+  const selectedProjectDisplay = React.useMemo(() => {
+    const found = propertyList.find((p) => p.projectCode === projectCode);
+    if (!found) return "";
+    return found.projectName
+      ? `${found.projectCode} > ${found.projectName}`
+      : found.projectCode || "";
+  }, [propertyList, projectCode]);
+
+  // Extract unique properties using a plain JS object dictionary
+  const uniqueProperties = React.useMemo(() => {
+    const lookup: { [key: string]: PropertyMasterItem } = {};
+    const result: PropertyMasterItem[] = [];
+
+    propertyList.forEach((item) => {
+      if (item.projectCode && !lookup[item.projectCode]) {
+        lookup[item.projectCode] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [propertyList]);
 
+  // User options banayein jisme ID aur Display Name dono hon
   const userOptions = React.useMemo(() => {
-      const names = userList
-        .map((user) => {
-          const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
-          return fullName || user.jobTitle || user.email || user.id;
-        })
-        .filter((name): name is string => Boolean(name));
-      return Array.from(new Set(names));
-    }, [userList]);
-  
+    return userList
+      .map((user) => {
+        const userId = user.id || user._id;
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+        const displayName = fullName || user.jobTitle || user.email || userId;
+        
+        return {
+          id: userId,
+          name: displayName,
+        };
+      })
+      .filter((user): user is { id: string; name: string } => Boolean(user.id && user.name));
+  }, [userList]);
+
+  // Dropdown ke andar selected user ka name show karne ke liye helper
+  const selectedUserDisplay = React.useMemo(() => {
+    const found = userOptions.find((u) => u.id === approverRole);
+    return found ? found.name : "";
+  }, [userOptions, approverRole]);
 
   return (
     <Dashboard.Content>
-      {/* Purpose: Routes approval to propert team */}
       <Actionbar title="PROPERTY MANAGEMENT APPROVAL">
         <Button
           label="SAVE"
@@ -218,7 +245,7 @@ export const CreatePropertyManagementApprovalMaster = ({
               <ListInput
                 className="w-100"
                 label="Project Code"
-                value={projectCode || undefined}
+                value={selectedProjectDisplay || undefined}
                 placeholder={isLoadingProperties ? "Loading..." : "Select project code"}
                 hasError={typeof validation["projectCode"] !== "undefined"}
                 isDisabled={isLoading || isSuccess || isLoadingProperties}
@@ -234,14 +261,61 @@ export const CreatePropertyManagementApprovalMaster = ({
                       }}
                     />
                     <Map
-                      items={uniqueProjectCodes}
-                      renderItem={(code) => (
+                      items={uniqueProperties}
+                      renderItem={(property) => {
+                        const displayLabel = property.projectName
+                          ? `${property.projectCode} > ${property.projectName}`
+                          : property.projectCode || "";
+
+                        return (
+                          <ListInput.Item
+                            key={property.projectCode}
+                            label={displayLabel}
+                            isActive={projectCode === property.projectCode}
+                            onClick={() => {
+                              if (property.projectCode) {
+                                setProjectCode(property.projectCode);
+                              }
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
+                    />
+                  </React.Fragment>
+                )}
+              </ListInput>
+            </Grid.Cell>
+
+            {/* Approver Role / User Dropdown */}
+            <Grid.Cell size={Grid.CellSize.S3}>
+              <ListInput
+                className="w-100"
+                label="Approver Role / User"
+                value={selectedUserDisplay || undefined} // Screen par name show hoga
+                placeholder={isLoadingUsers ? "Loading..." : "Select user or role"}
+                hasError={typeof validation["approverRole"] !== "undefined"}
+                isDisabled={isLoading || isSuccess || isLoadingUsers}
+              >
+                {(onClose) => (
+                  <React.Fragment>
+                    <ListInput.Item
+                      label="None"
+                      isActive={approverRole === ""}
+                      onClick={() => {
+                        setApproverRole("");
+                        onClose();
+                      }}
+                    />
+                    <Map
+                      items={userOptions}
+                      renderItem={(user) => (
                         <ListInput.Item
-                          key={code}
-                          label={code}
-                          isActive={projectCode === code}
+                          key={user.id}
+                          label={user.name} // Dropdown list mein Name dikhega
+                          isActive={approverRole === user.id}
                           onClick={() => {
-                            setProjectCode(code);
+                            setApproverRole(user.id); // State mein ID save hogi jo payload mein jayegi
                             onClose();
                           }}
                         />
@@ -251,45 +325,6 @@ export const CreatePropertyManagementApprovalMaster = ({
                 )}
               </ListInput>
             </Grid.Cell>
-
-            {/* Approver Role / User Dropdown */}
-                        <Grid.Cell size={Grid.CellSize.S3}>
-                          <ListInput
-                            className="w-100"
-                            label="Approver Role / User"
-                            value={approverRole || undefined}
-                            placeholder={isLoadingUsers ? "Loading..." : "Select user or role"}
-                            hasError={typeof validation["approverRole"] !== "undefined"}
-                            isDisabled={isLoading || isSuccess || isLoadingUsers}
-                          >
-                            {(onClose) => (
-                              <React.Fragment>
-                                <ListInput.Item
-                                  label="None"
-                                  isActive={approverRole === ""}
-                                  onClick={() => {
-                                    setApproverRole("");
-                                    onClose();
-                                  }}
-                                />
-                                <Map
-                                  items={userOptions}
-                                  renderItem={(userName) => (
-                                    <ListInput.Item
-                                      key={userName}
-                                      label={userName}
-                                      isActive={approverRole === userName}
-                                      onClick={() => {
-                                        setApproverRole(userName);
-                                        onClose();
-                                      }}
-                                    />
-                                  )}
-                                />
-                              </React.Fragment>
-                            )}
-                          </ListInput>
-                        </Grid.Cell>
 
             {/* Field 3: Status (Active / Inactive) */}
             <Grid.Cell size={Grid.CellSize.S3}>
