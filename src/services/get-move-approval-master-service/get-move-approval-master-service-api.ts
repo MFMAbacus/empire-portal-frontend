@@ -4,6 +4,8 @@ import { apiUrl } from '@/config';
 
 export type GetMoveApprovalInput = {
   sessionId: string;
+  userId?: string;
+  residentId?: string;
 };
 
 export class GetMoveApprovalMasterServiceApi extends Service<GetMoveApprovalInput> {
@@ -15,8 +17,13 @@ export class GetMoveApprovalMasterServiceApi extends Service<GetMoveApprovalInpu
   }
 
   public async execute(input: GetMoveApprovalInput): Promise<ServiceOutput> {
-    const { sessionId } = input;
-    const endpoint = `${apiUrl}/move-approval-master?sessionId=${sessionId}`;
+    const { sessionId, userId, residentId } = input;
+    let endpoint = `${apiUrl}/move-approval-request`;
+    const params: string[] = [];
+    if (sessionId) params.push(`sessionId=${sessionId}`);
+    if (userId) params.push(`userId=${userId}`);
+    if (residentId) params.push(`residentId=${residentId}`);
+    if (params.length > 0) endpoint += `?${params.join('&')}`;
 
     const response = await fetch(endpoint, {
       method: 'GET',

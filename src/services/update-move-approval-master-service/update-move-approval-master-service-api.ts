@@ -5,8 +5,10 @@ import { apiUrl } from '@/config';
 export type UpdateMoveApprovalInput = {
   sessionId: string;
   id: string;
-  status: string;
+  status?: string;
   rejectionReason?: string;
+  approverId?: string;
+  remarks?: string;
 };
 
 export class UpdateMoveApprovalMasterServiceApi extends Service<UpdateMoveApprovalInput> {
@@ -19,7 +21,14 @@ export class UpdateMoveApprovalMasterServiceApi extends Service<UpdateMoveApprov
 
   public async execute(input: UpdateMoveApprovalInput): Promise<ServiceOutput> {
     const { sessionId, id, ...bodyData } = input;
-    const endpoint = `${apiUrl}/move-approval-master/${id}?sessionId=${sessionId}`;
+
+    // Use action-specific endpoints for approve/reject
+    let endpoint = `${apiUrl}/move-approval-request/${id}`;
+    if (bodyData.status === 'Approved') {
+      endpoint = `${apiUrl}/move-approval-request/${id}/approve`;
+    } else if (bodyData.status === 'Rejected') {
+      endpoint = `${apiUrl}/move-approval-request/${id}/reject`;
+    }
 
     const response = await fetch(endpoint, {
       method: 'PATCH',
