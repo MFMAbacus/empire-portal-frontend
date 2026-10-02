@@ -173,7 +173,7 @@ export const EditVenueOperatingMaster = ({
     submit({
       sessionId,
       id, // Record Primary Key to update
-      venueId,
+      venueId, // Payload mein strictly venueId hi jayega
       day: daysSelected.join(", "),
       openTime,
       closeTime,
@@ -200,11 +200,28 @@ export const EditVenueOperatingMaster = ({
     );
   };
 
-  const uniqueVenueIds = React.useMemo(() => {
-    const ids = venueList
-      .map((item) => item.venueId)
-      .filter((vId): vId is string => Boolean(vId));
-    return Array.from(new Set(ids));
+  // Screen par selected venue ka display text set karne ke liye (Venue ID > Venue Name)
+  const selectedVenueDisplay = React.useMemo(() => {
+    const found = venueList.find((v) => v.venueId === venueId);
+    if (!found) return "";
+    return found.venueName
+      ? `${found.venueId} > ${found.venueName}`
+      : found.venueId || "";
+  }, [venueList, venueId]);
+
+  // Extract unique venues using a plain JS object dictionary
+  const uniqueVenues = React.useMemo(() => {
+    const lookup: { [key: string]: VenueMasterItem } = {};
+    const result: VenueMasterItem[] = [];
+
+    venueList.forEach((item) => {
+      if (item.venueId && !lookup[item.venueId]) {
+        lookup[item.venueId] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [venueList]);
 
   const daysLabel = React.useMemo(() => {
@@ -250,12 +267,12 @@ export const EditVenueOperatingMaster = ({
             <Paper.Title value={`Venue Operating Details (ID: ${id})`} />
 
             <Grid>
-              {/* Row 1: Venue ID & Day */}
+              {/* Row 1: Venue ID Dropdown (Shows ID > Name, sends ID) */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <ListInput
                   className="w-100"
                   label="Venue ID"
-                  value={venueId || undefined}
+                  value={selectedVenueDisplay || undefined}
                   placeholder={
                     isLoadingVenues ? "Loading..." : "Select venue ID"
                   }
@@ -273,18 +290,26 @@ export const EditVenueOperatingMaster = ({
                         }}
                       />
                       <Map
-                        items={uniqueVenueIds}
-                        renderItem={(vId) => (
-                          <ListInput.Item
-                            key={vId}
-                            label={vId}
-                            isActive={venueId === vId}
-                            onClick={() => {
-                              setVenueId(vId);
-                              onClose();
-                            }}
-                          />
-                        )}
+                        items={uniqueVenues}
+                        renderItem={(venue) => {
+                          const displayLabel = venue.venueName
+                            ? `${venue.venueId} > ${venue.venueName}`
+                            : venue.venueId || "";
+
+                          return (
+                            <ListInput.Item
+                              key={venue.venueId}
+                              label={displayLabel}
+                              isActive={venueId === venue.venueId}
+                              onClick={() => {
+                                if (venue.venueId) {
+                                  setVenueId(venue.venueId); // Payload mein strict venueId set hoga
+                                }
+                                onClose();
+                              }}
+                            />
+                          );
+                        }}
                       />
                     </React.Fragment>
                   )}
@@ -358,7 +383,7 @@ export const EditVenueOperatingMaster = ({
                   onChange={setCloseTime}
                 />
               </Grid.Cell>
-</Grid>
+            </Grid>
             <Grid>
               {/* Row 3: Checkboxes */}
               <Grid.Cell size={Grid.CellSize.S3}>

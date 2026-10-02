@@ -54,7 +54,7 @@ export const EditCourtBookingMaster = ({
 
   // Property Dropdown Data
   const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>(
-    [],
+    []
   );
   const [isLoadingProperties, setIsLoadingProperties] =
     React.useState<boolean>(false);
@@ -74,18 +74,14 @@ export const EditCourtBookingMaster = ({
     const fetchProperties = async () => {
       setIsLoadingProperties(true);
       try {
-        const response = await propertyService.execute({
+        const response: any = await propertyService.execute({
           sessionId,
           isArchived: false,
         } as any);
 
         if (isMounted && response) {
-          const items: PropertyMasterItem[] = Array.isArray(response.data)
-            ? response.data
-            : Array.isArray(response)
-              ? response
-              : [];
-
+          const rawData = response.data?.data || response.data || response;
+          const items: PropertyMasterItem[] = Array.isArray(rawData) ? rawData : [];
           setPropertyList(items);
         }
       } catch (err) {
@@ -104,7 +100,8 @@ export const EditCourtBookingMaster = ({
       propertyService.abort();
     };
   }, [sessionId]);
-// Initial Project Venue Data Fetching
+
+  // Initial Project Venue Data Fetching
   React.useEffect(() => {
     let isMounted = true;
     setIsFetching(true);
@@ -117,9 +114,9 @@ export const EditCourtBookingMaster = ({
         if (response && response.data) {
           const item = response.data;
           setMaxBooking(item.maxBooking || 0);
-          setProjectCode(item.projectCode || 0);
+          setProjectCode(item.projectCode || "");
           setAdvanceBooking(item.advanceBooking || 0);
-          setPendingSlot(item.pendingSlot ?? false)
+          setPendingSlot(item.pendingSlot ?? false);
           setIsActive(item.isActive ?? true);
         }
         setIsFetching(false);
@@ -168,13 +165,30 @@ export const EditCourtBookingMaster = ({
     submit,
   ]);
 
-  // Unique Project Codes for Dropdown
-  const uniqueProjectCodes = React.useMemo(() => {
-    const codes = propertyList
-      .map((item) => item.projectCode)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Unique Properties for Project Code dropdown display (`projectCode > projectName`)
+  const uniqueProperties = React.useMemo(() => {
+    const lookup: { [key: string]: PropertyMasterItem } = {};
+    const result: PropertyMasterItem[] = [];
+
+    propertyList.forEach((item) => {
+      const pCode = item.projectCode || item.id;
+      if (pCode && !lookup[pCode]) {
+        lookup[pCode] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [propertyList]);
+
+  // Screen par selected project ka display text set karne ke liye
+  const selectedProjectDisplay = React.useMemo(() => {
+    const found = propertyList.find((p) => (p.projectCode || p.id) === projectCode);
+    if (!found) return projectCode;
+    const pCode = found.projectCode || found.id;
+    const name = found.projectName;
+    return name ? `${pCode} > ${name}` : pCode || "";
+  }, [propertyList, projectCode]);
 
   return (
     <Dashboard.Content>
@@ -213,14 +227,13 @@ export const EditCourtBookingMaster = ({
 
             <Paper.Title value={`Court Booking Details (ID: ${id})`} />
 
-            {/* Row 2: Project Code, Apartment ID, CourtBooking Type, Login User ID */}
             <Grid>
               {/* Project Code Dropdown */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <ListInput
                   className="w-100"
                   label="Project Code"
-                  value={projectCode || undefined}
+                  value={selectedProjectDisplay || undefined}
                   placeholder={
                     isLoadingProperties ? "Loading..." : "Select project code"
                   }
@@ -238,54 +251,67 @@ export const EditCourtBookingMaster = ({
                         }}
                       />
                       <Map
-                        items={uniqueProjectCodes}
-                        renderItem={(code) => (
-                          <ListInput.Item
-                            key={code}
-                            label={code}
-                            isActive={projectCode === code}
-                            onClick={() => {
-                              setProjectCode(code);
-                              onClose();
-                            }}
-                          />
-                        )}
+                        items={uniqueProperties}
+                        renderItem={(property) => {
+                          const pCode = property.projectCode || property.id;
+                          const name = property.projectName;
+                          const displayLabel = name
+                            ? `${pCode} > ${name}`
+                            : pCode || "";
+
+                          return (
+                            <ListInput.Item
+                              key={pCode}
+                              label={displayLabel}
+                              isActive={projectCode === pCode}
+                              onClick={() => {
+                                if (pCode) {
+                                  setProjectCode(pCode);
+                                }
+                                onClose();
+                              }}
+                            />
+                          );
+                        }}
                       />
                     </React.Fragment>
                   )}
                 </ListInput>
               </Grid.Cell>
-            
-            {/* Venue ID Dropdown */}
-            <Grid.Cell size={Grid.CellSize.S3}>
-              <NumberInput
-                className="w-100"
-                label="Max Booking Duration"
-                placeholder="Enter max booking duration"
-                value={maxBooking.toString()}
-                hasError={typeof validation["maxBooking"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
-                onChange={(value) => setMaxBooking(parseInt(value) || 0)}
-              />
-            </Grid.Cell>
-            <Grid.Cell size={Grid.CellSize.S3}>
-              <NumberInput
-                className="w-100"
-                label="Advance Booking Days"
-                placeholder="Enter advance booking days"
-                value={advanceBooking.toString()}
-                hasError={typeof validation["advanceBooking"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
-                onChange={(value) => setAdvanceBooking(parseInt(value) || 0)}
-              />
-            </Grid.Cell>
+
+              {/* Max Booking Duration */}
+              <Grid.Cell size={Grid.CellSize.S3}>
+                <NumberInput
+                  className="w-100"
+                  label="Max Booking Duration"
+                  placeholder="Enter max booking duration"
+                  value={maxBooking.toString()}
+                  hasError={typeof validation["maxBooking"] !== "undefined"}
+                  isDisabled={isLoading || isSuccess}
+                  onChange={(value) => setMaxBooking(parseInt(value) || 0)}
+                />
+              </Grid.Cell>
+
+              {/* Advance Booking Days */}
+              <Grid.Cell size={Grid.CellSize.S3}>
+                <NumberInput
+                  className="w-100"
+                  label="Advance Booking Days"
+                  placeholder="Enter advance booking days"
+                  value={advanceBooking.toString()}
+                  hasError={typeof validation["advanceBooking"] !== "undefined"}
+                  isDisabled={isLoading || isSuccess}
+                  onChange={(value) => setAdvanceBooking(parseInt(value) || 0)}
+                />
+              </Grid.Cell>
             </Grid>
-            {/* Row 3: Active Checkbox */}
+
+            {/* Checkboxes Row */}
             <Grid>
               <Grid.Cell size={Grid.CellSize.S3}>
                 <Checkbox
                   className="mt-2"
-                  label=" Pending Slot Blocking"
+                  label="Pending Slot Blocking"
                   isChecked={pendingSlot}
                   isDisabled={isLoading || isSuccess}
                   onChange={setPendingSlot}

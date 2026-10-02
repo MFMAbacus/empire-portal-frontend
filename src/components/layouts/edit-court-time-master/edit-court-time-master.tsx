@@ -71,18 +71,14 @@ export const EditCourtTimeMaster = ({
     const fetchCourts = async () => {
       setIsLoadingCourts(true);
       try {
-        const response = await courtService.execute({
+        const response: any = await courtService.execute({
           sessionId,
           isArchived: false,
         } as any);
 
         if (isMounted && response) {
-          const items: CourtMasterItem[] = Array.isArray(response.data)
-            ? response.data
-            : Array.isArray(response)
-              ? response
-              : [];
-
+          const rawData = response.data?.data || response.data || response;
+          const items: CourtMasterItem[] = Array.isArray(rawData) ? rawData : [];
           setCourtList(items);
         }
       } catch (err) {
@@ -166,12 +162,30 @@ export const EditCourtTimeMaster = ({
     submit,
   ]);
 
-  const uniqueCourtIds = React.useMemo(() => {
-    const ids = courtList
-      .map((item) => item.courtId)
-      .filter((vId): vId is string => Boolean(vId));
-    return Array.from(new Set(ids));
+  // Extract unique courts with both id and name for Court ID dropdown display
+  const uniqueCourts = React.useMemo(() => {
+    const lookup: { [key: string]: CourtMasterItem } = {};
+    const result: CourtMasterItem[] = [];
+
+    courtList.forEach((item) => {
+      const cId = item.courtId || item.id;
+      if (cId && !lookup[cId]) {
+        lookup[cId] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [courtList]);
+
+  // Screen par selected court ka display text set karne ke liye (Court ID > Court Name)
+  const selectedCourtDisplay = React.useMemo(() => {
+    const found = courtList.find((c) => (c.courtId || c.id) === courtId);
+    if (!found) return courtId;
+    const cId = found.courtId || found.id;
+    const name = found.courtName;
+    return name ? `${cId} > ${name}` : cId || "";
+  }, [courtList, courtId]);
 
   return (
     <Dashboard.Content>
@@ -212,12 +226,12 @@ export const EditCourtTimeMaster = ({
             <Paper.Title value={`Court Time Details (ID: ${id})`} />
 
             <Grid>
-              {/* Row 1: Court ID & Day */}
+              {/* Row 1: Court ID & Slot Duration */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <ListInput
                   className="w-100"
                   label="Court ID"
-                  value={courtId || undefined}
+                  value={selectedCourtDisplay || undefined}
                   placeholder={
                     isLoadingCourts ? "Loading..." : "Select court ID"
                   }
@@ -235,18 +249,28 @@ export const EditCourtTimeMaster = ({
                         }}
                       />
                       <Map
-                        items={uniqueCourtIds}
-                        renderItem={(vId) => (
-                          <ListInput.Item
-                            key={vId}
-                            label={vId}
-                            isActive={courtId === vId}
-                            onClick={() => {
-                              setCourtId(vId);
-                              onClose();
-                            }}
-                          />
-                        )}
+                        items={uniqueCourts}
+                        renderItem={(court) => {
+                          const cId = court.courtId || court.id;
+                          const name = court.courtName;
+                          const displayLabel = name
+                            ? `${cId} > ${name}`
+                            : cId || "";
+
+                          return (
+                            <ListInput.Item
+                              key={cId}
+                              label={displayLabel}
+                              isActive={courtId === cId}
+                              onClick={() => {
+                                if (cId) {
+                                  setCourtId(cId);
+                                }
+                                onClose();
+                              }}
+                            />
+                          );
+                        }}
                       />
                     </React.Fragment>
                   )}
@@ -266,7 +290,7 @@ export const EditCourtTimeMaster = ({
               </Grid.Cell>
             </Grid>
             <Grid>
-              {/* Row 2: Open Time & Close Time */}
+              {/* Row 2: Slot Start Time & Slot End Time */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <DateInput
                   className="w-100"
@@ -294,7 +318,7 @@ export const EditCourtTimeMaster = ({
               </Grid.Cell>
             </Grid>
             <Grid>
-
+              {/* Row 3: Active Checkbox */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <Checkbox
                   className="mt-2"

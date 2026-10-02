@@ -30,7 +30,7 @@ type CreateReservationRuleMasterProps = {
 type VenueMasterItem = {
   id?: string;
   venueId?: string;
-  venuName?: string;
+  venueName?: string;
   [key: string]: any;
 };
 
@@ -54,27 +54,22 @@ export const CreateReservationRuleMaster = ({
 
   const { startTimeout } = useTimeout();
 
-  // Fetch Property Master list from API
+  // Fetch Venue Master list from API
   React.useEffect(() => {
     let isMounted = true;
     const service = new GetVenueMasterServiceApi();
 
-    const fetchPropertyMaster = async () => {
+    const fetchVenueMaster = async () => {
       setIsLoadingProperties(true);
       try {
-        const response = await service.execute({
+        const response: any = await service.execute({
           sessionId,
           isArchived: false,
         } as any);
 
-        if (isMounted && response && response.data) {
-          // Handle response format whether data array is wrapped or direct
-          const items: VenueMasterItem[] = Array.isArray(response.data)
-            ? response.data
-            : Array.isArray(response)
-              ? response
-              : [];
-
+        if (isMounted && response) {
+          const rawData = response.data?.data || response.data || response;
+          const items: VenueMasterItem[] = Array.isArray(rawData) ? rawData : [];
           setVenueList(items);
         }
       } catch (error) {
@@ -86,7 +81,7 @@ export const CreateReservationRuleMaster = ({
       }
     };
 
-    fetchPropertyMaster();
+    fetchVenueMaster();
 
     return () => {
       isMounted = false;
@@ -112,7 +107,7 @@ export const CreateReservationRuleMaster = ({
       slotDuration,
       maxGuest,
       lateArrival,
-      venueId,
+      venueId, // Payload mein strictly venueId hi jayega
       isActive,
     });
   }, [
@@ -125,13 +120,28 @@ export const CreateReservationRuleMaster = ({
     submit,
   ]);
 
-  // Extract unique venue for dropdown options
-  const uniqueVenue = React.useMemo(() => {
-    const codes = venueList
-      .map((item) => item.venueId)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Extract unique venues with both id and name for Venue ID dropdown display
+  const uniqueVenues = React.useMemo(() => {
+    const lookup: { [key: string]: VenueMasterItem } = {};
+    const result: VenueMasterItem[] = [];
+
+    venueList.forEach((item) => {
+      if (item.venueId && !lookup[item.venueId]) {
+        lookup[item.venueId] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [venueList]);
+
+  // Screen par selected venue ka display text set karne ke liye (Venue ID > Venue Name)
+  const selectedVenueDisplay = React.useMemo(() => {
+    const found = venueList.find((v) => v.venueId === venueId);
+    if (!found) return venueId;
+    const name = found.venueName;
+    return name ? `${found.venueId} > ${name}` : found.venueId || "";
+  }, [venueList, venueId]);
 
   return (
     <Dashboard.Content>
@@ -153,7 +163,7 @@ export const CreateReservationRuleMaster = ({
             <Alert message={alertData.message} severity={alertData.severity} />
           )}
 
-          <Paper.Title value="ReservationRule Master Details" />
+          <Paper.Title value="Reservation Rule Master Details" />
 
           <Grid>
             {/* Field 5: venueID (Dynamic ListInput Dropdown from API) */}
@@ -161,7 +171,7 @@ export const CreateReservationRuleMaster = ({
               <ListInput
                 className="w-100"
                 label="Venu ID"
-                value={venueId || undefined}
+                value={selectedVenueDisplay || undefined}
                 placeholder={
                   isLoadingProperties ? "Loading..." : "Select venue id"
                 }
@@ -179,18 +189,27 @@ export const CreateReservationRuleMaster = ({
                       }}
                     />
                     <Map
-                      items={uniqueVenue}
-                      renderItem={(code) => (
-                        <ListInput.Item
-                          key={code}
-                          label={code}
-                          isActive={venueId === code}
-                          onClick={() => {
-                            setVenueId(code);
-                            onClose();
-                          }}
-                        />
-                      )}
+                      items={uniqueVenues}
+                      renderItem={(venue) => {
+                        const name = venue.venueName;
+                        const displayLabel = name
+                          ? `${venue.venueId} > ${name}`
+                          : venue.venueId || "";
+
+                        return (
+                          <ListInput.Item
+                            key={venue.venueId}
+                            label={displayLabel}
+                            isActive={venueId === venue.venueId}
+                            onClick={() => {
+                              if (venue.venueId) {
+                                setVenueId(venue.venueId);
+                              }
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </React.Fragment>
                 )}
@@ -210,7 +229,7 @@ export const CreateReservationRuleMaster = ({
               />
             </Grid.Cell>
 
-            {/* Field 2: Max Guest / Reservation*/}
+            {/* Field 2: Max Guest / Reservation */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <NumberInput
                 className="w-100"
@@ -223,7 +242,7 @@ export const CreateReservationRuleMaster = ({
               />
             </Grid.Cell>
 
-            {/* Field 3:  Late Arrival Grace Period */}
+            {/* Field 3: Late Arrival Grace Period */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <NumberInput
                 className="w-100"

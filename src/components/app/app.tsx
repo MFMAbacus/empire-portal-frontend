@@ -184,6 +184,7 @@ import { MoveApprovalMaster } from "../layouts/move-approval-master";
 import { MoveApprovalHistoryMaster } from "../layouts/move-approval-history-master";
 import { CardProcessingMaster } from "../layouts/card-processing-master";
 import { RestaurantReservationApprovalMaster } from "../layouts/restaurant-reservation-approval-master";
+import { RestaurantReservationApprovalHistoryMaster } from "../layouts/restaurant-reservation-approval-history-master";
 import { CourtApprovalMaster } from "../layouts/court-approval-master";
 import { RequestHistoryMaster } from "../layouts/request-history-master";
 import { AuditLogsMaster } from "../layouts/audit-logs-master";
@@ -1309,7 +1310,16 @@ export const App = (): JSX.Element => {
       {currentPage === "restaurant-reservation-approval-master" && (
         <RestaurantReservationApprovalMaster
           sessionId={session.id}
+          userId={session.userId || session.role}
           onBack={() => setCurrentPage("masterforms")}
+          onHistory={() => setCurrentPage("restaurant-reservation-approval-history-master")}
+        />
+      )}
+      {currentPage === "restaurant-reservation-approval-history-master" && (
+        <RestaurantReservationApprovalHistoryMaster
+          sessionId={session.id}
+          userId={session.userId || session.role}
+          onBack={() => setCurrentPage("restaurant-reservation-approval-master")}
         />
       )}
       {currentPage === "court-approval-master" && (

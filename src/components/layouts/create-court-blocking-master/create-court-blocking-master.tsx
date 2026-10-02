@@ -22,7 +22,6 @@ import { useForm } from "@/hooks/use-form";
 import { makeCreateCourtBlockingMasterService } from "@/services/create-court-blocking-master-service";
 import { GetCourtMasterServiceApi } from "@/services/get-court-master-service";
 import { DateInput } from "@/components/base/date-input";
-import { NumberInput } from "@/components/base/number-input";
 
 type CreateCourtBlockingMasterProps = {
   sessionId: string;
@@ -51,47 +50,41 @@ export const CreateCourtBlockingMaster = ({
 
   const [courtId, setCourtId] = React.useState<string>("");
   const [courtList, setCourtList] = React.useState<CourtMasterItem[]>([]);
-  const [isLoadingProperties, setIsLoadingProperties] =
-    React.useState<boolean>(false);
+  const [isLoadingCourts, setIsLoadingCourts] = React.useState<boolean>(false);
 
   const [isActive, setIsActive] = React.useState<boolean>(true);
   const [isSuccess, setIsSuccess] = React.useState<boolean>(false);
 
   const { startTimeout } = useTimeout();
 
-  // Fetch Property Master list from API
+  // Fetch court Master list from API
   React.useEffect(() => {
     let isMounted = true;
     const service = new GetCourtMasterServiceApi();
 
-    const fetchPropertyMaster = async () => {
-      setIsLoadingProperties(true);
+    const fetchCourtMaster = async () => {
+      setIsLoadingCourts(true);
       try {
-        const response = await service.execute({
+        const response: any = await service.execute({
           sessionId,
           isArchived: false,
         } as any);
 
-        if (isMounted && response && response.data) {
-          // Handle response format whether data array is wrapped or direct
-          const items: CourtMasterItem[] = Array.isArray(response.data)
-            ? response.data
-            : Array.isArray(response)
-              ? response
-              : [];
-
+        if (isMounted && response) {
+          const rawData = response.data?.data || response.data || response;
+          const items: CourtMasterItem[] = Array.isArray(rawData) ? rawData : [];
           setCourtList(items);
         }
       } catch (error) {
         console.error("Failed to fetch court master details:", error);
       } finally {
         if (isMounted) {
-          setIsLoadingProperties(false);
+          setIsLoadingCourts(false);
         }
       }
     };
 
-    fetchPropertyMaster();
+    fetchCourtMaster();
 
     return () => {
       isMounted = false;
@@ -116,7 +109,7 @@ export const CreateCourtBlockingMaster = ({
       sessionId,
       blockId,
       blockDate,
-      courtId,
+      courtId, // Payload mein strictly courtId hi jayega
       startTime,
       endTime,
       reason,
@@ -136,13 +129,30 @@ export const CreateCourtBlockingMaster = ({
     submit,
   ]);
 
-  // Extract unique project codes for dropdown options
-  const uniqueCourt = React.useMemo(() => {
-    const codes = courtList
-      .map((item) => item.courtId)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Extract unique courts with both id and name for Court ID dropdown display
+  const uniqueCourts = React.useMemo(() => {
+    const lookup: { [key: string]: CourtMasterItem } = {};
+    const result: CourtMasterItem[] = [];
+
+    courtList.forEach((item) => {
+      const cId = item.courtId || item.id;
+      if (cId && !lookup[cId]) {
+        lookup[cId] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [courtList]);
+
+  // Screen par selected court ka display text set karne ke liye (Court ID > Court Name)
+  const selectedCourtDisplay = React.useMemo(() => {
+    const found = courtList.find((c) => (c.courtId || c.id) === courtId);
+    if (!found) return courtId;
+    const cId = found.courtId || found.id;
+    const name = found.courtName;
+    return name ? `${cId} > ${name}` : cId || "";
+  }, [courtList, courtId]);
 
   return (
     <Dashboard.Content>
@@ -187,17 +197,18 @@ export const CreateCourtBlockingMaster = ({
                 onChange={setBlockId}
               />
             </Grid.Cell>
-            {/* Field 5: court id( Dynamic ListInput Dropdown from API) */}
+            {/* Field 5: court id (Dynamic ListInput Dropdown from API) */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <ListInput
                 className="w-100"
                 label="Court ID"
-                value={courtId || undefined}
+                value={selectedCourtDisplay || undefined}
                 placeholder={
-                  isLoadingProperties ? "Loading..." : "Select courtId"
+                  isLoadingCourts ? "Loading..." : "Select court ID"
                 }
-                hasError={typeof validation["projectCode"] !== "undefined"}
-                isDisabled={isLoading || isSuccess || isLoadingProperties}
+                hasError={typeof validation["courtId"] !== "undefined"}
+                feedback={validation["courtId"]}
+                isDisabled={isLoading || isSuccess || isLoadingCourts}
               >
                 {(onClose) => (
                   <React.Fragment>
@@ -210,24 +221,34 @@ export const CreateCourtBlockingMaster = ({
                       }}
                     />
                     <Map
-                      items={uniqueCourt}
-                      renderItem={(code) => (
-                        <ListInput.Item
-                          key={code}
-                          label={code}
-                          isActive={courtId === code}
-                          onClick={() => {
-                            setCourtId(code);
-                            onClose();
-                          }}
-                        />
-                      )}
+                      items={uniqueCourts}
+                      renderItem={(court) => {
+                        const cId = court.courtId || court.id;
+                        const name = court.courtName;
+                        const displayLabel = name
+                          ? `${cId} > ${name}`
+                          : cId || "";
+
+                        return (
+                          <ListInput.Item
+                            key={cId}
+                            label={displayLabel}
+                            isActive={courtId === cId}
+                            onClick={() => {
+                              if (cId) {
+                                setCourtId(cId);
+                              }
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </React.Fragment>
                 )}
               </ListInput>
             </Grid.Cell>
-            {/* Field 2: CourtBlocking No */}
+            {/* Field 2: Block Date */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <DateInput
                 className="w-100"
@@ -241,7 +262,7 @@ export const CreateCourtBlockingMaster = ({
                 onChange={setBlockDate}
               />
             </Grid.Cell>
-            {/* Field 4: createdby */}
+            {/* Field 4: Created By */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <TextInput
                 className="w-100"
@@ -253,8 +274,8 @@ export const CreateCourtBlockingMaster = ({
                 onChange={setCreatedBy}
               />
             </Grid.Cell>
-              </Grid>
-              <Grid>
+          </Grid>
+          <Grid>
             <Grid.Cell size={Grid.CellSize.S3}>
               <DateInput
                 className="w-100"
@@ -284,7 +305,7 @@ export const CreateCourtBlockingMaster = ({
               />
             </Grid.Cell>
 
-            {/* Field 3: reason*/}
+            {/* Field 3: Reason */}
             <Grid.Cell size={Grid.CellSize.S6}>
               <TextInput
                 className="w-100"
@@ -296,8 +317,6 @@ export const CreateCourtBlockingMaster = ({
                 onChange={setReason}
               />
             </Grid.Cell>
-
-            
           </Grid>
 
           <Grid>

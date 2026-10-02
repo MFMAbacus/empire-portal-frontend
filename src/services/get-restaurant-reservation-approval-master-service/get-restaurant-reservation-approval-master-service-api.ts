@@ -4,6 +4,10 @@ import { apiUrl } from '@/config';
 
 export type GetRestaurantReservationInput = {
   sessionId: string;
+  userId?: string;
+  residentId?: string;
+  venueId?: string;
+  isArchived?: boolean;
 };
 
 export class GetRestaurantReservationApprovalMasterServiceApi extends Service<GetRestaurantReservationInput> {
@@ -15,8 +19,16 @@ export class GetRestaurantReservationApprovalMasterServiceApi extends Service<Ge
   }
 
   public async execute(input: GetRestaurantReservationInput): Promise<ServiceOutput> {
-    const { sessionId } = input;
-    const endpoint = `${apiUrl}/restaurant-reservation-approval-master?sessionId=${sessionId}`;
+    const { sessionId, userId, residentId, venueId, isArchived } = input;
+
+    const queryParams = new URLSearchParams();
+    queryParams.append("sessionId", sessionId);
+    if (userId) queryParams.append("userId", userId);
+    if (residentId) queryParams.append("residentId", residentId);
+    if (venueId) queryParams.append("venueId", venueId);
+    if (isArchived !== undefined) queryParams.append("isArchived", isArchived ? "1" : "0");
+
+    const endpoint = `${apiUrl}/restaurant-reservation-approval-request?${queryParams.toString()}`;
 
     const response = await fetch(endpoint, {
       method: 'GET',

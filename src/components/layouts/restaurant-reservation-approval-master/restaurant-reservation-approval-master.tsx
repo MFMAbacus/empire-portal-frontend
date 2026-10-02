@@ -27,11 +27,17 @@ export type RestaurantReservation = {
   id: string;
   reservationNo: string;
   venueName: string;
+  projectCode?: string;
   residentName: string;
+  residentEmail?: string;
+  residentMobile?: string;
   numberOfGuests: number;
+  reservationName: string;
   reservationDate: string;
   reservationTime: string;
   notes?: string;
+  isRuleValid?: boolean;
+  ruleValidationNotes?: string;
   status: "Pending" | "Approved" | "Arrived" | "Expired" | "Rejected";
   rejectionReason?: string;
   createdAt: string;
@@ -39,12 +45,16 @@ export type RestaurantReservation = {
 
 type RestaurantReservationApprovalMasterProps = {
   sessionId: string;
+  userId?: string;
   onBack?: () => void;
+  onHistory?: () => void;
 };
 
 export const RestaurantReservationApprovalMaster = ({
   sessionId,
+  userId: propUserId,
   onBack,
+  onHistory,
 }: RestaurantReservationApprovalMasterProps): JSX.Element => {
   const [reservations, setReservations] = React.useState<RestaurantReservation[]>([]);
   const [selectedRes, setSelectedRes] = React.useState<RestaurantReservation | null>(null);
@@ -52,9 +62,38 @@ export const RestaurantReservationApprovalMaster = ({
   const [rejectionReason, setRejectionReason] = React.useState<string>("");
   const [feedback, setFeedback] = React.useState<string | null>(null);
 
+  const effectiveUserId = React.useMemo(() => {
+    if (propUserId) return propUserId;
+    try {
+      const rawUser =
+        localStorage.getItem("user") ||
+        sessionStorage.getItem("user") ||
+        localStorage.getItem("userId");
+      if (!rawUser) return undefined;
+      if (rawUser.startsWith("{")) {
+        const parsed = JSON.parse(rawUser);
+        return parsed.id || parsed._id || parsed.userId || parsed.role;
+      }
+      return rawUser;
+    } catch {
+      return undefined;
+    }
+  }, [propUserId]);
+
   const handleSuccess = React.useCallback((data: unknown) => {
-    const list = (data as RestaurantReservation[]) || [];
-    setReservations(list);
+    const raw = data as any;
+    const list: RestaurantReservation[] = Array.isArray(raw)
+      ? raw
+      : Array.isArray(raw?.data)
+      ? raw.data
+      : [];
+
+    // Filter to show active pending or approved (awaiting arrival) requests
+    const activeList = list.filter((r) => {
+      const st = (r.status || "").toLowerCase();
+      return st === "pending" || st === "approved";
+    });
+    setReservations(activeList);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
@@ -64,8 +103,8 @@ export const RestaurantReservationApprovalMaster = ({
   });
 
   const loadReservations = React.useCallback(() => {
-    submit({ sessionId });
-  }, [sessionId, submit]);
+    submit({ sessionId, userId: effectiveUserId });
+  }, [sessionId, effectiveUserId, submit]);
 
   React.useEffect(() => {
     loadReservations();
@@ -125,7 +164,7 @@ export const RestaurantReservationApprovalMaster = ({
       case "Arrived":
         return <Badge value="Arrived & Seated" color={Badge.Color.GREEN} />;
       case "Expired":
-        return <Badge value="Auto Expired (No Show)" color={Badge.Color.RED} />;
+        return <Badge value=" Expired" color={Badge.Color.RED} />;
       case "Rejected":
         return <Badge value="Rejected" color={Badge.Color.RED} />;
       default:
@@ -137,12 +176,15 @@ export const RestaurantReservationApprovalMaster = ({
     <Dashboard.Content>
       <Actionbar title="RESTAURANT RESERVATION APPROVAL & ARRIVAL CONFIRMATION">
         {onBack && <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />}
+        {onHistory && (
+          <Button label="HISTORY" onClick={onHistory} />
+        )}
         <Button label="RELOAD" onClick={loadReservations} />
       </Actionbar>
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="Restaurant & Cafe Reservation Approvals" />
+          <Paper.Title value="Pending Restaurant & Cafe Reservation Approvals" />
 
           {feedback && (
             <Alert
@@ -160,7 +202,13 @@ export const RestaurantReservationApprovalMaster = ({
             <LoadingFeedback feedback="Fetching restaurant reservation approvals from Live API..." />
           )}
 
-          {!isLoading && (
+          {isLoading && (
+            <div style={{ padding: "32px", textAlign: "center", color: "#94a3b8" }}>
+              No pending or active restaurant reservation requests found.
+            </div>
+          )}
+
+          {!isLoading  && (
             <Table
               head={
                 <Table.Row>
@@ -168,6 +216,7 @@ export const RestaurantReservationApprovalMaster = ({
                   <Table.Header value="VENUE NAME" />
                   <Table.Header value="RESIDENT NAME & GUESTS" />
                   <Table.Header value="DATE & TIME" />
+                  <Table.Header value="RULE CHECK" />
                   <Table.Header value="STATUS" />
                   <Table.Header value="ACTIONS" />
                 </Table.Row>
@@ -186,6 +235,12 @@ export const RestaurantReservationApprovalMaster = ({
                       <Table.Cell>
                         <div>{res.reservationDate}</div>
                         <small style={{ color: "#666" }}>{res.reservationTime}</small>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Badge
+                          value={res.isRuleValid ? "✓ Passed" : "✗ Violation"}
+                          color={res.isRuleValid ? Badge.Color.GREEN : Badge.Color.RED}
+                        />
                       </Table.Cell>
                       <Table.Cell>{getStatusBadge(res.status)}</Table.Cell>
                       <Table.Cell align={Table.Align.RIGHT}>
@@ -220,7 +275,7 @@ export const RestaurantReservationApprovalMaster = ({
                                 onClick={() => handleArrivalStatus(res, true)}
                               />
                               <Button
-                                label="NOT ARRIVED (AUTO EXPIRE)"
+                                label="NOT ARRIVED"
                                 size={Button.Size.SMALL}
                                 onClick={() => handleArrivalStatus(res, false)}
                               />
@@ -244,9 +299,39 @@ export const RestaurantReservationApprovalMaster = ({
           <Modal.Body>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div><strong>Venue Name:</strong> {selectedRes.venueName}</div>
+              <div><strong>Project Code:</strong> {selectedRes.projectCode || "—"}</div>
               <div><strong>Resident Name:</strong> {selectedRes.residentName}</div>
+              <div><strong>Email / Mobile:</strong> {selectedRes.residentEmail || "—"} / {selectedRes.residentMobile || "—"}</div>
               <div><strong>Number of Guests:</strong> {selectedRes.numberOfGuests} Guests</div>
+              <div><strong>Reservation Name:</strong> {selectedRes.reservationName}</div>
               <div><strong>Date & Time:</strong> {selectedRes.reservationDate} @ {selectedRes.reservationTime}</div>
+
+              {/* Rule Validation Box */}
+              <div
+                style={{
+                  gridColumn: "span 2",
+                  padding: "12px 16px",
+                  borderRadius: "8px",
+                  background: selectedRes.isRuleValid ? "#ecfdf5" : "#fff1f2",
+                  border: `1px solid ${selectedRes.isRuleValid ? "#6ee7b7" : "#fca5a5"}`,
+                }}
+              >
+                <strong>Reservation Rule Validation: </strong>
+                <Badge
+                  value={selectedRes.isRuleValid ? "✓ Passed" : "✗ Violation"}
+                  color={selectedRes.isRuleValid ? Badge.Color.GREEN : Badge.Color.RED}
+                />
+                <div
+                  style={{
+                    marginTop: "6px",
+                    fontSize: "13px",
+                    color: "#475569",
+                  }}
+                >
+                  {selectedRes.ruleValidationNotes || "No rule validation notes."}
+                </div>
+              </div>
+
               <div><strong>Reservation Status:</strong> {selectedRes.status}</div>
               {selectedRes.notes && (
                 <div style={{ gridColumn: "span 2" }}>
@@ -270,7 +355,7 @@ export const RestaurantReservationApprovalMaster = ({
             {selectedRes.status === "Approved" && (
               <>
                 <Button label="Confirm Guest Arrived" onClick={() => handleArrivalStatus(selectedRes, true)} />
-                <Button label="Mark Not Arrived & Auto-Expire" onClick={() => handleArrivalStatus(selectedRes, false)} />
+                <Button label="Mark Not Arrived " onClick={() => handleArrivalStatus(selectedRes, false)} />
               </>
             )}
             <Button label="Close" onClick={() => setSelectedRes(null)} />

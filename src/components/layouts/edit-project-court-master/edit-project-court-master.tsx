@@ -62,7 +62,7 @@ export const EditProjectCourtMaster = ({
 
   // Property Dropdown Data
   const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>(
-    [],
+    []
   );
   const [isLoadingProperties, setIsLoadingProperties] =
     React.useState<boolean>(false);
@@ -85,18 +85,14 @@ export const EditProjectCourtMaster = ({
     const fetchProperties = async () => {
       setIsLoadingProperties(true);
       try {
-        const response = await propertyService.execute({
+        const response: any = await propertyService.execute({
           sessionId,
           isArchived: false,
         } as any);
 
         if (isMounted && response) {
-          const items: PropertyMasterItem[] = Array.isArray(response.data)
-            ? response.data
-            : Array.isArray(response)
-              ? response
-              : [];
-
+          const rawData = response.data?.data || response.data || response;
+          const items: PropertyMasterItem[] = Array.isArray(rawData) ? rawData : [];
           setPropertyList(items);
         }
       } catch (err) {
@@ -124,18 +120,14 @@ export const EditProjectCourtMaster = ({
     const fetchCourts = async () => {
       setIsLoadingCourts(true);
       try {
-        const response = await courtService.execute({
+        const response: any = await courtService.execute({
           sessionId,
           isArchived: false,
         } as any);
 
         if (isMounted && response) {
-          const items: CourtMasterItem[] = Array.isArray(response.data)
-            ? response.data
-            : Array.isArray(response)
-              ? response
-              : [];
-
+          const rawData = response.data?.data || response.data || response;
+          const items: CourtMasterItem[] = Array.isArray(rawData) ? rawData : [];
           setCourtList(items);
         }
       } catch (err) {
@@ -208,30 +200,66 @@ export const EditProjectCourtMaster = ({
     } as any);
   }, [sessionId, id, courtId, projectCode, isAccess, isActive, submit]);
 
-  // Unique Project Codes for Dropdown
-  const uniqueProjectCodes = React.useMemo(() => {
-    const codes = propertyList
-      .map((item) => item.projectCode)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Unique Properties for Project Code dropdown display (`projectCode > projectName`)
+  const uniqueProperties = React.useMemo(() => {
+    const lookup: { [key: string]: PropertyMasterItem } = {};
+    const result: PropertyMasterItem[] = [];
+
+    propertyList.forEach((item) => {
+      const pCode = item.projectCode || item.id;
+      if (pCode && !lookup[pCode]) {
+        lookup[pCode] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [propertyList]);
+
+  // Screen par selected project ka display text set karne ke liye
+  const selectedProjectDisplay = React.useMemo(() => {
+    const found = propertyList.find((p) => (p.projectCode || p.id) === projectCode);
+    if (!found) return projectCode;
+    const pCode = found.projectCode || found.id;
+    const name = found.projectName;
+    return name ? `${pCode} > ${name}` : pCode || "";
+  }, [propertyList, projectCode]);
 
   // Filter & Format Court Dropdown Options
   const filteredCourts = React.useMemo(() => {
     if (!projectCode) return courtList;
     const items = courtList.filter(
       (item) =>
-        item.projectCode === projectCode || item.projectId === projectCode,
+        item.projectCode === projectCode || item.projectId === projectCode
     );
     return items.length > 0 ? items : courtList;
   }, [courtList, projectCode]);
 
-  const uniqueCourtIds = React.useMemo(() => {
-    const ids = filteredCourts
-      .map((item) => item.courtId)
-      .filter((id): id is string => Boolean(id));
-    return Array.from(new Set(ids));
+  // Unique Courts for Court ID dropdown display (`courtId > courtName`)
+  const uniqueCourts = React.useMemo(() => {
+    const lookup: { [key: string]: CourtMasterItem } = {};
+    const result: CourtMasterItem[] = [];
+
+    filteredCourts.forEach((item) => {
+      const cId = item.courtId || item.id;
+      if (cId && !lookup[cId]) {
+        lookup[cId] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [filteredCourts]);
+
+  // Screen par selected court ka display text set karne ke liye
+  const selectedCourtDisplay = React.useMemo(() => {
+    const found = courtList.find((c) => (c.courtId || c.id) === courtId);
+    if (!found) return courtId;
+    const cId = found.courtId || found.id;
+    const name = found.courtName;
+    return name ? `${cId} > ${name}` : cId || "";
+  }, [courtList, courtId]);
+
   return (
     <Dashboard.Content>
       <Actionbar title="EDIT PROJECT COURT MASTER">
@@ -264,114 +292,139 @@ export const EditProjectCourtMaster = ({
 
             <Paper.Title value={`Project Court Details (ID: ${id})`} />
 
-            {/* Row 2: Project Code, Apartment ID, ProjectCourt Type, Login User ID */}
-                      <Grid>
-                        {/* Project Code Dropdown */}
-                        <Grid.Cell size={Grid.CellSize.S3}>
-                          <ListInput
-                            className="w-100"
-                            label="Project Code"
-                            value={projectCode || undefined}
-                            placeholder={isLoadingProperties ? "Loading..." : "Select project code"}
-                            hasError={typeof validation["projectCode"] !== "undefined"}
-                            isDisabled={isLoading || isSuccess || isLoadingProperties}
-                          >
-                            {(onClose) => (
-                              <React.Fragment>
-                                <ListInput.Item
-                                  label="None"
-                                  isActive={projectCode === ""}
-                                  onClick={() => {
-                                    setProjectCode("");
-                                    setCourtId("");
-                                    onClose();
-                                  }}
-                                />
-                                <Map
-                                  items={uniqueProjectCodes}
-                                  renderItem={(code) => (
-                                    <ListInput.Item
-                                      key={code}
-                                      label={code}
-                                      isActive={projectCode === code}
-                                      onClick={() => {
-                                        setProjectCode(code);
-                                        setCourtId(""); // Project change hone par apartment ID reset
-                                        onClose();
-                                      }}
-                                    />
-                                  )}
-                                />
-                              </React.Fragment>
-                            )}
-                          </ListInput>
-                        </Grid.Cell>
-                      </Grid>
-                        {/* Court ID Dropdown */}
-                        <Grid.Cell size={Grid.CellSize.S3}>
-                          <ListInput
-                            className="w-100"
-                            label="Court ID"
-                            value={courtId || undefined}
-                            placeholder={
-                              !projectCode
-                                ? "Select project code first"
-                                : isLoadingCourts
-                                ? "Loading..."
-                                : "Select court ID"
-                            }
-                            hasError={typeof validation["courtId"] !== "undefined"}
-                            isDisabled={isLoading || isSuccess || isLoadingCourts || !projectCode}
-                          >
-                            {(onClose) => (
-                              <React.Fragment>
-                                <ListInput.Item
-                                  label="None"
-                                  isActive={courtId === ""}
-                                  onClick={() => {
-                                    setCourtId("");
-                                    onClose();
-                                  }}
-                                />
-                                <Map
-                                  items={uniqueCourtIds}
-                                  renderItem={(id) => (
-                                    <ListInput.Item
-                                      key={id}
-                                      label={id}
-                                      isActive={courtId === id}
-                                      onClick={() => {
-                                        setCourtId(id);
-                                        onClose();
-                                      }}
-                                    />
-                                  )}
-                                />
-                              </React.Fragment>
-                            )}
-                          </ListInput>
-                        </Grid.Cell>
-                      {/* Row 3: Active Checkbox */}
-                      <Grid>
-                        <Grid.Cell size={Grid.CellSize.S3}>
-                          <Checkbox
-                            className="mt-2"
-                            label="Access Allowed"
-                            isChecked={isAccess}
-                            isDisabled={isLoading || isSuccess}
-                            onChange={setIsAccess}
-                          />
-                        </Grid.Cell>
-                        <Grid.Cell size={Grid.CellSize.S3}>
-                          <Checkbox
-                            className="mt-2"
-                            label="Active"
-                            isChecked={isActive}
-                            isDisabled={isLoading || isSuccess}
-                            onChange={setIsActive}
-                          />
-                          </Grid.Cell>
-                      </Grid>
+            <Grid>
+              {/* Project Code Dropdown */}
+              <Grid.Cell size={Grid.CellSize.S3}>
+                <ListInput
+                  className="w-100"
+                  label="Project Code"
+                  value={selectedProjectDisplay || undefined}
+                  placeholder={
+                    isLoadingProperties ? "Loading..." : "Select project code"
+                  }
+                  hasError={typeof validation["projectCode"] !== "undefined"}
+                  isDisabled={isLoading || isSuccess || isLoadingProperties}
+                >
+                  {(onClose) => (
+                    <React.Fragment>
+                      <ListInput.Item
+                        label="None"
+                        isActive={projectCode === ""}
+                        onClick={() => {
+                          setProjectCode("");
+                          setCourtId("");
+                          onClose();
+                        }}
+                      />
+                      <Map
+                        items={uniqueProperties}
+                        renderItem={(property) => {
+                          const pCode = property.projectCode || property.id;
+                          const name = property.projectName;
+                          const displayLabel = name
+                            ? `${pCode} > ${name}`
+                            : pCode || "";
+
+                          return (
+                            <ListInput.Item
+                              key={pCode}
+                              label={displayLabel}
+                              isActive={projectCode === pCode}
+                              onClick={() => {
+                                if (pCode) {
+                                  setProjectCode(pCode);
+                                  setCourtId(""); // Project change hone par court ID reset
+                                }
+                                onClose();
+                              }}
+                            />
+                          );
+                        }}
+                      />
+                    </React.Fragment>
+                  )}
+                </ListInput>
+              </Grid.Cell>
+
+              {/* Court ID Dropdown */}
+              <Grid.Cell size={Grid.CellSize.S3}>
+                <ListInput
+                  className="w-100"
+                  label="Court ID"
+                  value={selectedCourtDisplay || undefined}
+                  placeholder={
+                    !projectCode
+                      ? "Select project code first"
+                      : isLoadingCourts
+                      ? "Loading..."
+                      : "Select court ID"
+                  }
+                  hasError={typeof validation["courtId"] !== "undefined"}
+                  isDisabled={
+                    isLoading || isSuccess || isLoadingCourts || !projectCode
+                  }
+                >
+                  {(onClose) => (
+                    <React.Fragment>
+                      <ListInput.Item
+                        label="None"
+                        isActive={courtId === ""}
+                        onClick={() => {
+                          setCourtId("");
+                          onClose();
+                        }}
+                      />
+                      <Map
+                        items={uniqueCourts}
+                        renderItem={(court) => {
+                          const cId = court.courtId || court.id;
+                          const name = court.courtName;
+                          const displayLabel = name
+                            ? `${cId} > ${name}`
+                            : cId || "";
+
+                          return (
+                            <ListInput.Item
+                              key={cId}
+                              label={displayLabel}
+                              isActive={courtId === cId}
+                              onClick={() => {
+                                if (cId) {
+                                  setCourtId(cId);
+                                }
+                                onClose();
+                              }}
+                            />
+                          );
+                        }}
+                      />
+                    </React.Fragment>
+                  )}
+                </ListInput>
+              </Grid.Cell>
+            </Grid>
+
+            {/* Checkboxes Row */}
+            <Grid>
+              <Grid.Cell size={Grid.CellSize.S3}>
+                <Checkbox
+                  className="mt-2"
+                  label="Access Allowed"
+                  isChecked={isAccess}
+                  isDisabled={isLoading || isSuccess}
+                  onChange={setIsAccess}
+                />
+              </Grid.Cell>
+              <Grid.Cell size={Grid.CellSize.S3}>
+                <Checkbox
+                  className="mt-2"
+                  label="Active"
+                  isChecked={isActive}
+                  isDisabled={isLoading || isSuccess}
+                  onChange={setIsActive}
+                />
+              </Grid.Cell>
+            </Grid>
           </Paper>
         )}
       </Dashboard.Page>

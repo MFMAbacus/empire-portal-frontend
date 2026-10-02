@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { apiUrl } from "@/config";
 import { AlertSeverity } from "@/types/alert";
 import { Table } from "@/components/base/table";
 import { Map } from "@/components/base/map";
@@ -395,25 +396,10 @@ export const MoveApprovalHistoryMaster = ({
                   value={selectedRequest.isRuleValid ? "✓ Passed" : "✗ Violation"}
                   color={selectedRequest.isRuleValid ? Badge.Color.GREEN : Badge.Color.RED}
                 />
-                <div style={{ marginTop: "6px", fontSize: "13px", color: "#475569" }}>
+                <div style={{ marginTop: "6px", fontSize: "13px", color: "#475569", }}>
                   {selectedRequest.ruleValidationNotes}
                 </div>
               </div>
-
-              {/* Item Image */}
-              {selectedRequest.itemImage && (
-                <div style={{ gridColumn: "span 2" }}>
-                  <strong>Item Image:</strong>
-                  <div style={{ marginTop: "8px" }}>
-                    <img
-                      src={selectedRequest.itemImage}
-                      alt="Item"
-                      style={{ maxWidth: "100%", maxHeight: "260px", borderRadius: "8px", border: "1px solid #e2e8f0" }}
-                    />
-                  </div>
-                </div>
-              )}
-
               {/* Status */}
               <div>
                 <strong>Status:</strong>{" "}
@@ -428,14 +414,6 @@ export const MoveApprovalHistoryMaster = ({
                   }
                 />
               </div>
-
-              {/* Rejection Reason */}
-              {selectedRequest.rejectionReason && (
-                <div style={{ gridColumn: "span 2", color: "#dc2626" }}>
-                  <strong>Rejection Reason:</strong> {selectedRequest.rejectionReason}
-                </div>
-              )}
-
               {/* Approval History */}
               {selectedRequest.approvalHistory && selectedRequest.approvalHistory.length > 0 && (
                 <div style={{ gridColumn: "span 2" }}>
@@ -475,6 +453,40 @@ export const MoveApprovalHistoryMaster = ({
                   </div>
                 </div>
               )}
+              {/* Item Image */}
+              {selectedRequest.itemImage && (
+                <div style={{ gridColumn: "span 2" }}>
+                  <strong>Item Image:</strong>
+                  <div style={{ marginTop: "8px" }}>
+                    <a
+                      href={`${apiUrl}/uploads/${selectedRequest.itemImage}`}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      <img
+                        src={`${apiUrl}/uploads/${selectedRequest.itemImage}`}
+                        alt="Item Preview"
+                        style={{
+                          maxWidth: "100%",
+                          maxHeight: "200px",
+                          borderRadius: "8px",
+                          border: "1px solid #e2e8f0",
+                          cursor: "pointer",
+                        }}
+                      />
+                    </a>
+                  </div>
+                </div>
+              )}
+              {/* Rejection Reason */}
+              {selectedRequest.rejectionReason && (
+                <div style={{ gridColumn: "span 2", color: "#dc2626" }}>
+                  <strong>Rejection Reason:</strong>{" "}
+                  {selectedRequest.rejectionReason}
+                </div>
+              )}
+
+             
             </div>
           </Modal.Body>
           <Modal.Footer>

@@ -53,8 +53,11 @@ export const EditCourtMaster = ({
   const [projectCode, setProjectCode] = React.useState<string>("");
   const [isActive, setIsActive] = React.useState<boolean>(true);
 
-  const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>([]);
-  const [isLoadingProperties, setIsLoadingProperties] = React.useState<boolean>(false);
+  const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>(
+    [],
+  );
+  const [isLoadingProperties, setIsLoadingProperties] =
+    React.useState<boolean>(false);
 
   const [isFetching, setIsFetching] = React.useState<boolean>(true);
   const [isSuccess, setIsSuccess] = React.useState<boolean>(false);
@@ -79,8 +82,8 @@ export const EditCourtMaster = ({
           const items: PropertyMasterItem[] = Array.isArray(response.data)
             ? response.data
             : Array.isArray(response)
-            ? response
-            : [];
+              ? response
+              : [];
 
           setPropertyList(items);
         }
@@ -148,7 +151,7 @@ export const EditCourtMaster = ({
   const handleSubmit = React.useCallback(() => {
     submit({
       sessionId,
-      id: courtId,            // Target Record Primary Key
+      id: courtId, // Target Record Primary Key
       courtId: courtCode, // User Input Field Value
       courtName,
       courtType,
@@ -168,12 +171,28 @@ export const EditCourtMaster = ({
     submit,
   ]);
 
-  // Extract unique project codes for dropdown options
-  const uniqueProjectCodes = React.useMemo(() => {
-    const codes = propertyList
-      .map((item) => item.projectCode)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Screen par selected item ka display text set karne ke liye (Code > Name)
+  const selectedProjectDisplay = React.useMemo(() => {
+    const found = propertyList.find((p) => p.projectCode === projectCode);
+    if (!found) return "";
+    return found.projectName
+      ? `${found.projectCode} > ${found.projectName}`
+      : found.projectCode || "";
+  }, [propertyList, projectCode]);
+
+  // Extract unique properties using a plain JS object dictionary
+  const uniqueProperties = React.useMemo(() => {
+    const lookup: { [key: string]: PropertyMasterItem } = {};
+    const result: PropertyMasterItem[] = [];
+
+    propertyList.forEach((item) => {
+      if (item.projectCode && !lookup[item.projectCode]) {
+        lookup[item.projectCode] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [propertyList]);
 
   return (
@@ -207,7 +226,10 @@ export const EditCourtMaster = ({
             )}
 
             {alertData !== null && (
-              <Alert message={alertData.message} severity={alertData.severity} />
+              <Alert
+                message={alertData.message}
+                severity={alertData.severity}
+              />
             )}
 
             <Paper.Title value={`Court Details (ID: ${courtId})`} />
@@ -272,8 +294,10 @@ export const EditCourtMaster = ({
                 <ListInput
                   className="w-100"
                   label="Project Code"
-                  value={projectCode || undefined}
-                  placeholder={isLoadingProperties ? "Loading..." : "Select project code"}
+                  value={selectedProjectDisplay || undefined}
+                  placeholder={
+                    isLoadingProperties ? "Loading..." : "Select project code"
+                  }
                   hasError={typeof validation["projectCode"] !== "undefined"}
                   isDisabled={isLoading || isSuccess || isLoadingProperties}
                 >
@@ -288,18 +312,26 @@ export const EditCourtMaster = ({
                         }}
                       />
                       <Map
-                        items={uniqueProjectCodes}
-                        renderItem={(code) => (
-                          <ListInput.Item
-                            key={code}
-                            label={code}
-                            isActive={projectCode === code}
-                            onClick={() => {
-                              setProjectCode(code);
-                              onClose();
-                            }}
-                          />
-                        )}
+                        items={uniqueProperties}
+                        renderItem={(property) => {
+                          const displayLabel = property.projectName
+                            ? `${property.projectCode} > ${property.projectName}`
+                            : property.projectCode || "";
+
+                          return (
+                            <ListInput.Item
+                              key={property.projectCode}
+                              label={displayLabel}
+                              isActive={projectCode === property.projectCode}
+                              onClick={() => {
+                                if (property.projectCode) {
+                                  setProjectCode(property.projectCode); // Payload gets strictly code
+                                }
+                                onClose();
+                              }}
+                            />
+                          );
+                        }}
                       />
                     </React.Fragment>
                   )}

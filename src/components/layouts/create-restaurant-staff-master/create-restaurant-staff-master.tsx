@@ -45,6 +45,7 @@ type VenueMasterItem = {
   projectId?: string;
   [key: string]: any;
 };
+
 type UserItem = {
   _id?: string;
   id?: string;
@@ -56,6 +57,11 @@ type UserItem = {
   [key: string]: any;
 };
 
+type UserOptionItem = {
+  id: string;
+  name: string;
+};
+
 const delayAfterSuccess = 1000;
 
 export const CreateRestaurantStaffMaster = ({
@@ -65,13 +71,10 @@ export const CreateRestaurantStaffMaster = ({
   const [approverRole, setApproverRole] = React.useState<string>("");
 
   const [projectCode, setProjectCode] = React.useState<string>("");
-  const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>(
-    [],
-  );
-  const [isLoadingProperties, setIsLoadingProperties] =
-    React.useState<boolean>(false);
+  const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>([]);
+  const [isLoadingProperties, setIsLoadingProperties] = React.useState<boolean>(false);
 
-  const [role, setRole] = React.useState<string>("");
+  const [role, setRole] = React.useState<string>(""); // Payload mein role ka name hi jayega
 
   const [venueId, setVenueId] = React.useState<string>("");
   const [venueList, setVenueList] = React.useState<VenueMasterItem[]>([]);
@@ -79,6 +82,7 @@ export const CreateRestaurantStaffMaster = ({
 
   const [isActive, setIsActive] = React.useState<boolean>(true);
   const [isSuccess, setIsSuccess] = React.useState<boolean>(false);
+
   // Users State
   const [userList, setUserList] = React.useState<UserItem[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = React.useState<boolean>(false);
@@ -98,12 +102,8 @@ export const CreateRestaurantStaffMaster = ({
         } as any);
 
         if (isMounted && response) {
-          // Handle response format variations safely
           const rawData = response.data?.data || response.data || response;
-          const items: PropertyMasterItem[] = Array.isArray(rawData)
-            ? rawData
-            : [];
-
+          const items: PropertyMasterItem[] = Array.isArray(rawData) ? rawData : [];
           setPropertyList(items);
         }
       } catch (error) {
@@ -219,21 +219,36 @@ export const CreateRestaurantStaffMaster = ({
       approverRole,
       projectCode,
       venueId,
-      role,
+      role, // Yeh ab strictly role ka name pass karega
       isActive,
     });
   }, [sessionId, approverRole, projectCode, venueId, role, isActive, submit]);
 
-  // Extract unique project codes for dropdown options
-  const uniqueProjectCodes = React.useMemo(() => {
-    const codes = propertyList
-      .map((item) => item.projectCode)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Selected project ka display text set karne ke liye (Code > Name)
+  const selectedProjectDisplay = React.useMemo(() => {
+    const found = propertyList.find((p) => p.projectCode === projectCode);
+    if (!found) return projectCode;
+    return found.projectName
+      ? `${found.projectCode} > ${found.projectName}`
+      : found.projectCode || "";
+  }, [propertyList, projectCode]);
+
+  // Extract unique properties using a plain JS object dictionary
+  const uniqueProperties = React.useMemo(() => {
+    const lookup: { [key: string]: PropertyMasterItem } = {};
+    const result: PropertyMasterItem[] = [];
+
+    propertyList.forEach((item) => {
+      if (item.projectCode && !lookup[item.projectCode]) {
+        lookup[item.projectCode] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [propertyList]);
 
-  // Selected projectCode ke relative Venue filter karein
-  // Filter venues based on selected project code (agar empty hai toh all venues option render kar sakte ho)
+  // Filter venues based on selected project code
   const filteredVenues = React.useMemo(() => {
     if (!projectCode) return venueList;
     const items = venueList.filter(
@@ -243,29 +258,59 @@ export const CreateRestaurantStaffMaster = ({
     return items.length > 0 ? items : venueList;
   }, [venueList, projectCode]);
 
-  // Extract unique venue IDs filtered venue list me se
-  const uniqueVenueIds = React.useMemo(() => {
-    const ids = filteredVenues
-      .map((item) => item.venueId)
-      .filter((id): id is string => Boolean(id));
-    return Array.from(new Set(ids));
+  // Extract unique venues with both id and name for Venue ID dropdown display
+  const uniqueVenues = React.useMemo(() => {
+    const lookup: { [key: string]: VenueMasterItem } = {};
+    const result: VenueMasterItem[] = [];
+
+    filteredVenues.forEach((item) => {
+      if (item.venueId && !lookup[item.venueId]) {
+        lookup[item.venueId] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [filteredVenues]);
 
-  const userOptions = React.useMemo(() => {
-    const names = userList
-      .map((user) => {
-        const fullName = [user.firstName, user.lastName]
-          .filter(Boolean)
-          .join(" ");
-        return fullName || user.jobTitle || user.email || user.id;
-      })
-      .filter((name): name is string => Boolean(name));
-    return Array.from(new Set(names));
+  // Screen par selected venue ka display text set karne ke liye (Venue ID > Venue Name)
+  const selectedVenueDisplay = React.useMemo(() => {
+    const found = venueList.find((v) => v.venueId === venueId);
+    if (!found) return venueId;
+    return found.venueName
+      ? `${found.venueId} > ${found.venueName}`
+      : found.venueId || "";
+  }, [venueList, venueId]);
+
+  // User Options mapped to ID & Name structure
+  const userOptions: UserOptionItem[] = React.useMemo(() => {
+    const mapObj: { [key: string]: UserOptionItem } = {};
+    userList.forEach((user) => {
+      const uId = user.id || user._id;
+      if (uId && !mapObj[uId]) {
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+        const displayName = fullName || user.jobTitle || user.email || uId;
+        mapObj[uId] = { id: uId, name: displayName };
+      }
+    });
+
+    const result: UserOptionItem[] = [];
+    for (const key in mapObj) {
+      if (Object.prototype.hasOwnProperty.call(mapObj, key)) {
+        result.push(mapObj[key]);
+      }
+    }
+    return result;
   }, [userList]);
+
+  // Dropdown ke andar selected user ka name show karne ke liye helper
+  const selectedUserDisplay = React.useMemo(() => {
+    const found = userOptions.find((u) => u.id === approverRole);
+    return found ? found.name : approverRole;
+  }, [userOptions, approverRole]);
 
   return (
     <Dashboard.Content>
-      {/* Purpose: Routes approval to propert team */}
       <Actionbar title="RESTAURANT STAFF APPROVAL">
         <Button
           label="SAVE"
@@ -297,7 +342,7 @@ export const CreateRestaurantStaffMaster = ({
               <ListInput
                 className="w-100"
                 label="Approver Role / User"
-                value={approverRole || undefined}
+                value={selectedUserDisplay || undefined}
                 placeholder={
                   isLoadingUsers ? "Loading..." : "Select user or role"
                 }
@@ -316,13 +361,13 @@ export const CreateRestaurantStaffMaster = ({
                     />
                     <Map
                       items={userOptions}
-                      renderItem={(userName) => (
+                      renderItem={(userOpt: UserOptionItem) => (
                         <ListInput.Item
-                          key={userName}
-                          label={userName}
-                          isActive={approverRole === userName}
+                          key={userOpt.id}
+                          label={userOpt.name}
+                          isActive={approverRole === userOpt.id}
                           onClick={() => {
-                            setApproverRole(userName);
+                            setApproverRole(userOpt.id);
                             onClose();
                           }}
                         />
@@ -332,12 +377,13 @@ export const CreateRestaurantStaffMaster = ({
                 )}
               </ListInput>
             </Grid.Cell>
+
             {/* Field 1: Project Code */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <ListInput
                 className="w-100"
                 label="Project Code"
-                value={projectCode || undefined}
+                value={selectedProjectDisplay || undefined}
                 placeholder={
                   isLoadingProperties ? "Loading..." : "Select project code"
                 }
@@ -351,34 +397,44 @@ export const CreateRestaurantStaffMaster = ({
                       isActive={projectCode === ""}
                       onClick={() => {
                         setProjectCode("");
+                        setVenueId("");
                         onClose();
                       }}
                     />
                     <Map
-                      items={uniqueProjectCodes}
-                      renderItem={(code) => (
-                        <ListInput.Item
-                          key={code}
-                          label={code}
-                          isActive={projectCode === code}
-                          onClick={() => {
-                            setProjectCode(code);
-                            onClose();
-                          }}
-                        />
-                      )}
+                      items={uniqueProperties}
+                      renderItem={(property: PropertyMasterItem) => {
+                        const displayLabel = property.projectName
+                          ? `${property.projectCode} > ${property.projectName}`
+                          : property.projectCode || "";
+
+                        return (
+                          <ListInput.Item
+                            key={property.projectCode}
+                            label={displayLabel}
+                            isActive={projectCode === property.projectCode}
+                            onClick={() => {
+                              if (property.projectCode) {
+                                setProjectCode(property.projectCode);
+                              }
+                              setVenueId("");
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </React.Fragment>
                 )}
               </ListInput>
             </Grid.Cell>
 
-            {/* Venue ID Dropdown */}
+            {/* Venue ID Dropdown (Shows ID > Name, sends ID) */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <ListInput
                 className="w-100"
                 label="Venue ID"
-                value={venueId || undefined}
+                value={selectedVenueDisplay || undefined}
                 placeholder={
                   !projectCode
                     ? "Select project code first"
@@ -402,18 +458,26 @@ export const CreateRestaurantStaffMaster = ({
                       }}
                     />
                     <Map
-                      items={uniqueVenueIds}
-                      renderItem={(id) => (
-                        <ListInput.Item
-                          key={id}
-                          label={id}
-                          isActive={venueId === id}
-                          onClick={() => {
-                            setVenueId(id);
-                            onClose();
-                          }}
-                        />
-                      )}
+                      items={uniqueVenues}
+                      renderItem={(venue) => {
+                        const displayLabel = venue.venueName
+                          ? `${venue.venueId} > ${venue.venueName}`
+                          : venue.venueId || "";
+
+                        return (
+                          <ListInput.Item
+                            key={venue.venueId}
+                            label={displayLabel}
+                            isActive={venueId === venue.venueId}
+                            onClick={() => {
+                              if (venue.venueId) {
+                                setVenueId(venue.venueId);
+                              }
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </React.Fragment>
                 )}
@@ -426,7 +490,7 @@ export const CreateRestaurantStaffMaster = ({
                 role={role}
                 feedback={validation["role"]}
                 hasError={typeof validation["role"] !== "undefined"}
-                onChange={(selectedRole) => setRole(selectedRole || "")}
+                onChange={(selectedRoleName) => setRole(selectedRoleName || "")}
                 sessionId={sessionId}
                 isDisabled={isLoading || isSuccess}
               />

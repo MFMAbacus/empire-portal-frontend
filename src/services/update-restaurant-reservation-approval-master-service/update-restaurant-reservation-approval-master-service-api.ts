@@ -19,7 +19,7 @@ export class UpdateRestaurantReservationApprovalMasterServiceApi extends Service
 
   public async execute(input: UpdateRestaurantReservationInput): Promise<ServiceOutput> {
     const { sessionId, id, ...bodyData } = input;
-    const endpoint = `${apiUrl}/restaurant-reservation-approval-master/${id}?sessionId=${sessionId}`;
+    const endpoint = `${apiUrl}/restaurant-reservation-approval-request/${id}?sessionId=${sessionId}`;
 
     const response = await fetch(endpoint, {
       method: 'PATCH',

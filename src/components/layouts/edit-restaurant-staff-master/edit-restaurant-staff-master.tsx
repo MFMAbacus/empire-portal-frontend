@@ -60,6 +60,11 @@ type UserItem = {
   [key: string]: any;
 };
 
+type UserOptionItem = {
+  id: string;
+  name: string;
+};
+
 const delayAfterSuccess = 1000;
 
 export const EditRestaurantStaffMaster = ({
@@ -254,7 +259,7 @@ export const EditRestaurantStaffMaster = ({
       Id,
       approverRole,
       projectCode,
-      venueId,
+      venueId, // Payload mein strictly venueId hi jayega
       role,
       isActive,
     } as any);
@@ -269,12 +274,27 @@ export const EditRestaurantStaffMaster = ({
     submit,
   ]);
 
-  // Derived Options
-  const uniqueProjectCodes = React.useMemo(() => {
-    const codes = propertyList
-      .map((item) => item.projectCode)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Derived Options & Helpers
+  const selectedProjectDisplay = React.useMemo(() => {
+    const found = propertyList.find((p) => p.projectCode === projectCode);
+    if (!found) return projectCode;
+    return found.projectName
+      ? `${found.projectCode} > ${found.projectName}`
+      : found.projectCode || "";
+  }, [propertyList, projectCode]);
+
+  const uniqueProperties = React.useMemo(() => {
+    const lookup: { [key: string]: PropertyMasterItem } = {};
+    const result: PropertyMasterItem[] = [];
+
+    propertyList.forEach((item) => {
+      if (item.projectCode && !lookup[item.projectCode]) {
+        lookup[item.projectCode] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [propertyList]);
 
   const filteredVenues = React.useMemo(() => {
@@ -285,22 +305,55 @@ export const EditRestaurantStaffMaster = ({
     return items.length > 0 ? items : venueList;
   }, [venueList, projectCode]);
 
-  const uniqueVenueIds = React.useMemo(() => {
-    const ids = filteredVenues
-      .map((item) => item.venueId)
-      .filter((id): id is string => Boolean(id));
-    return Array.from(new Set(ids));
+  // Extract unique venues with both id and name for Venue ID dropdown display
+  const uniqueVenues = React.useMemo(() => {
+    const lookup: { [key: string]: VenueMasterItem } = {};
+    const result: VenueMasterItem[] = [];
+
+    filteredVenues.forEach((item) => {
+      if (item.venueId && !lookup[item.venueId]) {
+        lookup[item.venueId] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [filteredVenues]);
 
-  const userOptions = React.useMemo(() => {
-    const names = userList
-      .map((user) => {
+  // Screen par selected venue ka display text set karne ke liye (Venue ID > Venue Name)
+  const selectedVenueDisplay = React.useMemo(() => {
+    const found = venueList.find((v) => v.venueId === venueId);
+    if (!found) return venueId;
+    return found.venueName
+      ? `${found.venueId} > ${found.venueName}`
+      : found.venueId || "";
+  }, [venueList, venueId]);
+
+  // User Options mapped to ID & Name structure
+  const userOptions: UserOptionItem[] = React.useMemo(() => {
+    const mapObj: { [key: string]: UserOptionItem } = {};
+    userList.forEach((user) => {
+      const uId = user.id || user._id;
+      if (uId && !mapObj[uId]) {
         const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
-        return fullName || user.jobTitle || user.email || user.id;
-      })
-      .filter((name): name is string => Boolean(name));
-    return Array.from(new Set(names));
+        const displayName = fullName || user.jobTitle || user.email || uId;
+        mapObj[uId] = { id: uId, name: displayName };
+      }
+    });
+
+    const result: UserOptionItem[] = [];
+    for (const key in mapObj) {
+      if (Object.prototype.hasOwnProperty.call(mapObj, key)) {
+        result.push(mapObj[key]);
+      }
+    }
+    return result;
   }, [userList]);
+
+  const selectedUserDisplay = React.useMemo(() => {
+    const found = userOptions.find((u) => u.id === approverRole);
+    return found ? found.name : approverRole;
+  }, [userOptions, approverRole]);
 
   return (
     <Dashboard.Content>
@@ -343,7 +396,7 @@ export const EditRestaurantStaffMaster = ({
                 <ListInput
                   className="w-100"
                   label="Approver Role / User"
-                  value={approverRole || undefined}
+                  value={selectedUserDisplay || undefined}
                   placeholder={
                     isLoadingUsers ? "Loading..." : "Select user or role"
                   }
@@ -362,13 +415,13 @@ export const EditRestaurantStaffMaster = ({
                       />
                       <Map
                         items={userOptions}
-                        renderItem={(userName) => (
+                        renderItem={(userOpt: UserOptionItem) => (
                           <ListInput.Item
-                            key={userName}
-                            label={userName}
-                            isActive={approverRole === userName}
+                            key={userOpt.id}
+                            label={userOpt.name}
+                            isActive={approverRole === userOpt.id}
                             onClick={() => {
-                              setApproverRole(userName);
+                              setApproverRole(userOpt.id);
                               onClose();
                             }}
                           />
@@ -384,7 +437,7 @@ export const EditRestaurantStaffMaster = ({
                 <ListInput
                   className="w-100"
                   label="Project Code"
-                  value={projectCode || undefined}
+                  value={selectedProjectDisplay || undefined}
                   placeholder={
                     isLoadingProperties ? "Loading..." : "Select project code"
                   }
@@ -403,31 +456,39 @@ export const EditRestaurantStaffMaster = ({
                         }}
                       />
                       <Map
-                        items={uniqueProjectCodes}
-                        renderItem={(code) => (
-                          <ListInput.Item
-                            key={code}
-                            label={code}
-                            isActive={projectCode === code}
-                            onClick={() => {
-                              setProjectCode(code);
-                              setVenueId("");
-                              onClose();
-                            }}
-                          />
-                        )}
+                        items={uniqueProperties}
+                        renderItem={(property: PropertyMasterItem) => {
+                          const displayLabel = property.projectName
+                            ? `${property.projectCode} > ${property.projectName}`
+                            : property.projectCode || "";
+
+                          return (
+                            <ListInput.Item
+                              key={property.projectCode}
+                              label={displayLabel}
+                              isActive={projectCode === property.projectCode}
+                              onClick={() => {
+                                if (property.projectCode) {
+                                  setProjectCode(property.projectCode);
+                                }
+                                setVenueId("");
+                                onClose();
+                              }}
+                            />
+                          );
+                        }}
                       />
                     </React.Fragment>
                   )}
                 </ListInput>
               </Grid.Cell>
 
-              {/* Venue ID Dropdown */}
+              {/* Venue ID Dropdown (Shows ID > Name, sends ID) */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <ListInput
                   className="w-100"
                   label="Venue ID"
-                  value={venueId || undefined}
+                  value={selectedVenueDisplay || undefined}
                   placeholder={
                     !projectCode
                       ? "Select project code first"
@@ -451,18 +512,26 @@ export const EditRestaurantStaffMaster = ({
                         }}
                       />
                       <Map
-                        items={uniqueVenueIds}
-                        renderItem={(id) => (
-                          <ListInput.Item
-                            key={id}
-                            label={id}
-                            isActive={venueId === id}
-                            onClick={() => {
-                              setVenueId(id);
-                              onClose();
-                            }}
-                          />
-                        )}
+                        items={uniqueVenues}
+                        renderItem={(venue) => {
+                          const displayLabel = venue.venueName
+                            ? `${venue.venueId} > ${venue.venueName}`
+                            : venue.venueId || "";
+
+                          return (
+                            <ListInput.Item
+                              key={venue.venueId}
+                              label={displayLabel}
+                              isActive={venueId === venue.venueId}
+                              onClick={() => {
+                                if (venue.venueId) {
+                                  setVenueId(venue.venueId); // Payload mein strict venueId set hoga
+                                }
+                                onClose();
+                              }}
+                            />
+                          );
+                        }}
                       />
                     </React.Fragment>
                   )}

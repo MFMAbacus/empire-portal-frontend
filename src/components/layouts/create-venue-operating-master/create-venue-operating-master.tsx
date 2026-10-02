@@ -55,7 +55,6 @@ export const CreateVenueOperatingMaster = ({
 
   const [openTime, setOpenTime] = React.useState<string>("");
   const [closeTime, setCloseTime] = React.useState<string>("");
-  // Fixed initial state: Array empty hona chahiye
   const [daysSelected, setDaysSelected] = React.useState<string[]>([]);
 
   const [isClosed, setIsClosed] = React.useState<boolean>(false);
@@ -118,7 +117,7 @@ export const CreateVenueOperatingMaster = ({
   const handleSubmit = React.useCallback(() => {
     submit({
       sessionId,
-      venueId,
+      venueId, // Payload mein strictly venueId hi jayega
       day: daysSelected.join(", "),
       openTime,
       closeTime,
@@ -144,12 +143,28 @@ export const CreateVenueOperatingMaster = ({
     );
   };
 
-  // Extract unique venue for dropdown options
-  const uniquevenues = React.useMemo(() => {
-    const codes = venueList
-      .map((item) => item.venueName || item.venueId)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Screen par selected venue ka display text set karne ke liye (Venue ID > Venue Name)
+  const selectedVenueDisplay = React.useMemo(() => {
+    const found = venueList.find((v) => v.venueId === venueId);
+    if (!found) return "";
+    return found.venueName
+      ? `${found.venueId} > ${found.venueName}`
+      : found.venueId || "";
+  }, [venueList, venueId]);
+
+  // Extract unique venues using a plain JS object dictionary
+  const uniqueVenues = React.useMemo(() => {
+    const lookup: { [key: string]: VenueMasterItem } = {};
+    const result: VenueMasterItem[] = [];
+
+    venueList.forEach((item) => {
+      if (item.venueId && !lookup[item.venueId]) {
+        lookup[item.venueId] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [venueList]);
 
   const daysLabel = React.useMemo(() => {
@@ -181,12 +196,12 @@ export const CreateVenueOperatingMaster = ({
           <Paper.Title value="Venue Operating Master Details" />
 
           <Grid>
-            {/* Venue ID Dropdown */}
+            {/* Venue ID Dropdown (Shows ID > Name, sends ID) */}
             <Grid.Cell size={Grid.CellSize.S6}>
               <ListInput
                 className="w-100"
                 label="Venue ID"
-                value={venueId || undefined}
+                value={selectedVenueDisplay || undefined}
                 placeholder="Select venue ID"
                 hasError={typeof validation["venueId"] !== "undefined"}
                 feedback={validation["venueId"]}
@@ -203,18 +218,26 @@ export const CreateVenueOperatingMaster = ({
                       }}
                     />
                     <Map
-                      items={uniquevenues}
-                      renderItem={(id) => (
-                        <ListInput.Item
-                          key={id}
-                          label={id}
-                          isActive={venueId === id}
-                          onClick={() => {
-                            setVenueId(id);
-                            onClose();
-                          }}
-                        />
-                      )}
+                      items={uniqueVenues}
+                      renderItem={(venue) => {
+                        const displayLabel = venue.venueName
+                          ? `${venue.venueId} > ${venue.venueName}`
+                          : venue.venueId || "";
+
+                        return (
+                          <ListInput.Item
+                            key={venue.venueId}
+                            label={displayLabel}
+                            isActive={venueId === venue.venueId}
+                            onClick={() => {
+                              if (venue.venueId) {
+                                setVenueId(venue.venueId); // Payload mein strict venueId set hoga
+                              }
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </React.Fragment>
                 )}

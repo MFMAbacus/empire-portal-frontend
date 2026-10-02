@@ -50,7 +50,6 @@ export const CreateProjectVenueMaster = ({
   sessionId,
   onBack,
 }: CreateProjectVenueMasterProps): JSX.Element => {
-
   const [venueId, setVenueId] = React.useState<string>("");
   const [venueList, setVenueList] = React.useState<VenueMasterItem[]>([]);
   const [isLoadingVenues, setIsLoadingVenues] = React.useState<boolean>(false);
@@ -58,6 +57,7 @@ export const CreateProjectVenueMaster = ({
   const [projectCode, setProjectCode] = React.useState<string>("");
   const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>([]);
   const [isLoadingProperties, setIsLoadingProperties] = React.useState<boolean>(false);
+  
   const [isAccess, setIsAccess] = React.useState<boolean>(false);
   const [isActive, setIsActive] = React.useState<boolean>(true);
   const [isSuccess, setIsSuccess] = React.useState<boolean>(false);
@@ -72,18 +72,14 @@ export const CreateProjectVenueMaster = ({
     const fetchPropertyMaster = async () => {
       setIsLoadingProperties(true);
       try {
-        const response = await service.execute({
+        const response: any = await service.execute({
           sessionId,
           isArchived: false,
         } as any);
 
-        if (isMounted && response && response.data) {
-          const items: PropertyMasterItem[] = Array.isArray(response.data)
-            ? response.data
-            : Array.isArray(response)
-            ? response
-            : [];
-
+        if (isMounted && response) {
+          const rawData = response.data?.data || response.data || response;
+          const items: PropertyMasterItem[] = Array.isArray(rawData) ? rawData : [];
           setPropertyList(items);
         }
       } catch (error) {
@@ -157,7 +153,7 @@ export const CreateProjectVenueMaster = ({
   const handleSubmit = React.useCallback(() => {
     submit({
       sessionId,
-      venueId,
+      venueId, // Payload mein strictly venueId hi jayega
       projectCode,
       isAccess,
       isActive,
@@ -171,16 +167,31 @@ export const CreateProjectVenueMaster = ({
       submit,
   ]);
 
-  // Extract unique project codes for dropdown options
-  const uniqueProjectCodes = React.useMemo(() => {
-    const codes = propertyList
-      .map((item) => item.projectCode)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Selected project ka display text set karne ke liye (Code > Name)
+  const selectedProjectDisplay = React.useMemo(() => {
+    const found = propertyList.find((p) => p.projectCode === projectCode);
+    if (!found) return projectCode;
+    return found.projectName
+      ? `${found.projectCode} > ${found.projectName}`
+      : found.projectCode || "";
+  }, [propertyList, projectCode]);
+
+  // Extract unique properties using a plain JS object dictionary
+  const uniqueProperties = React.useMemo(() => {
+    const lookup: { [key: string]: PropertyMasterItem } = {};
+    const result: PropertyMasterItem[] = [];
+
+    propertyList.forEach((item) => {
+      if (item.projectCode && !lookup[item.projectCode]) {
+        lookup[item.projectCode] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [propertyList]);
 
-  // Selected projectCode ke relative Venue filter karein
-  // Filter venues based on selected project code (agar empty hai toh all venues option render kar sakte ho)
+  // Filter venues based on selected project code
   const filteredVenues = React.useMemo(() => {
     if (!projectCode) return venueList;
     const items = venueList.filter(
@@ -189,13 +200,29 @@ export const CreateProjectVenueMaster = ({
     return items.length > 0 ? items : venueList;
   }, [venueList, projectCode]);
   
-  // Extract unique venue IDs filtered venue list me se
-  const uniqueVenueIds = React.useMemo(() => {
-    const ids = filteredVenues
-      .map((item) => item.venueId)
-      .filter((id): id is string => Boolean(id));
-    return Array.from(new Set(ids));
+  // Extract unique venues with both id and name for Venue ID dropdown display
+  const uniqueVenues = React.useMemo(() => {
+    const lookup: { [key: string]: VenueMasterItem } = {};
+    const result: VenueMasterItem[] = [];
+
+    filteredVenues.forEach((item) => {
+      if (item.venueId && !lookup[item.venueId]) {
+        lookup[item.venueId] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [filteredVenues]);
+
+  // Screen par selected venue ka display text set karne ke liye (Venue ID > Venue Name)
+  const selectedVenueDisplay = React.useMemo(() => {
+    const found = venueList.find((v) => v.venueId === venueId);
+    if (!found) return venueId;
+    return found.venueName
+      ? `${found.venueId} > ${found.venueName}`
+      : found.venueId || "";
+  }, [venueList, venueId]);
 
   return (
     <Dashboard.Content>
@@ -222,14 +249,14 @@ export const CreateProjectVenueMaster = ({
 
           <Paper.Title value="Project Venue Master Details" />
 
-          {/* Row 2: Project Code, Apartment ID, ProjectVenue Type, Login User ID */}
+          {/* Row 2: Project Code, Venue ID */}
           <Grid>
             {/* Project Code Dropdown */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <ListInput
                 className="w-100"
                 label="Project Code"
-                value={projectCode || undefined}
+                value={selectedProjectDisplay || undefined}
                 placeholder={isLoadingProperties ? "Loading..." : "Select project code"}
                 hasError={typeof validation["projectCode"] !== "undefined"}
                 isDisabled={isLoading || isSuccess || isLoadingProperties}
@@ -246,31 +273,39 @@ export const CreateProjectVenueMaster = ({
                       }}
                     />
                     <Map
-                      items={uniqueProjectCodes}
-                      renderItem={(code) => (
-                        <ListInput.Item
-                          key={code}
-                          label={code}
-                          isActive={projectCode === code}
-                          onClick={() => {
-                            setProjectCode(code);
-                            setVenueId(""); // Project change hone par apartment ID reset
-                            onClose();
-                          }}
-                        />
-                      )}
+                      items={uniqueProperties}
+                      renderItem={(property: PropertyMasterItem) => {
+                        const displayLabel = property.projectName
+                          ? `${property.projectCode} > ${property.projectName}`
+                          : property.projectCode || "";
+
+                        return (
+                          <ListInput.Item
+                            key={property.projectCode}
+                            label={displayLabel}
+                            isActive={projectCode === property.projectCode}
+                            onClick={() => {
+                              if (property.projectCode) {
+                                setProjectCode(property.projectCode);
+                              }
+                              setVenueId(""); // Project change hone par venue ID reset
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </React.Fragment>
                 )}
               </ListInput>
             </Grid.Cell>
-          </Grid>
+          
             {/* Venue ID Dropdown */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <ListInput
                 className="w-100"
                 label="Venue ID"
-                value={venueId || undefined}
+                value={selectedVenueDisplay || undefined}
                 placeholder={
                   !projectCode
                     ? "Select project code first"
@@ -292,24 +327,34 @@ export const CreateProjectVenueMaster = ({
                       }}
                     />
                     <Map
-                      items={uniqueVenueIds}
-                      renderItem={(id) => (
-                        <ListInput.Item
-                          key={id}
-                          label={id}
-                          isActive={venueId === id}
-                          onClick={() => {
-                            setVenueId(id);
-                            onClose();
-                          }}
-                        />
-                      )}
+                      items={uniqueVenues}
+                      renderItem={(venue) => {
+                        const displayLabel = venue.venueName
+                          ? `${venue.venueId} > ${venue.venueName}`
+                          : venue.venueId || "";
+
+                        return (
+                          <ListInput.Item
+                            key={venue.venueId}
+                            label={displayLabel}
+                            isActive={venueId === venue.venueId}
+                            onClick={() => {
+                              if (venue.venueId) {
+                                setVenueId(venue.venueId);
+                              }
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </React.Fragment>
                 )}
               </ListInput>
             </Grid.Cell>
-          {/* Row 3: Active Checkbox */}
+          </Grid>
+
+          {/* Row 3: Checkboxes */}
           <Grid>
             <Grid.Cell size={Grid.CellSize.S3}>
               <Checkbox

@@ -34,6 +34,7 @@ type PropertyMasterItem = {
   projectName?: string;
   [key: string]: any;
 };
+
 type UserItem = {
   _id?: string;
   id?: string;
@@ -55,16 +56,18 @@ export const CreateFacilityApprovalMaster = ({
 
   const [projectCode, setProjectCode] = React.useState<string>("");
   const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>(
-    [],
+    []
   );
   const [isLoadingProperties, setIsLoadingProperties] =
     React.useState<boolean>(false);
 
   const [isActive, setIsActive] = React.useState<boolean>(true);
   const [isSuccess, setIsSuccess] = React.useState<boolean>(false);
+
   // Users State
   const [userList, setUserList] = React.useState<UserItem[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = React.useState<boolean>(false);
+
   const { startTimeout } = useTimeout();
 
   // Fetch Property Master list from API
@@ -81,7 +84,6 @@ export const CreateFacilityApprovalMaster = ({
         } as any);
 
         if (isMounted && response) {
-          // Handle response format variations safely
           const rawData = response.data?.data || response.data || response;
           const items: PropertyMasterItem[] = Array.isArray(rawData)
             ? rawData
@@ -105,7 +107,8 @@ export const CreateFacilityApprovalMaster = ({
       service.abort();
     };
   }, [sessionId]);
-  // 3. Fetch Users
+
+  // Fetch Users
   React.useEffect(() => {
     let isMounted = true;
     const userService = new GetUserServiceApi();
@@ -113,19 +116,15 @@ export const CreateFacilityApprovalMaster = ({
     const fetchUsers = async () => {
       setIsLoadingUsers(true);
       try {
-        const response = await userService.execute({
+        const response: any = await userService.execute({
           sessionId,
           userId: "",
         } as any);
 
         if (isMounted && response) {
-          const rawData = Array.isArray(response.data)
-            ? response.data
-            : Array.isArray(response)
-              ? response
-              : [];
-
-          setUserList(rawData);
+          const rawData = response.data?.data || response.data || response;
+          const items: UserItem[] = Array.isArray(rawData) ? rawData : [];
+          setUserList(items);
         }
       } catch (error) {
         console.error("Failed to fetch users list:", error);
@@ -165,29 +164,61 @@ export const CreateFacilityApprovalMaster = ({
     });
   }, [sessionId, approverRole, projectCode, isActive, submit]);
 
-  // Extract unique project codes for dropdown options
-  const uniqueProjectCodes = React.useMemo(() => {
-    const codes = propertyList
-      .map((item) => item.projectCode)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Unique Properties for Project Code dropdown display (`projectCode > projectName`)
+  const uniqueProperties = React.useMemo(() => {
+    const lookup: { [key: string]: PropertyMasterItem } = {};
+    const result: PropertyMasterItem[] = [];
+
+    propertyList.forEach((item) => {
+      const pCode = item.projectCode || item.id;
+      if (pCode && !lookup[pCode]) {
+        lookup[pCode] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [propertyList]);
 
+  // Screen par selected project ka display text set karne ke liye
+  const selectedProjectDisplay = React.useMemo(() => {
+    const found = propertyList.find(
+      (p) => (p.projectCode || p.id) === projectCode
+    );
+    if (!found) return projectCode;
+    const pCode = found.projectCode || found.id;
+    const name = found.projectName;
+    return name ? `${pCode} > ${name}` : pCode || "";
+  }, [propertyList, projectCode]);
+
+  // User options banayein jisme ID aur Display Name dono hon
   const userOptions = React.useMemo(() => {
-    const names = userList
+    return userList
       .map((user) => {
+        const userId =  user.id || user.email;
         const fullName = [user.firstName, user.lastName]
           .filter(Boolean)
           .join(" ");
-        return fullName || user.jobTitle || user.email || user.id;
+        const displayName = fullName || user.jobTitle || user.email || userId;
+
+        return {
+          id: userId,
+          name: displayName,
+        };
       })
-      .filter((name): name is string => Boolean(name));
-    return Array.from(new Set(names));
+      .filter((user): user is { id: string; name: string } =>
+        Boolean(user.id && user.name)
+      );
   }, [userList]);
+
+  // Screen par selected user ka name show karne ke liye helper
+  const selectedUserDisplay = React.useMemo(() => {
+    const found = userOptions.find((u) => u.id === approverRole);
+    return found ? found.name : approverRole;
+  }, [userOptions, approverRole]);
 
   return (
     <Dashboard.Content>
-      {/* Purpose: Routes approval to propert team */}
       <Actionbar title="FACILITY APPROVAL">
         <Button
           label="SAVE"
@@ -212,7 +243,7 @@ export const CreateFacilityApprovalMaster = ({
               <ListInput
                 className="w-100"
                 label="Project Code"
-                value={projectCode || undefined}
+                value={selectedProjectDisplay || undefined}
                 placeholder={
                   isLoadingProperties ? "Loading..." : "Select project code"
                 }
@@ -230,18 +261,28 @@ export const CreateFacilityApprovalMaster = ({
                       }}
                     />
                     <Map
-                      items={uniqueProjectCodes}
-                      renderItem={(code) => (
-                        <ListInput.Item
-                          key={code}
-                          label={code}
-                          isActive={projectCode === code}
-                          onClick={() => {
-                            setProjectCode(code);
-                            onClose();
-                          }}
-                        />
-                      )}
+                      items={uniqueProperties}
+                      renderItem={(property) => {
+                        const pCode = property.projectCode || property.id;
+                        const name = property.projectName;
+                        const displayLabel = name
+                          ? `${pCode} > ${name}`
+                          : pCode || "";
+
+                        return (
+                          <ListInput.Item
+                            key={pCode}
+                            label={displayLabel}
+                            isActive={projectCode === pCode}
+                            onClick={() => {
+                              if (pCode) {
+                                setProjectCode(pCode);
+                              }
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </React.Fragment>
                 )}
@@ -253,7 +294,7 @@ export const CreateFacilityApprovalMaster = ({
               <ListInput
                 className="w-100"
                 label="Approver Role / User"
-                value={approverRole || undefined}
+                value={selectedUserDisplay || undefined}
                 placeholder={
                   isLoadingUsers ? "Loading..." : "Select user or role"
                 }
@@ -272,13 +313,13 @@ export const CreateFacilityApprovalMaster = ({
                     />
                     <Map
                       items={userOptions}
-                      renderItem={(userName) => (
+                      renderItem={(user) => (
                         <ListInput.Item
-                          key={userName}
-                          label={userName}
-                          isActive={approverRole === userName}
+                          key={user.id}
+                          label={user.name}
+                          isActive={approverRole === user.id}
                           onClick={() => {
-                            setApproverRole(userName);
+                            setApproverRole(user.id);
                             onClose();
                           }}
                         />

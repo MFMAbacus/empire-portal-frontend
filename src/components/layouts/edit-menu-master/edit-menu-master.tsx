@@ -154,7 +154,7 @@ export const EditMenuMaster = ({
       menuName,
       price,
       menuItem,
-      venueId,
+      venueId, // Payload mein strictly venueId hi jayega
       isActive,
     } as any);
   }, [
@@ -169,12 +169,28 @@ export const EditMenuMaster = ({
     submit,
   ]);
 
-  // Extract unique venue for dropdown options
+  // Screen par selected venue ka display text set karne ke liye (Venue ID > Venue Name)
+  const selectedVenueDisplay = React.useMemo(() => {
+    const found = venueList.find((v) => v.venueId === venueId);
+    if (!found) return "";
+    return found.venueName
+      ? `${found.venueId} > ${found.venueName}`
+      : found.venueId || "";
+  }, [venueList, venueId]);
+
+  // Extract unique venues using a plain JS object dictionary
   const uniqueVenues = React.useMemo(() => {
-    const codes = venueList
-      .map((item) => item.venueId)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+    const lookup: { [key: string]: VenueMasterItem } = {};
+    const result: VenueMasterItem[] = [];
+
+    venueList.forEach((item) => {
+      if (item.venueId && !lookup[item.venueId]) {
+        lookup[item.venueId] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [venueList]);
 
   return (
@@ -228,24 +244,24 @@ export const EditMenuMaster = ({
                   onChange={setMenuCode}
                 />
               </Grid.Cell>
-              {/* Field 2: Menu No. */}
+              {/* Field 2: Menu Name */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <TextInput
                   className="w-100"
                   label="Menu Name."
-                  placeholder="Enter Memnu name"
+                  placeholder="Enter Menu name"
                   value={menuName}
                   hasError={typeof validation["menuName"] !== "undefined"}
                   isDisabled={isLoading || isSuccess}
                   onChange={setMenuName}
                 />
               </Grid.Cell>
-              {/* Field 5: venueId (ListInput Dropdown) */}
+              {/* Field 5: Venue ID Dropdown (Shows ID > Name, sends ID) */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <ListInput
                   className="w-100"
                   label="Venue ID"
-                  value={venueId || undefined}
+                  value={selectedVenueDisplay || undefined}
                   placeholder={
                     isLoadingProperties ? "Loading..." : "Select venue Id"
                   }
@@ -264,23 +280,31 @@ export const EditMenuMaster = ({
                       />
                       <Map
                         items={uniqueVenues}
-                        renderItem={(code) => (
-                          <ListInput.Item
-                            key={code}
-                            label={code}
-                            isActive={venueId === code}
-                            onClick={() => {
-                              setVenueId(code);
-                              onClose();
-                            }}
-                          />
-                        )}
+                        renderItem={(venue) => {
+                          const displayLabel = venue.venueName
+                            ? `${venue.venueId} > ${venue.venueName}`
+                            : venue.venueId || "";
+
+                          return (
+                            <ListInput.Item
+                              key={venue.venueId}
+                              label={displayLabel}
+                              isActive={venueId === venue.venueId}
+                              onClick={() => {
+                                if (venue.venueId) {
+                                  setVenueId(venue.venueId); // Payload mein strict venueId set hoga
+                                }
+                                onClose();
+                              }}
+                            />
+                          );
+                        }}
                       />
                     </React.Fragment>
                   )}
                 </ListInput>
               </Grid.Cell>
-              {/* Field 4: price */}
+              {/* Field 4: Price */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <NumberInput
                   className="w-100"
@@ -292,9 +316,9 @@ export const EditMenuMaster = ({
                   onChange={(value) => setPrice(parseInt(value) || 0)}
                 />
               </Grid.Cell>
-              </Grid>
-              <Grid>
-              {/* Field 3: menu item */}
+            </Grid>
+            <Grid>
+              {/* Field 3: Menu Item */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <TextInput
                   className="w-100"

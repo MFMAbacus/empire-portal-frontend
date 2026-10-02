@@ -45,10 +45,9 @@ export const EditReservationRuleMaster = ({
   id,
   onBack,
 }: EditReservationRuleMasterProps): JSX.Element => {
-  // User editable input state for ReservationRule ID/Code
   const [slotDuration, setSlotDuration] = React.useState<number>(0);
-    const [maxGuest, setMaxGuest] = React.useState<number>(0);
-    const [lateArrival, setLateArrival] = React.useState<number>(30);
+  const [maxGuest, setMaxGuest] = React.useState<number>(0);
+  const [lateArrival, setLateArrival] = React.useState<number>(30);
 
   const [venueId, setVenueId] = React.useState<string>("");
   const [isActive, setIsActive] = React.useState<boolean>(true);
@@ -71,18 +70,14 @@ export const EditReservationRuleMaster = ({
     const fetchProperties = async () => {
       setIsLoadingProperties(true);
       try {
-        const response = await propertyService.execute({
+        const response: any = await propertyService.execute({
           sessionId,
           isArchived: false,
         } as any);
 
         if (isMounted && response) {
-          const items: VenueMasterItem[] = Array.isArray(response.data)
-            ? response.data
-            : Array.isArray(response)
-              ? response
-              : [];
-
+          const rawData = response.data?.data || response.data || response;
+          const items: VenueMasterItem[] = Array.isArray(rawData) ? rawData : [];
           setVenueList(items);
         }
       } catch (err) {
@@ -165,13 +160,28 @@ export const EditReservationRuleMaster = ({
     submit,
   ]);
 
-  // Extract unique venue for dropdown options
+  // Extract unique venues with both id and name for Venue ID dropdown display
   const uniqueVenues = React.useMemo(() => {
-    const codes = venueList
-      .map((item) => item.venueId)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+    const lookup: { [key: string]: VenueMasterItem } = {};
+    const result: VenueMasterItem[] = [];
+
+    venueList.forEach((item) => {
+      if (item.venueId && !lookup[item.venueId]) {
+        lookup[item.venueId] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [venueList]);
+
+  // Screen par selected venue ka display text set karne ke liye (Venue ID > Venue Name)
+  const selectedVenueDisplay = React.useMemo(() => {
+    const found = venueList.find((v) => v.venueId === venueId);
+    if (!found) return venueId;
+    const name = found.venueName;
+    return name ? `${found.venueId} > ${name}` : found.venueId || "";
+  }, [venueList, venueId]);
 
   return (
     <Dashboard.Content>
@@ -208,7 +218,7 @@ export const EditReservationRuleMaster = ({
               />
             )}
 
-            <Paper.Title value={`ReservationRule Details (ID: ${id})`} />
+            <Paper.Title value={`Reservation Rule Details (ID: ${id})`} />
 
             <Grid>
               {/* Field 5: venueId (ListInput Dropdown) */}
@@ -216,7 +226,7 @@ export const EditReservationRuleMaster = ({
                 <ListInput
                   className="w-100"
                   label="Venue ID"
-                  value={venueId || undefined}
+                  value={selectedVenueDisplay || undefined}
                   placeholder={
                     isLoadingProperties ? "Loading..." : "Select venue Id"
                   }
@@ -235,17 +245,26 @@ export const EditReservationRuleMaster = ({
                       />
                       <Map
                         items={uniqueVenues}
-                        renderItem={(code) => (
-                          <ListInput.Item
-                            key={code}
-                            label={code}
-                            isActive={venueId === code}
-                            onClick={() => {
-                              setVenueId(code);
-                              onClose();
-                            }}
-                          />
-                        )}
+                        renderItem={(venue) => {
+                          const name = venue.venueName;
+                          const displayLabel = name
+                            ? `${venue.venueId} > ${name}`
+                            : venue.venueId || "";
+
+                          return (
+                            <ListInput.Item
+                              key={venue.venueId}
+                              label={displayLabel}
+                              isActive={venueId === venue.venueId}
+                              onClick={() => {
+                                if (venue.venueId) {
+                                  setVenueId(venue.venueId);
+                                }
+                                onClose();
+                              }}
+                            />
+                          );
+                        }}
                       />
                     </React.Fragment>
                   )}
@@ -287,9 +306,8 @@ export const EditReservationRuleMaster = ({
                   onChange={(value) => setLateArrival(parseInt(value) || 0)}
                 />
               </Grid.Cell>
-              </Grid>
-              <Grid>
-              
+            </Grid>
+            <Grid>
               {/* Status Checkbox */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <Checkbox

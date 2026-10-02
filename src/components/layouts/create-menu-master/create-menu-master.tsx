@@ -20,8 +20,7 @@ import { useTimeout } from "@/hooks/use-timeout";
 import { useForm } from "@/hooks/use-form";
 
 import { makeCreateMenuMasterService } from "@/services/create-menu-master-service";
-
-import { GetVenueMasterServiceApi } from '@/services/get-venue-master-service';
+import { GetVenueMasterServiceApi } from "@/services/get-venue-master-service";
 
 type CreateMenuMasterProps = {
   sessionId: string;
@@ -31,7 +30,7 @@ type CreateMenuMasterProps = {
 type VenueMasterItem = {
   id?: string;
   venueId?: string;
-  venuName?: string;
+  venueName?: string;
   [key: string]: any;
 };
 
@@ -55,12 +54,12 @@ export const CreateMenuMaster = ({
 
   const { startTimeout } = useTimeout();
 
-  // Fetch Property Master list from API
+  // Fetch Venue Master list from API
   React.useEffect(() => {
     let isMounted = true;
     const service = new GetVenueMasterServiceApi();
 
-    const fetchPropertyMaster = async () => {
+    const fetchVenueMaster = async () => {
       setIsLoadingProperties(true);
       try {
         const response = await service.execute({
@@ -69,7 +68,6 @@ export const CreateMenuMaster = ({
         } as any);
 
         if (isMounted && response && response.data) {
-          // Handle response format whether data array is wrapped or direct
           const items: VenueMasterItem[] = Array.isArray(response.data)
             ? response.data
             : Array.isArray(response)
@@ -87,7 +85,7 @@ export const CreateMenuMaster = ({
       }
     };
 
-    fetchPropertyMaster();
+    fetchVenueMaster();
 
     return () => {
       isMounted = false;
@@ -114,7 +112,7 @@ export const CreateMenuMaster = ({
       menuName,
       price,
       menuItem,
-      venueId,
+      venueId, // Payload mein strictly venueId hi jayega
       isActive,
     });
   }, [
@@ -128,12 +126,28 @@ export const CreateMenuMaster = ({
     submit,
   ]);
 
-  // Extract unique venue for dropdown options
-  const uniqueVenue = React.useMemo(() => {
-    const codes = venueList
-      .map((item) => item.venueId)
-      .filter((code): code is string => Boolean(code));
-    return Array.from(new Set(codes));
+  // Screen par selected venue ka display text set karne ke liye (Venue ID > Venue Name)
+  const selectedVenueDisplay = React.useMemo(() => {
+    const found = venueList.find((v) => v.venueId === venueId);
+    if (!found) return "";
+    return found.venueName
+      ? `${found.venueId} > ${found.venueName}`
+      : found.venueId || "";
+  }, [venueList, venueId]);
+
+  // Extract unique venues using a plain JS object dictionary (jaise project code mein kia tha)
+  const uniqueVenues = React.useMemo(() => {
+    const lookup: { [key: string]: VenueMasterItem } = {};
+    const result: VenueMasterItem[] = [];
+
+    venueList.forEach((item) => {
+      if (item.venueId && !lookup[item.venueId]) {
+        lookup[item.venueId] = item;
+        result.push(item);
+      }
+    });
+
+    return result;
   }, [venueList]);
 
   return (
@@ -190,12 +204,12 @@ export const CreateMenuMaster = ({
               />
             </Grid.Cell>
           
-            {/* Field 5: venueID (Dynamic ListInput Dropdown from API) */}
+            {/* Field 5: Venue ID Dropdown (Shows ID > Name, sends ID) */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <ListInput
                 className="w-100"
                 label="Venu ID"
-                value={venueId || undefined}
+                value={selectedVenueDisplay || undefined}
                 placeholder={isLoadingProperties ? "Loading..." : "Select venue id"}
                 hasError={typeof validation["venueId"] !== "undefined"}
                 isDisabled={isLoading || isSuccess || isLoadingProperties}
@@ -211,18 +225,26 @@ export const CreateMenuMaster = ({
                       }}
                     />
                     <Map
-                      items={uniqueVenue}
-                      renderItem={(code) => (
-                        <ListInput.Item
-                          key={code}
-                          label={code}
-                          isActive={venueId === code}
-                          onClick={() => {
-                            setVenueId(code);
-                            onClose();
-                          }}
-                        />
-                      )}
+                      items={uniqueVenues}
+                      renderItem={(venue) => {
+                        const displayLabel = venue.venueName
+                          ? `${venue.venueId} > ${venue.venueName}`
+                          : venue.venueId || "";
+
+                        return (
+                          <ListInput.Item
+                            key={venue.venueId}
+                            label={displayLabel}
+                            isActive={venueId === venue.id || venueId === venue.venueId}
+                            onClick={() => {
+                              if (venue.venueId) {
+                                setVenueId(venue.venueId); // Payload mein strict venueId set hoga
+                              }
+                              onClose();
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </React.Fragment>
                 )}
@@ -238,14 +260,15 @@ export const CreateMenuMaster = ({
                 value={price.toString()}
                 hasError={typeof validation["price"] !== "undefined"}
                 isDisabled={isLoading || isSuccess}
-               onChange={(value) =>
-                      setPrice(parseInt(value) || 0)
-                    }
+                onChange={(value) =>
+                  setPrice(parseInt(value) || 0)
+                }
               />
             </Grid.Cell>
-</Grid>
+          </Grid>
+          
           <Grid>
-            {/* Field 4: menu item*/}
+            {/* Field 4: menu item */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <TextInput
                 className="w-100"
@@ -269,8 +292,6 @@ export const CreateMenuMaster = ({
               />
             </Grid.Cell>
           </Grid>
-
-          
         </Paper>
       </Dashboard.Page>
     </Dashboard.Content>
