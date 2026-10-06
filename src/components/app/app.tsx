@@ -186,6 +186,7 @@ import { CardProcessingMaster } from "../layouts/card-processing-master";
 import { RestaurantReservationApprovalMaster } from "../layouts/restaurant-reservation-approval-master";
 import { RestaurantReservationApprovalHistoryMaster } from "../layouts/restaurant-reservation-approval-history-master";
 import { CourtApprovalMaster } from "../layouts/court-approval-master";
+import { CourtApprovalHistoryMaster } from "../layouts/court-approval-history-master";
 import { RequestHistoryMaster } from "../layouts/request-history-master";
 import { AuditLogsMaster } from "../layouts/audit-logs-master";
 
@@ -1325,7 +1326,16 @@ export const App = (): JSX.Element => {
       {currentPage === "court-approval-master" && (
         <CourtApprovalMaster
           sessionId={session.id}
+          userId={session.userId || session.role}
           onBack={() => setCurrentPage("masterforms")}
+          onHistory={() => setCurrentPage("court-approval-history-master")}
+        />
+      )}
+      {currentPage === "court-approval-history-master" && (
+        <CourtApprovalHistoryMaster
+          sessionId={session.id}
+          userId={session.userId || session.role}
+          onBack={() => setCurrentPage("court-approval-master")}
         />
       )}
       {currentPage === "request-history-master" && (
@@ -1518,6 +1528,6 @@ const topbarNavItemPageMap: { [page: string]: string } = {
   "card-processing-master": "masterforms",
   "restaurant-reservation-approval-master": "masterforms",
   "court-approval-master": "masterforms",
-  "request-history-master": "masterforms",
-  "audit-logs-master": "masterforms",
+  // "request-history-master": "masterforms",
+  // "audit-logs-master": "masterforms",
 };

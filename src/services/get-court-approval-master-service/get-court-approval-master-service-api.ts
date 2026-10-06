@@ -4,6 +4,11 @@ import { apiUrl } from '@/config';
 
 export type GetCourtApprovalInput = {
   sessionId: string;
+  userId?: string;
+  projectCode?: string;
+  isArchived?: boolean;
+  residentId?: string;
+  status?: string;
 };
 
 export class GetCourtApprovalMasterServiceApi extends Service<GetCourtApprovalInput> {
@@ -15,8 +20,16 @@ export class GetCourtApprovalMasterServiceApi extends Service<GetCourtApprovalIn
   }
 
   public async execute(input: GetCourtApprovalInput): Promise<ServiceOutput> {
-    const { sessionId } = input;
-    const endpoint = `${apiUrl}/court-approval-master?sessionId=${sessionId}`;
+    const { sessionId, userId, projectCode, isArchived, residentId, status } = input;
+    const queryParams = new URLSearchParams({ sessionId });
+
+    if (userId) queryParams.append('userId', userId);
+    if (projectCode) queryParams.append('projectCode', projectCode);
+    if (isArchived) queryParams.append('isArchived', '1');
+    if (residentId) queryParams.append('residentId', residentId);
+    if (status) queryParams.append('status', status);
+
+    const endpoint = `${apiUrl}/court-approval-request?${queryParams.toString()}`;
 
     const response = await fetch(endpoint, {
       method: 'GET',

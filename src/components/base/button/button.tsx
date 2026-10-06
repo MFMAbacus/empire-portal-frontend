@@ -13,6 +13,7 @@ type ButtonComponent = {
 enum ButtonColor {
   DEFAULT = 'default',
   RED = 'red',
+  GREEN = 'green',
 }
 
 enum ButtonSize {

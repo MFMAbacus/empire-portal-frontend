@@ -292,18 +292,18 @@ export const MASTER_FORM_CATEGORIES: MasterFormCategory[] = [
         description: "Manage special event court booking requests.",
         badgeColor: "green",
       },
-      {
-        id: "request-history-master",
-        title: "Request History",
-        description: "View complete activity audit trail for all requests.",
-        badgeColor: "cyan",
-      },
-      {
-        id: "audit-logs-master",
-        title: "Audit Logs",
-        description: "Monitor system configuration changes and user actions.",
-        badgeColor: "red",
-      },
+      // {
+      //   id: "request-history-master",
+      //   title: "Request History",
+      //   description: "View complete activity audit trail for all requests.",
+      //   badgeColor: "cyan",
+      // },
+      // {
+      //   id: "audit-logs-master",
+      //   title: "Audit Logs",
+      //   description: "Monitor system configuration changes and user actions.",
+      //   badgeColor: "red",
+      // },
     ],
   },
 ];

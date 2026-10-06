@@ -43,6 +43,17 @@
         background-color: $color-red-50;
       }
     }
+    &--color-green {
+      background-color: $color-green;
+
+      &:hover:enabled, &:focus-visible {
+        background-color: rgba($color-green, 0.9);
+      }
+  
+      &:disabled {
+        background-color: rgba($color-green, 0.5);
+      }
+    }
 
     &--size-small {
       height: 2rem;

@@ -421,11 +421,13 @@ export const GuestApprovalMaster = ({
                               <Button
                                 label="APPROVE & ASSIGN GATE"
                                 size={Button.Size.DEFAULT}
+                                color={Button.Color.GREEN}
                                 onClick={() => openApproveModal(req)}
                               />
                               <Button
                                 label="REJECT"
                                 size={Button.Size.DEFAULT}
+                                color={Button.Color.RED}
                                 onClick={() => openRejectModal(req)}
                               />
                             </>
@@ -503,13 +505,15 @@ export const GuestApprovalMaster = ({
               <Grid>
                 <Grid.Cell size={Grid.CellSize.S12}>
                   <Button
-                    label="Approve & Assign Gate"
+                    label="Approve "
+                    color={Button.Color.GREEN}
                     onClick={() => openApproveModal(selectedRequest)}
                   />
                 </Grid.Cell>
                 <Grid.Cell size={Grid.CellSize.S12}>
                   <Button
-                    label="Reject Request"
+                    label="Reject"
+                     color={Button.Color.RED}
                     onClick={() => openRejectModal(selectedRequest)}
                   />
                 </Grid.Cell>

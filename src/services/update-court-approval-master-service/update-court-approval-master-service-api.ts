@@ -7,6 +7,7 @@ export type UpdateCourtApprovalInput = {
   id: string;
   slotStatus: string;
   rejectionReason?: string;
+  status: string;
 };
 
 export class UpdateCourtApprovalMasterServiceApi extends Service<UpdateCourtApprovalInput> {
@@ -19,7 +20,7 @@ export class UpdateCourtApprovalMasterServiceApi extends Service<UpdateCourtAppr
 
   public async execute(input: UpdateCourtApprovalInput): Promise<ServiceOutput> {
     const { sessionId, id, ...bodyData } = input;
-    const endpoint = `${apiUrl}/court-approval-master/${id}?sessionId=${sessionId}`;
+    const endpoint = `${apiUrl}/court-approval-request/${id}?sessionId=${sessionId}`;
 
     const response = await fetch(endpoint, {
       method: 'PATCH',

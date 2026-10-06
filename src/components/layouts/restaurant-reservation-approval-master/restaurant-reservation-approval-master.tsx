@@ -13,6 +13,7 @@ import { Modal } from "@/components/base/modal";
 import { TextInput } from "@/components/base/text-input";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 
+import { Grid } from "@/components/base/grid";
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
 
@@ -257,11 +258,13 @@ export const RestaurantReservationApprovalMaster = ({
                               <Button
                                 label="APPROVE"
                                 size={Button.Size.SMALL}
+                                color={Button.Color.GREEN}
                                 onClick={() => handleApprove(res)}
                               />
                               <Button
                                 label="REJECT"
                                 size={Button.Size.SMALL}
+                                color={Button.Color.RED}
                                 onClick={() => setRejectModal(res)}
                               />
                             </>
@@ -272,11 +275,13 @@ export const RestaurantReservationApprovalMaster = ({
                               <Button
                                 label="ARRIVED"
                                 size={Button.Size.SMALL}
+                                color={Button.Color.GREEN}
                                 onClick={() => handleArrivalStatus(res, true)}
                               />
                               <Button
                                 label="NOT ARRIVED"
                                 size={Button.Size.SMALL}
+                                color={Button.Color.RED}
                                 onClick={() => handleArrivalStatus(res, false)}
                               />
                             </>
@@ -348,8 +353,15 @@ export const RestaurantReservationApprovalMaster = ({
           <Modal.Footer>
             {selectedRes.status === "Pending" && (
               <>
-                <Button label="Approve Table" onClick={() => handleApprove(selectedRes)} />
-                <Button label="Reject Table" onClick={() => setRejectModal(selectedRes)} />
+                <Grid>
+                  <Grid.Cell size={Grid.CellSize.S12}>
+                    <Button label="Approve" color={Button.Color.GREEN} onClick={() => handleApprove(selectedRes)} />
+                  </Grid.Cell>
+                  <Grid.Cell size={Grid.CellSize.S12}>
+                    
+                <Button label="Reject " color={Button.Color.RED} onClick={() => setRejectModal(selectedRes)} />
+                  </Grid.Cell>
+                </Grid>
               </>
             )}
             {selectedRes.status === "Approved" && (

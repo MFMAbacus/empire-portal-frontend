@@ -12,6 +12,7 @@ export type CreateCourtApprovalInput = {
   timeSlot: string;
   duration?: string;
   slotStatus: string;
+  status: string;
 };
 
 export class CreateCourtApprovalMasterServiceApi extends Service<CreateCourtApprovalInput> {
@@ -24,7 +25,7 @@ export class CreateCourtApprovalMasterServiceApi extends Service<CreateCourtAppr
 
   public async execute(input: CreateCourtApprovalInput): Promise<ServiceOutput> {
     const { sessionId, ...bodyData } = input;
-    const endpoint = `${apiUrl}/court-approval-master?sessionId=${sessionId}`;
+    const endpoint = `${apiUrl}/court-approval-request?sessionId=${sessionId}`;
 
     const response = await fetch(endpoint, {
       method: 'POST',

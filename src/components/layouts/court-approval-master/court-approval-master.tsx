@@ -14,6 +14,7 @@ import { TextInput } from "@/components/base/text-input";
 import { ListInput } from "@/components/base/list-input";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 
+import { Grid } from "@/components/base/grid";
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
 
@@ -28,26 +29,36 @@ import { makeUpdateCourtApprovalMasterService } from "@/services/update-court-ap
 export type CourtBooking = {
   id: string;
   reservationNo: string;
+  courtId?: string;
   courtName: string;
+  courtType?: string;
+  residentId?: string;
   residentName: string;
   apartmentNo: string;
   projectCode: string;
   bookingDate: string;
   timeSlot: string;
   duration: string;
-  slotStatus: "Pending Blocked" | "Approved" | "Maintenance Blocked" | "PT Session Blocked" | "Rejected";
+  slotStatus?: "Pending Blocked" | "Approved" | "Maintenance Blocked" | "PT Session Blocked" | "Rejected";
+  status?: string;
   rejectionReason?: string;
-  createdAt: string;
+  hasViolation?: boolean;
+  violationDetails?: string;
+  createdAt?: string;
 };
 
 type CourtApprovalMasterProps = {
   sessionId: string;
+  userId?: string;
   onBack?: () => void;
+  onHistory?: () => void;
 };
 
 export const CourtApprovalMaster = ({
   sessionId,
+  userId: propUserId,
   onBack,
+  onHistory,
 }: CourtApprovalMasterProps): JSX.Element => {
   const [bookings, setBookings] = React.useState<CourtBooking[]>([]);
   const [selectedBooking, setSelectedBooking] = React.useState<CourtBooking | null>(null);
@@ -55,17 +66,54 @@ export const CourtApprovalMaster = ({
   const [rejectModal, setRejectModal] = React.useState<CourtBooking | null>(null);
   const [rejectionReason, setRejectionReason] = React.useState<string>("");
 
+  const effectiveUserId = React.useMemo(() => {
+    if (propUserId) return propUserId;
+    try {
+      const rawUser =
+        localStorage.getItem("user") ||
+        sessionStorage.getItem("user") ||
+        localStorage.getItem("userId");
+      if (!rawUser) return undefined;
+      if (rawUser.startsWith("{")) {
+        const parsed = JSON.parse(rawUser);
+        return parsed.id || parsed._id || parsed.userId || parsed.role;
+      }
+      return rawUser;
+    } catch {
+      return undefined;
+    }
+  }, [propUserId]);
+
   // Block Slot Form state
   const [blockCourt, setBlockCourt] = React.useState<string>("Tennis Court #1");
   const [blockType, setBlockType] = React.useState<string>("Maintenance Blocked");
-  const [blockDate, setBlockDate] = React.useState<string>("2026-09-23");
-  const [blockTime, setBlockTime] = React.useState<string>("02:00 PM - 04:00 PM");
+  const [blockDate, setBlockDate] = React.useState<string>(new Date().toISOString().split("T")[0]);
+  const [blockTime, setBlockTime] = React.useState<string>("02:00 PM - 03:00 PM");
 
   const [feedback, setFeedback] = React.useState<string | null>(null);
 
   const handleSuccess = React.useCallback((data: unknown) => {
-    const list = (data as CourtBooking[]) || [];
-    setBookings(list);
+    const raw = data as any;
+    const list: CourtBooking[] = Array.isArray(raw)
+      ? raw
+      : Array.isArray(raw?.data)
+      ? raw.data
+      : [];
+
+    const formattedList = list.map((item: any) => ({
+      ...item,
+      slotStatus: item.slotStatus || item.status || "Pending Blocked",
+    }));
+
+    // Filter pending requests for the main portal page (Approved/Rejected move to History)
+    const pendingOnly = formattedList.filter(
+      (b) =>
+        b.slotStatus === "Pending Blocked" ||
+        b.status === "Pending Blocked" ||
+        b.status === "Pending"
+    );
+
+    setBookings(pendingOnly);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
@@ -75,8 +123,8 @@ export const CourtApprovalMaster = ({
   });
 
   const loadBookings = React.useCallback(() => {
-    submit({ sessionId });
-  }, [sessionId, submit]);
+    submit({ sessionId, userId: effectiveUserId });
+  }, [sessionId, effectiveUserId, submit]);
 
   React.useEffect(() => {
     loadBookings();
@@ -101,8 +149,9 @@ export const CourtApprovalMaster = ({
       sessionId,
       id: booking.id,
       slotStatus: "Approved",
+      status: "Approved",
     });
-    setFeedback(`Court Booking ${booking.reservationNo} (${booking.courtName}) approved.`);
+    setFeedback(`✓ Court Booking ${booking.reservationNo || booking.id} (${booking.courtName}) APPROVED! Request moved to History.`);
     setSelectedBooking(null);
   };
 
@@ -112,9 +161,10 @@ export const CourtApprovalMaster = ({
       sessionId,
       id: rejectModal.id,
       slotStatus: "Rejected",
+      status: "Rejected",
       rejectionReason: rejectionReason || "Court unavailable for maintenance",
     });
-    setFeedback(`Court Booking ${rejectModal.reservationNo} rejected & slot released.`);
+    setFeedback(`✗ Court Booking ${rejectModal.reservationNo || rejectModal.id} REJECTED & slot released! Request moved to History.`);
     setRejectModal(null);
     setRejectionReason("");
     setSelectedBooking(null);
@@ -131,15 +181,16 @@ export const CourtApprovalMaster = ({
       timeSlot: blockTime,
       duration: "Slot Blocked",
       slotStatus: blockType,
+      status: blockType,
     });
-    setFeedback(`Slot successfully blocked on ${blockCourt} (${blockType}) via Express Backend API!`);
+    setFeedback(`✓ Slot successfully blocked on ${blockCourt} (${blockType})!`);
     setBlockSlotModal(false);
   };
 
-  const getSlotBadge = (status: CourtBooking["slotStatus"]) => {
+  const getSlotBadge = (status: string | undefined) => {
     switch (status) {
       case "Pending Blocked":
-        return <Badge value="Pending (Slot Blocked Immediately)" color={Badge.Color.BLUE} />;
+        return <Badge value="Pending " color={Badge.Color.BLUE} />;
       case "Approved":
         return <Badge value="Approved & Confirmed" color={Badge.Color.GREEN} />;
       case "Maintenance Blocked":
@@ -147,9 +198,9 @@ export const CourtApprovalMaster = ({
       case "PT Session Blocked":
         return <Badge value="Blocked (PT Session)" color={Badge.Color.BLUE} />;
       case "Rejected":
-        return <Badge value="Rejected (Slot Released)" color={Badge.Color.RED} />;
+        return <Badge value="Rejected" color={Badge.Color.RED} />;
       default:
-        return <Badge value={status} color={Badge.Color.GRAY} />;
+        return <Badge value={status || "Pending Blocked"} color={Badge.Color.GRAY} />;
     }
   };
 
@@ -157,13 +208,14 @@ export const CourtApprovalMaster = ({
     <Dashboard.Content>
       <Actionbar title="SPORTS COURT RESERVATION & SLOT BLOCKING">
         {onBack && <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />}
+        {onHistory && <Button label="HISTORY" onClick={onHistory} />}
         <Button label="RELOAD" onClick={loadBookings} />
-        <Button label="+ ADD BLOCK SLOT FOR MAINTENANCE / PT" onClick={() => setBlockSlotModal(true)} />
+        {/* <Button label="+ BLOCK SLOT FOR MAINTENANCE / PT" onClick={() => setBlockSlotModal(true)} /> */}
       </Actionbar>
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="Sports Court Booking Approvals" />
+          <Paper.Title value="Pending Sports Court Booking Approvals" />
 
           {feedback && (
             <Alert
@@ -181,6 +233,12 @@ export const CourtApprovalMaster = ({
             <LoadingFeedback feedback="Fetching court bookings from Live Express API..." />
           )}
 
+          {isLoading && (
+            <div style={{ padding: "32px", textAlign: "center", color: "#94a3b8" }}>
+              No pending sports court bookings found for your project scope. Approved & Rejected requests are stored in the <strong>HISTORY</strong> tab.
+            </div>
+          )}
+
           {!isLoading && (
             <Table
               head={
@@ -189,6 +247,7 @@ export const CourtApprovalMaster = ({
                   <Table.Header value="COURT NAME" />
                   <Table.Header value="RESIDENT & APARTMENT" />
                   <Table.Header value="DATE & TIME SLOT" />
+                  <Table.Header value="VIOLATION CHECK" />
                   <Table.Header value="SLOT LOCK STATUS" />
                   <Table.Header value="ACTIONS" />
                 </Table.Row>
@@ -198,15 +257,21 @@ export const CourtApprovalMaster = ({
                   items={bookings}
                   renderItem={(b) => (
                     <Table.Row key={b.id}>
-                      <Table.Cell><strong>{b.reservationNo}</strong></Table.Cell>
+                      <Table.Cell><strong>{b.reservationNo || b.id}</strong></Table.Cell>
                       <Table.Cell>{b.courtName}</Table.Cell>
                       <Table.Cell>
                         <div>{b.residentName}</div>
-                        <small style={{ color: "#666" }}>{b.apartmentNo}</small>
+                        <small style={{ color: "#666" }}>{b.apartmentNo || b.projectCode}</small>
                       </Table.Cell>
                       <Table.Cell>
                         <div>{b.bookingDate}</div>
                         <small style={{ color: "#666" }}>{b.timeSlot} ({b.duration})</small>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Badge
+                          value={b.hasViolation ? "⚠ Rule Violation" : "✓ Valid"}
+                          color={b.hasViolation ? Badge.Color.RED : Badge.Color.GREEN}
+                        />
                       </Table.Cell>
                       <Table.Cell>{getSlotBadge(b.slotStatus)}</Table.Cell>
                       <Table.Cell align={Table.Align.RIGHT}>
@@ -218,20 +283,18 @@ export const CourtApprovalMaster = ({
                             />
                           </Tooltip>
 
-                          {b.slotStatus === "Pending Blocked" && (
-                            <>
-                              <Button
-                                label="APPROVE"
-                                size={Button.Size.SMALL}
-                                onClick={() => handleApprove(b)}
-                              />
-                              <Button
-                                label="REJECT"
-                                size={Button.Size.SMALL}
-                                onClick={() => setRejectModal(b)}
-                              />
-                            </>
-                          )}
+                          <Button
+                            label="APPROVE"
+                            size={Button.Size.SMALL}
+                            color={Button.Color.GREEN}
+                            onClick={() => handleApprove(b)}
+                          />
+                          <Button
+                            label="REJECT"
+                            size={Button.Size.SMALL}
+                            color={Button.Color.RED}
+                            onClick={() => setRejectModal(b)}
+                          />
                         </div>
                       </Table.Cell>
                     </Table.Row>
@@ -255,7 +318,28 @@ export const CourtApprovalMaster = ({
               <div><strong>Booking Date:</strong> {selectedBooking.bookingDate}</div>
               <div><strong>Time Slot:</strong> {selectedBooking.timeSlot}</div>
               <div><strong>Duration:</strong> {selectedBooking.duration}</div>
-              <div><strong>Slot Lock Status:</strong> {selectedBooking.slotStatus}</div>
+              <div><strong>Slot Lock Status:</strong> {getSlotBadge(selectedBooking.slotStatus)}</div>
+
+              {/* Violation Info Banner */}
+              <div
+                style={{
+                  gridColumn: "span 2",
+                  padding: "12px 16px",
+                  borderRadius: "8px",
+                  background: selectedBooking.hasViolation ? "#fff1f2" : "#ecfdf5",
+                  border: `1px solid ${selectedBooking.hasViolation ? "#fca5a5" : "#6ee7b7"}`,
+                }}
+              >
+                <strong>Rule & Conflict Validation: </strong>
+                <Badge
+                  value={selectedBooking.hasViolation ? "⚠ Violation Detected" : "✓ Compliant"}
+                  color={selectedBooking.hasViolation ? Badge.Color.RED : Badge.Color.GREEN}
+                />
+                <div style={{ marginTop: "6px", fontSize: "13px", color: "#475569" }}>
+                  {selectedBooking.violationDetails || "No rule violations detected."}
+                </div>
+              </div>
+
               {selectedBooking.rejectionReason && (
                 <div style={{ gridColumn: "span 2", color: "red" }}>
                   <strong>Rejection Reason:</strong> {selectedBooking.rejectionReason}
@@ -264,12 +348,15 @@ export const CourtApprovalMaster = ({
             </div>
           </Modal.Body>
           <Modal.Footer>
-            {selectedBooking.slotStatus === "Pending Blocked" && (
-              <>
-                <Button label="Approve Booking" onClick={() => handleApprove(selectedBooking)} />
-                <Button label="Reject Booking" onClick={() => setRejectModal(selectedBooking)} />
-              </>
-            )}
+            <Grid>
+              <Grid.Cell size={Grid.CellSize.S12}>
+                <Button label="Approve " color={Button.Color.GREEN} onClick={() => handleApprove(selectedBooking)} />
+              </Grid.Cell>
+              <Grid.Cell size={Grid.CellSize.S12}>
+            <Button label="Reject "  color={Button.Color.RED} onClick={() => setRejectModal(selectedBooking)} />
+              </Grid.Cell>
+            </Grid>
+            
             <Button label="Close" onClick={() => setSelectedBooking(null)} />
           </Modal.Footer>
         </Modal>
@@ -354,7 +441,7 @@ export const CourtApprovalMaster = ({
       {/* Reject Modal */}
       {rejectModal && (
         <Modal>
-          <Modal.Header title={`Reject Booking - ${rejectModal.reservationNo}`} />
+          <Modal.Header title={`Reject Booking - ${rejectModal.reservationNo || rejectModal.id}`} />
           <Modal.Body>
             <TextInput
               label="Rejection Reason *"

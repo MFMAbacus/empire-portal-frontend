@@ -1151,6 +1151,6 @@ const masterformsSubSections: PermissionItem[] = [
   { id: "card-processing-master", title: "Card Processing" },
   { id: "restaurant-reservation-approval-master",title: "Restaurant Reservation Approval"},
   { id: "court-approval-master", title: "Court Approval" },
-  { id: "request-history-master", title: "Request History" },
-  { id: "audit-logs-master", title: "Audit Logs" },
+  // { id: "request-history-master", title: "Request History" },
+  // { id: "audit-logs-master", title: "Audit Logs" },
 ];

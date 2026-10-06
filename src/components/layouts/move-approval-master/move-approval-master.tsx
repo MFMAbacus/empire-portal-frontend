@@ -373,11 +373,13 @@ export const MoveApprovalMaster = ({
                               <Button
                                 label={approving === req.id ? "..." : "APPROVE"}
                                 size={Button.Size.SMALL}
+                                color={Button.Color.GREEN}
                                 onClick={() => handleApprove(req)}
                               />
                               <Button
                                 label="REJECT"
                                 size={Button.Size.SMALL}
+                                color={Button.Color.RED}
                                 onClick={() => {
                                   setRejectionReason("");
                                   setRejectModal(req);
@@ -596,7 +598,7 @@ export const MoveApprovalMaster = ({
                 <Grid.Cell size={Grid.CellSize.S12}>
                 <Button
                   label="Approve"
-                  color={Button.Color.DEFAULT}
+                  color={Button.Color.GREEN}
                   onClick={() => handleApprove(selectedRequest)}
                 />
                 </Grid.Cell>
