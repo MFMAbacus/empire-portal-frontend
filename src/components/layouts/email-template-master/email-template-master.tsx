@@ -19,6 +19,7 @@ import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
 import { DeleteModal } from "@/components/layouts/delete-modal";
 import { FilterModal } from "./filter-modal";
+import { paginate } from "@/utility/paginate";
 
 import { PlusIcon } from "@/components/icons/plus-icon";
 import { EyeIcon } from "@/components/icons/eye-icon";
@@ -60,7 +61,7 @@ export const EmailTemplateMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "email-template-master"
+    "email-template-master",
   );
 
   const [emailTemplates, setEmailTemplates] = React.useState<
@@ -74,6 +75,7 @@ export const EmailTemplateMaster = ({
   const [restoreTemplateCode, setRestoreTemplateCode] = React.useState<
     string | null
   >(null);
+  const [page, setPage] = React.useState<number>(1);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as EmailTemplateItem[];
@@ -88,7 +90,7 @@ export const EmailTemplateMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadEmailTemplates = React.useCallback(() => {
@@ -113,16 +115,12 @@ export const EmailTemplateMaster = ({
       if (filters.module) {
         predicate =
           predicate &&
-          current.module
-            ?.toLowerCase()
-            .includes(filters.module.toLowerCase());
+          current.module?.toLowerCase().includes(filters.module.toLowerCase());
       }
       if (filters.event) {
         predicate =
           predicate &&
-          current.event
-            ?.toLowerCase()
-            .includes(filters.event.toLowerCase());
+          current.event?.toLowerCase().includes(filters.event.toLowerCase());
       }
       if (filters.subject) {
         predicate =
@@ -137,6 +135,19 @@ export const EmailTemplateMaster = ({
       return predicate;
     });
   }, [emailTemplates, filters]);
+
+  const [totalPages, paginatedEmailTemplates] = React.useMemo(() => {
+    if (!filteredEmailTemplates) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredEmailTemplates, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredEmailTemplates, page]);
 
   return (
     <Dashboard.Content>
@@ -181,7 +192,7 @@ export const EmailTemplateMaster = ({
             <LoadingFeedback feedback="Loading email templates, please wait." />
           )}
 
-          {!isLoading && filteredEmailTemplates !== null && (
+          {!isLoading && paginatedEmailTemplates !== null && (
             <Table
               head={
                 <Table.Row>
@@ -195,7 +206,7 @@ export const EmailTemplateMaster = ({
               }
               body={
                 <Map
-                  items={filteredEmailTemplates || []}
+                  items={paginatedEmailTemplates || []}
                   renderItem={(template) => (
                     <Table.Row key={template.id || template.templateCode}>
                       <Table.Cell>{template.templateCode}</Table.Cell>
@@ -264,7 +275,9 @@ export const EmailTemplateMaster = ({
               />
             )}
 
-          {!isLoading && filteredEmailTemplates !== null && <Pagination />}
+          {!isLoading && paginatedEmailTemplates !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -298,7 +311,7 @@ export const EmailTemplateMaster = ({
             templateCode: restoreTemplateCode,
           }}
           title="UNARCHIVE EMAIL TEMPLATE"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this email template record?"
           serviceMaker={makeDeleteEmailTemplateMasterService}
           onDelete={loadEmailTemplates}

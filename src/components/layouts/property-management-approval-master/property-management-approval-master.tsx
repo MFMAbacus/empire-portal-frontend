@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -60,16 +61,18 @@ export const PropertyManagementApprovalMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "property-management-approval-master"
+    "property-management-approval-master",
   );
 
-  const [approvals, setApprovals] = React.useState<PropertyManagementApprovalItem[] | null>(
-    null
-  );
-  const [filters, setFilters] = React.useState<PropertyManagementApprovalFilters>({});
+  const [approvals, setApprovals] = React.useState<
+    PropertyManagementApprovalItem[] | null
+  >(null);
+  const [filters, setFilters] =
+    React.useState<PropertyManagementApprovalFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
   const [restoreId, setRestoreId] = React.useState<string | null>(null);
+  const [page, setPage] = React.useState<number>(1);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as PropertyManagementApprovalItem[];
@@ -84,7 +87,7 @@ export const PropertyManagementApprovalMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadApprovals = React.useCallback(() => {
@@ -99,7 +102,7 @@ export const PropertyManagementApprovalMaster = ({
     if (approvals === null) return null;
     return approvals.filter((current) => {
       let predicate = true;
-      
+
       if (filters.approverRole) {
         predicate =
           predicate &&
@@ -122,6 +125,19 @@ export const PropertyManagementApprovalMaster = ({
     });
   }, [approvals, filters]);
 
+  const [totalPages, paginatedApprovals] = React.useMemo(() => {
+    if (!filteredApprovals) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredApprovals, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredApprovals, page]);
+
   return (
     <Dashboard.Content>
       {/* Updated Form Name / Title */}
@@ -135,11 +151,7 @@ export const PropertyManagementApprovalMaster = ({
           isDisabled={isLoading}
           onClick={() => setFilterModal(true)}
         />
-        <Button
-          label="RELOAD"
-          isDisabled={isLoading}
-          onClick={loadApprovals}
-        />
+        <Button label="RELOAD" isDisabled={isLoading} onClick={loadApprovals} />
         {/* FIXED: Write permission check (removed exclamation mark) */}
         {canWrite && onCreate && (
           <Button
@@ -167,7 +179,7 @@ export const PropertyManagementApprovalMaster = ({
             <LoadingFeedback feedback="Loading Property Managemnt Approval, please wait." />
           )}
 
-          {!isLoading && filteredApprovals !== null && (
+          {!isLoading && paginatedApprovals !== null && (
             <Table
               head={
                 <Table.Row>
@@ -180,7 +192,7 @@ export const PropertyManagementApprovalMaster = ({
               }
               body={
                 <Map
-                  items={filteredApprovals || []}
+                  items={paginatedApprovals || []}
                   renderItem={(approval) => (
                     <Table.Row key={approval.id}>
                       <Table.Cell>{approval.id}</Table.Cell>
@@ -204,9 +216,7 @@ export const PropertyManagementApprovalMaster = ({
                                 <IconButton
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
-                                  onClick={() =>
-                                    setDeleteId(approval.id)
-                                  }
+                                  onClick={() => setDeleteId(approval.id)}
                                 />
                               </Tooltip>
                             )}
@@ -246,7 +256,9 @@ export const PropertyManagementApprovalMaster = ({
               />
             )}
 
-          {!isLoading && filteredApprovals !== null && <Pagination />}
+          {!isLoading && paginatedApprovals !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -280,7 +292,7 @@ export const PropertyManagementApprovalMaster = ({
             id: restoreId,
           }}
           title="UNARCHIVE PROPERTY MANAGEMENT APPROVAL"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this property management approval record?"
           serviceMaker={makeDeletePropertyManagementApprovalMasterService}
           onDelete={loadApprovals}

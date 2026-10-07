@@ -14,6 +14,8 @@ import { TextInput } from "@/components/base/text-input";
 import { ListInput } from "@/components/base/list-input";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 
+import { paginate } from "@/utility/paginate";
+import { Pagination } from "@/components/base/pagination";
 import { Grid } from "@/components/base/grid";
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -60,11 +62,14 @@ export const CourtApprovalMaster = ({
   onBack,
   onHistory,
 }: CourtApprovalMasterProps): JSX.Element => {
-  const [bookings, setBookings] = React.useState<CourtBooking[]>([]);
+  const [bookings, setBookings] = React.useState<CourtBooking[] | null>(null);
   const [selectedBooking, setSelectedBooking] = React.useState<CourtBooking | null>(null);
   const [blockSlotModal, setBlockSlotModal] = React.useState<boolean>(false);
   const [rejectModal, setRejectModal] = React.useState<CourtBooking | null>(null);
   const [rejectionReason, setRejectionReason] = React.useState<string>("");
+
+  // Pagination State
+  const [page, setPage] = React.useState<number>(1);
 
   const effectiveUserId = React.useMemo(() => {
     if (propUserId) return propUserId;
@@ -112,7 +117,7 @@ export const CourtApprovalMaster = ({
         b.status === "Pending Blocked" ||
         b.status === "Pending"
     );
-
+    setPage(1);
     setBookings(pendingOnly);
   }, []);
 
@@ -187,6 +192,20 @@ export const CourtApprovalMaster = ({
     setBlockSlotModal(false);
   };
 
+  // Paginated records computation
+  const [totalPages, paginatedBookings] = React.useMemo(() => {
+    if (!bookings) {
+      return [1, []];
+    }
+
+    const pagination = paginate(bookings, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [bookings, page]);
+
   const getSlotBadge = (status: string | undefined) => {
     switch (status) {
       case "Pending Blocked":
@@ -215,7 +234,7 @@ export const CourtApprovalMaster = ({
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="Pending Sports Court Booking Approvals" />
+          <Paper.Title value="Sports Court Booking Approvals" />
 
           {feedback && (
             <Alert
@@ -233,13 +252,7 @@ export const CourtApprovalMaster = ({
             <LoadingFeedback feedback="Fetching court bookings from Live Express API..." />
           )}
 
-          {isLoading && (
-            <div style={{ padding: "32px", textAlign: "center", color: "#94a3b8" }}>
-              No pending sports court bookings found for your project scope. Approved & Rejected requests are stored in the <strong>HISTORY</strong> tab.
-            </div>
-          )}
-
-          {!isLoading && (
+          {!isLoading && paginatedBookings !== null && (
             <Table
               head={
                 <Table.Row>
@@ -254,7 +267,7 @@ export const CourtApprovalMaster = ({
               }
               body={
                 <Map
-                  items={bookings}
+                  items={paginatedBookings}
                   renderItem={(b) => (
                     <Table.Row key={b.id}>
                       <Table.Cell><strong>{b.reservationNo || b.id}</strong></Table.Cell>
@@ -302,6 +315,16 @@ export const CourtApprovalMaster = ({
                 />
               }
             />
+          )}
+
+          {!isLoading && bookings !== null && bookings.length === 0 && (
+            <div style={{ padding: "32px", textAlign: "center", color: "#94a3b8" }}>
+              No pending sports court bookings found for your project scope. Approved & Rejected requests are stored in the <strong>HISTORY</strong> tab.
+            </div>
+          )}
+
+          {!isLoading && paginatedBookings !== null && bookings && bookings.length > 0 && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
           )}
         </Paper>
       </Dashboard.Page>

@@ -14,6 +14,7 @@ import { Tooltip } from "@/components/base/tooltip";
 import { Modal } from "@/components/base/modal";
 import { TextInput } from "@/components/base/text-input";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
+import { Pagination } from "@/components/base/pagination";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -22,6 +23,7 @@ import { EyeIcon } from "@/components/icons/eye-icon";
 import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
 
 import { useForm } from "@/hooks/use-form";
+import { paginate } from "@/utility/paginate";
 import { makeGetMoveApprovalMasterService } from "@/services/get-move-approval-master-service";
 import { makeUpdateMoveApprovalMasterService } from "@/services/update-move-approval-master-service";
 
@@ -98,6 +100,9 @@ export const MoveApprovalMaster = ({
   } | null>(null);
   const [approving, setApproving] = React.useState<string | null>(null);
 
+  // Pagination State
+  const [page, setPage] = React.useState<number>(1);
+
   const effectiveUserId = React.useMemo(() => {
     if (propUserId) return propUserId;
     try {
@@ -128,6 +133,7 @@ export const MoveApprovalMaster = ({
       (r) => r.status?.toLowerCase() === "pending",
     );
     setRequests(pendingList);
+    setPage(1);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
@@ -143,6 +149,20 @@ export const MoveApprovalMaster = ({
   React.useEffect(() => {
     loadRequests();
   }, [loadRequests]);
+
+  // Paginated records computation
+  const [totalPages, paginatedRequests] = React.useMemo(() => {
+    if (!requests) {
+      return [1, []];
+    }
+
+    const pagination = paginate(requests, {
+      currentPage: page,
+      totalPerPage: 25,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [requests, page]);
 
   // ── PATCH ────────────────────────────────────────────────────────────────
   const { submit: submitUpdate } = useForm({
@@ -283,7 +303,7 @@ export const MoveApprovalMaster = ({
               }
               body={
                 <Map
-                  items={requests}
+                  items={paginatedRequests}
                   renderItem={(req) => (
                     <Table.Row key={req.id}>
                       <Table.Cell>
@@ -394,6 +414,10 @@ export const MoveApprovalMaster = ({
                 />
               }
             />
+          )}
+
+          {!isLoading && requests.length > 0 && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
           )}
         </Paper>
       </Dashboard.Page>
@@ -506,7 +530,6 @@ export const MoveApprovalMaster = ({
                 />
               </div>
 
-
               {/* Item Image */}
               {selectedRequest.itemImage && (
                 <div style={{ gridColumn: "span 2" }}>
@@ -533,7 +556,6 @@ export const MoveApprovalMaster = ({
                 </div>
               )}
 
-              
               {/* Rejection Reason */}
               {selectedRequest.rejectionReason && (
                 <div style={{ gridColumn: "span 2", color: "#dc2626" }}>
@@ -594,25 +616,25 @@ export const MoveApprovalMaster = ({
           <Modal.Footer>
             {selectedRequest.status?.toLowerCase() === "pending" && (
               <>
-              <Grid>
-                <Grid.Cell size={Grid.CellSize.S12}>
-                <Button
-                  label="Approve"
-                  color={Button.Color.GREEN}
-                  onClick={() => handleApprove(selectedRequest)}
-                />
-                </Grid.Cell>
-                <Grid.Cell size={Grid.CellSize.S12}>
-                <Button
-                  label="Reject"
-                  color={Button.Color.RED}
-                  onClick={() => {
-                    setRejectionReason("");
-                    setRejectModal(selectedRequest);
-                  }}
-                />
-                </Grid.Cell>
-              </Grid>
+                <Grid>
+                  <Grid.Cell size={Grid.CellSize.S12}>
+                    <Button
+                      label="Approve"
+                      color={Button.Color.GREEN}
+                      onClick={() => handleApprove(selectedRequest)}
+                    />
+                  </Grid.Cell>
+                  <Grid.Cell size={Grid.CellSize.S12}>
+                    <Button
+                      label="Reject"
+                      color={Button.Color.RED}
+                      onClick={() => {
+                        setRejectionReason("");
+                        setRejectModal(selectedRequest);
+                      }}
+                    />
+                  </Grid.Cell>
+                </Grid>
               </>
             )}
             <Button label="Close" onClick={() => setSelectedRequest(null)} />

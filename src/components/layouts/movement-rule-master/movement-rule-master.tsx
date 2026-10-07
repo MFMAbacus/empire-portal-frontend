@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -60,7 +61,7 @@ export const MovementRuleMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "movement-rule-master"
+    "movement-rule-master",
   );
 
   const [rules, setRules] = React.useState<MovementRuleItem[] | null>(null);
@@ -68,6 +69,7 @@ export const MovementRuleMaster = ({
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
   const [deleteRuleId, setDeleteRuleId] = React.useState<string | null>(null);
   const [restoreRuleId, setRestoreRuleId] = React.useState<string | null>(null);
+  const [page, setPage] = React.useState<number>(1);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as MovementRuleItem[];
@@ -82,7 +84,7 @@ export const MovementRuleMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadRules = React.useCallback(() => {
@@ -139,6 +141,19 @@ export const MovementRuleMaster = ({
     });
   }, [rules, filters]);
 
+  const [totalPages, paginatedRules] = React.useMemo(() => {
+    if (!filteredRules) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredRules, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredRules, page]);
+
   return (
     <Dashboard.Content>
       <Actionbar title="MOVEMENT RULE MASTER">
@@ -182,7 +197,7 @@ export const MovementRuleMaster = ({
             <LoadingFeedback feedback="Loading movement rule records, please wait." />
           )}
 
-          {!isLoading && filteredRules !== null && (
+          {!isLoading && paginatedRules !== null && (
             <Table
               head={
                 <Table.Row>
@@ -196,7 +211,7 @@ export const MovementRuleMaster = ({
               }
               body={
                 <Map
-                  items={filteredRules || []}
+                  items={paginatedRules || []}
                   renderItem={(item) => (
                     <Table.Row key={item.id}>
                       <Table.Cell>{item.projectCode}</Table.Cell>
@@ -207,9 +222,7 @@ export const MovementRuleMaster = ({
                         <Badge
                           value={item.isActive ? "Active" : "Inactive"}
                           color={
-                            item.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            item.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -261,7 +274,9 @@ export const MovementRuleMaster = ({
               />
             )}
 
-          {!isLoading && filteredRules !== null && <Pagination />}
+          {!isLoading && paginatedRules !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -295,7 +310,7 @@ export const MovementRuleMaster = ({
             id: restoreRuleId,
           }}
           title="UNARCHIVE MOVEMENT RULE"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this movement rule record?"
           serviceMaker={makeDeleteMovementRuleMasterService}
           onDelete={loadRules}

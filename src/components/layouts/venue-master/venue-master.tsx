@@ -26,6 +26,7 @@ import { ArchiveIcon } from "@/components/icons/archive-icon";
 import { CheckIcon } from "@/components/icons/check-icon";
 import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
 import { FilterIcon } from "@/components/icons/filter-icon";
+import { paginate } from "@/utility/paginate";
 
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
@@ -47,15 +48,16 @@ const getFileType = (fileName?: string): string => {
 
 // Robust Dynamic File Size Extractor
 const getFormattedFileSize = (venue: VenueItem): string => {
-  const rawSize = 
-    venue.fileSize ?? 
-    (venue as unknown as Record<string, unknown>).file_size ?? 
-    (venue as unknown as Record<string, unknown>).size ?? 
+  const rawSize =
+    venue.fileSize ??
+    (venue as unknown as Record<string, unknown>).file_size ??
+    (venue as unknown as Record<string, unknown>).size ??
     (venue as unknown as Record<string, unknown>).attachmentSize;
 
   if (rawSize === undefined || rawSize === null || rawSize === "") return "N/A";
 
-  const bytes = typeof rawSize === "string" ? parseFloat(rawSize) : Number(rawSize);
+  const bytes =
+    typeof rawSize === "string" ? parseFloat(rawSize) : Number(rawSize);
 
   if (isNaN(bytes) || bytes <= 0) return "N/A";
   if (bytes < 1024) return `${bytes} Bytes`;
@@ -95,16 +97,16 @@ export const VenueMaster = ({
   onBack,
 }: VenueMasterProps): JSX.Element => {
   const { checkSubSection } = usePermission();
-  const { canWrite } = checkSubSection(
-    ModuleName.MASTER_FORMS,
-    "venue-master"
-  );
+  const { canWrite } = checkSubSection(ModuleName.MASTER_FORMS, "venue-master");
 
   const [venues, setVenues] = React.useState<VenueItem[] | null>(null);
   const [filters, setFilters] = React.useState<VenueFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
   const [deleteVenueId, setDeleteVenueId] = React.useState<string | null>(null);
-  const [restoreVenueId, setRestoreVenueId] = React.useState<string | null>(null);
+  const [restoreVenueId, setRestoreVenueId] = React.useState<string | null>(
+    null,
+  );
+  const [page, setPage] = React.useState<number>(1);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as VenueItem[];
@@ -120,7 +122,7 @@ export const VenueMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadVenues = React.useCallback(() => {
@@ -138,12 +140,16 @@ export const VenueMaster = ({
       if (filters.venueId) {
         predicate =
           predicate &&
-          current.venueId?.toLowerCase().includes(filters.venueId.toLowerCase());
+          current.venueId
+            ?.toLowerCase()
+            .includes(filters.venueId.toLowerCase());
       }
       if (filters.venueName) {
         predicate =
           predicate &&
-          current.venueName?.toLowerCase().includes(filters.venueName.toLowerCase());
+          current.venueName
+            ?.toLowerCase()
+            .includes(filters.venueName.toLowerCase());
       }
       if (filters.type) {
         predicate =
@@ -153,17 +159,23 @@ export const VenueMaster = ({
       if (filters.location) {
         predicate =
           predicate &&
-          current.location?.toLowerCase().includes(filters.location.toLowerCase());
+          current.location
+            ?.toLowerCase()
+            .includes(filters.location.toLowerCase());
       }
       if (filters.contact) {
         predicate =
           predicate &&
-          current.contact?.toLowerCase().includes(filters.contact.toLowerCase());
+          current.contact
+            ?.toLowerCase()
+            .includes(filters.contact.toLowerCase());
       }
       if (filters.projectCode) {
         predicate =
           predicate &&
-          current.projectCode?.toLowerCase().includes(filters.projectCode.toLowerCase());
+          current.projectCode
+            ?.toLowerCase()
+            .includes(filters.projectCode.toLowerCase());
       }
       if (typeof filters.isActive !== "undefined") {
         predicate = predicate && current.isActive === filters.isActive;
@@ -171,6 +183,19 @@ export const VenueMaster = ({
       return predicate;
     });
   }, [venues, filters]);
+
+  const [totalPages, paginatedVenues] = React.useMemo(() => {
+    if (!filteredVenues) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredVenues, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredVenues, page]);
 
   return (
     <Dashboard.Content>
@@ -184,11 +209,7 @@ export const VenueMaster = ({
           isDisabled={isLoading}
           onClick={() => setFilterModal(true)}
         />
-        <Button
-          label="RELOAD"
-          isDisabled={isLoading}
-          onClick={loadVenues}
-        />
+        <Button label="RELOAD" isDisabled={isLoading} onClick={loadVenues} />
         {canWrite && onCreate && (
           <Button
             label="CREATE"
@@ -215,7 +236,7 @@ export const VenueMaster = ({
             <LoadingFeedback feedback="Loading Restaurant / Cafe records, please wait." />
           )}
 
-          {!isLoading && filteredVenues !== null && (
+          {!isLoading && paginatedVenues !== null && (
             <Table
               head={
                 <Table.Row>
@@ -233,7 +254,7 @@ export const VenueMaster = ({
               }
               body={
                 <Map
-                  items={filteredVenues || []}
+                  items={paginatedVenues || []}
                   renderItem={(venue) => (
                     <Table.Row key={venue.id}>
                       <Table.Cell>{venue.venueId}</Table.Cell>
@@ -250,9 +271,7 @@ export const VenueMaster = ({
                         <Badge
                           value={venue.isActive ? "Active" : "Inactive"}
                           color={
-                            venue.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            venue.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -264,9 +283,7 @@ export const VenueMaster = ({
                                 <IconButton
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
-                                  onClick={() =>
-                                    setDeleteVenueId(venue.id)
-                                  }
+                                  onClick={() => setDeleteVenueId(venue.id)}
                                 />
                               </Tooltip>
                             )}
@@ -306,7 +323,9 @@ export const VenueMaster = ({
               />
             )}
 
-          {!isLoading && filteredVenues !== null && <Pagination />}
+          {!isLoading && paginatedVenues !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -340,7 +359,7 @@ export const VenueMaster = ({
             venueId: restoreVenueId,
           }}
           title="UNARCHIVE VENUE"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this venue record?"
           serviceMaker={makeDeleteVenueMasterService}
           onDelete={loadVenues}

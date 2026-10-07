@@ -15,6 +15,8 @@ import { DateInput } from "@/components/base/date-input";
 import { ListInput } from "@/components/base/list-input";
 import { Grid } from "@/components/base/grid";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
+import { paginate } from "@/utility/paginate";
+import { Pagination } from "@/components/base/pagination";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -195,6 +197,9 @@ export const CourtApprovalHistoryMaster = ({
   const [historyBookings, setHistoryBookings] = React.useState<CourtBooking[]>([]);
   const [selectedBooking, setSelectedBooking] = React.useState<CourtBooking | null>(null);
 
+  // Pagination State
+  const [page, setPage] = React.useState<number>(1);
+
   // Filter States
   const [isFilterModalOpen, setIsFilterModalOpen] = React.useState<boolean>(false);
   const [filterReservationNo, setFilterReservationNo] = React.useState<string | null>(null);
@@ -264,11 +269,12 @@ export const CourtApprovalHistoryMaster = ({
 
     // History contains processed bookings (Approved, Maintenance Blocked, PT Session Blocked, Rejected)
     const processedList = list.filter(
-      (b) => b.slotStatus !== "Pending Blocked",
+      (b) => b.slotStatus !== "Pending Blocked" && b.status !== "Pending Blocked",
     );
 
     setAllHistoryBookings(processedList);
     setHistoryBookings(processedList);
+    setPage(1);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
@@ -305,7 +311,22 @@ export const CourtApprovalHistoryMaster = ({
       filters.status
     );
     setHistoryBookings(filtered);
+    setPage(1); // Reset to page 1 on filter
   };
+
+  // Paginated records computation
+  const [totalPages, paginatedHistoryBookings] = React.useMemo(() => {
+    if (!historyBookings) {
+      return [1, []];
+    }
+
+    const pagination = paginate(historyBookings, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [historyBookings, page]);
 
   const getSlotBadge = (status: CourtBooking["slotStatus"] | string) => {
     switch (status) {
@@ -354,15 +375,15 @@ export const CourtApprovalHistoryMaster = ({
             <LoadingFeedback feedback="Fetching court reservation audit history..." />
           )}
 
-          {isLoading && historyBookings.length === 0 && (
+          {!isLoading && historyBookings.length === 0 && (
             <div
               style={{ padding: "32px", textAlign: "center", color: "#94a3b8" }}
             >
-              No processed court booking history records found.
+              No processed court booking history records found matching your criteria.
             </div>
           )}
 
-          {!isLoading && (
+          {!isLoading && paginatedHistoryBookings.length > 0 && (
             <Table
               head={
                 <Table.Row>
@@ -376,11 +397,11 @@ export const CourtApprovalHistoryMaster = ({
               }
               body={
                 <Map
-                  items={historyBookings}
+                  items={paginatedHistoryBookings}
                   renderItem={(b) => (
                     <Table.Row key={b.id}>
                       <Table.Cell>
-                        <strong>{b.reservationNo}</strong>
+                        <strong>{b.reservationNo || b.id}</strong>
                       </Table.Cell>
                       <Table.Cell>
                         <div>{b.courtName}</div>
@@ -396,7 +417,7 @@ export const CourtApprovalHistoryMaster = ({
                           {b.timeSlot} ({b.duration})
                         </small>
                       </Table.Cell>
-                      <Table.Cell>{getSlotBadge(b.status)}</Table.Cell>
+                      <Table.Cell>{getSlotBadge(b.status || b.slotStatus)}</Table.Cell>
                       <Table.Cell align={Table.Align.RIGHT}>
                         <div
                           style={{
@@ -419,6 +440,10 @@ export const CourtApprovalHistoryMaster = ({
               }
             />
           )}
+
+          {!isLoading && historyBookings.length > 0 && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -438,7 +463,7 @@ export const CourtApprovalHistoryMaster = ({
       {selectedBooking && (
         <Modal isLong={true}>
           <Modal.Header
-            title={`Audit Log Details - ${selectedBooking.reservationNo}`}
+            title={`Audit Log Details - ${selectedBooking.reservationNo || selectedBooking.id}`}
           />
           <Modal.Body>
             <div
@@ -469,7 +494,7 @@ export const CourtApprovalHistoryMaster = ({
               </div>
               <div>
                 <strong>Final Status:</strong>{" "}
-                {getSlotBadge(selectedBooking.status)}
+                {getSlotBadge(selectedBooking.status || selectedBooking.slotStatus)}
               </div>
 
               {selectedBooking.rejectionReason && (

@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -61,22 +62,13 @@ export const MenuMaster = ({
   onBack,
 }: MenuMasterProps): JSX.Element => {
   const { checkSubSection } = usePermission();
-  const { canWrite } = checkSubSection(
-    ModuleName.MASTER_FORMS,
-    "menu-master"
-  );
+  const { canWrite } = checkSubSection(ModuleName.MASTER_FORMS, "menu-master");
 
-  const [menus, setMenus] = React.useState<MenuItem[] | null>(
-    null
-  );
+  const [menus, setMenus] = React.useState<MenuItem[] | null>(null);
   const [filters, setFilters] = React.useState<MenuFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteMenuId, setDeleteMenuId] = React.useState<string | null>(
-    null
-  );
-  const [restoreMenuId, setRestoreMenuId] = React.useState<
-    string | null
-  >(null);
+  const [deleteMenuId, setDeleteMenuId] = React.useState<string | null>(null);
+  const [restoreMenuId, setRestoreMenuId] = React.useState<string | null>(null);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as MenuItem[];
@@ -91,8 +83,9 @@ export const MenuMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
+  const [page, setPage] = React.useState<number>(1);
 
   const loadMenus = React.useCallback(() => {
     submit({ sessionId, isArchived: showArchived });
@@ -109,9 +102,7 @@ export const MenuMaster = ({
       if (filters.menuId) {
         predicate =
           predicate &&
-          current.menuId
-            .toLowerCase()
-            .includes(filters.menuId.toLowerCase());
+          current.menuId.toLowerCase().includes(filters.menuId.toLowerCase());
       }
       if (filters.menuName) {
         predicate =
@@ -131,9 +122,7 @@ export const MenuMaster = ({
       if (filters.venueId) {
         predicate =
           predicate &&
-          current.venueId
-            .toLowerCase()
-            .includes(filters.venueId.toLowerCase());
+          current.venueId.toLowerCase().includes(filters.venueId.toLowerCase());
       }
       if (typeof filters.isActive !== "undefined") {
         predicate = predicate && current.isActive === filters.isActive;
@@ -141,6 +130,19 @@ export const MenuMaster = ({
       return predicate;
     });
   }, [menus, filters]);
+
+  const [totalPages, paginatedMenus] = React.useMemo(() => {
+    if (!filteredMenus) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredMenus, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredMenus, page]);
 
   return (
     <Dashboard.Content>
@@ -154,11 +156,7 @@ export const MenuMaster = ({
           isDisabled={isLoading}
           onClick={() => setFilterModal(true)}
         />
-        <Button
-          label="RELOAD"
-          isDisabled={isLoading}
-          onClick={loadMenus}
-        />
+        <Button label="RELOAD" isDisabled={isLoading} onClick={loadMenus} />
         {canWrite && onCreate && (
           <Button
             label="CREATE"
@@ -185,7 +183,7 @@ export const MenuMaster = ({
             <LoadingFeedback feedback="Loading menu records, please wait." />
           )}
 
-          {!isLoading && filteredMenus !== null && (
+          {!isLoading && paginatedMenus !== null && (
             <Table
               head={
                 <Table.Row>
@@ -200,7 +198,7 @@ export const MenuMaster = ({
               }
               body={
                 <Map
-                  items={filteredMenus || []}
+                  items={paginatedMenus || []}
                   renderItem={(menu) => (
                     <Table.Row key={menu.id}>
                       <Table.Cell>{menu.menuId}</Table.Cell>
@@ -212,9 +210,7 @@ export const MenuMaster = ({
                         <Badge
                           value={menu.isActive ? "Active" : "Inactive"}
                           color={
-                            menu.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            menu.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -226,9 +222,7 @@ export const MenuMaster = ({
                                 <IconButton
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
-                                  onClick={() =>
-                                    setDeleteMenuId(menu.id)
-                                  }
+                                  onClick={() => setDeleteMenuId(menu.id)}
                                 />
                               </Tooltip>
                             )}
@@ -268,7 +262,9 @@ export const MenuMaster = ({
               />
             )}
 
-          {!isLoading && filteredMenus !== null && <Pagination />}
+          {!isLoading && paginatedMenus !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -302,7 +298,7 @@ export const MenuMaster = ({
             menuId: restoreMenuId,
           }}
           title="UNARCHIVE MENU"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this menu record?"
           serviceMaker={makeDeleteMenuMasterService}
           onDelete={loadMenus}

@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -70,6 +71,7 @@ export const FacilityApprovalMaster = ({
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
   const [restoreId, setRestoreId] = React.useState<string | null>(null);
+  const [page, setPage] = React.useState<number>(1);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as FacilityApprovalItem[];
@@ -122,6 +124,19 @@ export const FacilityApprovalMaster = ({
     });
   }, [approvals, filters]);
 
+  const [totalPages, paginatedApprovals] = React.useMemo(() => {
+    if (!filteredApprovals) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredApprovals, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredApprovals, page]);
+
   return (
     <Dashboard.Content>
       {/* Updated Form Name / Title */}
@@ -167,7 +182,7 @@ export const FacilityApprovalMaster = ({
             <LoadingFeedback feedback="Loading Property Managemnt Approval, please wait." />
           )}
 
-          {!isLoading && filteredApprovals !== null && (
+          {!isLoading && paginatedApprovals !== null && (
             <Table
               head={
                 <Table.Row>
@@ -180,7 +195,7 @@ export const FacilityApprovalMaster = ({
               }
               body={
                 <Map
-                  items={filteredApprovals || []}
+                  items={paginatedApprovals || []}
                   renderItem={(approval) => (
                     <Table.Row key={approval.id}>
                       <Table.Cell>{approval.id}</Table.Cell>
@@ -246,7 +261,9 @@ export const FacilityApprovalMaster = ({
               />
             )}
 
-          {!isLoading && filteredApprovals !== null && <Pagination />}
+          {!isLoading && paginatedApprovals !== null && (
+                                <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+                              )}
         </Paper>
       </Dashboard.Page>
 

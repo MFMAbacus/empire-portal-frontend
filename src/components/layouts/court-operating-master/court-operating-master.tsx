@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -60,8 +61,9 @@ export const CourtOperatingMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "CourtOperating-master"
+    "CourtOperating-master",
   );
+  const [page, setPage] = React.useState<number>(1);
 
   const [courtOperatings, setCourtOperatings] = React.useState<
     CourtOperatingItem[] | null
@@ -88,7 +90,7 @@ export const CourtOperatingMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadCourtOperatings = React.useCallback(() => {
@@ -141,6 +143,19 @@ export const CourtOperatingMaster = ({
     });
   }, [courtOperatings, filters]);
 
+  const [totalPages, paginatedCourtOperatings] = React.useMemo(() => {
+    if (!filteredCourtOperatings) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredCourtOperatings, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredCourtOperatings, page]);
+
   return (
     <Dashboard.Content>
       <Actionbar title="COURT OPERATING MASTER">
@@ -184,7 +199,7 @@ export const CourtOperatingMaster = ({
             <LoadingFeedback feedback="Loading Court Operating records, please wait." />
           )}
 
-          {!isLoading && filteredCourtOperatings !== null && (
+          {!isLoading && paginatedCourtOperatings !== null && (
             <Table
               head={
                 <Table.Row>
@@ -199,7 +214,7 @@ export const CourtOperatingMaster = ({
               }
               body={
                 <Map
-                  items={filteredCourtOperatings || []}
+                  items={paginatedCourtOperatings || []}
                   renderItem={(item) => (
                     <Table.Row key={item.id}>
                       <Table.Cell>{item.courtId}</Table.Cell>
@@ -210,9 +225,7 @@ export const CourtOperatingMaster = ({
                         <Badge
                           value={item.isClosed ? "Yes" : "No"}
                           color={
-                            item.isClosed
-                              ? Badge.Color.RED
-                              : Badge.Color.GREEN
+                            item.isClosed ? Badge.Color.RED : Badge.Color.GREEN
                           }
                         />
                       </Table.Cell>
@@ -220,9 +233,7 @@ export const CourtOperatingMaster = ({
                         <Badge
                           value={item.isActive ? "Active" : "Inactive"}
                           color={
-                            item.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            item.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -254,7 +265,9 @@ export const CourtOperatingMaster = ({
                           <Tooltip value="Unarchive">
                             <IconButton
                               icon={<CheckIcon />}
-                              onClick={() => setRestoreCourtOperatingId(item.id)}
+                              onClick={() =>
+                                setRestoreCourtOperatingId(item.id)
+                              }
                             />
                           </Tooltip>
                         )}
@@ -276,7 +289,9 @@ export const CourtOperatingMaster = ({
               />
             )}
 
-          {!isLoading && filteredCourtOperatings !== null && <Pagination />}
+          {!isLoading && paginatedCourtOperatings !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -310,7 +325,7 @@ export const CourtOperatingMaster = ({
             id: restoreCourtOperatingId,
           }}
           title="UNARCHIVE COURT OPERATING"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this Court Operating record?"
           serviceMaker={makeDeleteCourtOperatingMasterService}
           onDelete={loadCourtOperatings}

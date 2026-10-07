@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -60,16 +61,17 @@ export const AccessCardStaffMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "access-card-staff-master"
+    "access-card-staff-master",
   );
 
   const [staffs, setStaffs] = React.useState<AccessCardStaffItem[] | null>(
-    null
+    null,
   );
   const [filters, setFilters] = React.useState<AccessCardStaffFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
   const [restoreId, setRestoreId] = React.useState<string | null>(null);
+  const [page, setPage] = React.useState<number>(1);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as AccessCardStaffItem[];
@@ -84,7 +86,7 @@ export const AccessCardStaffMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadApprovals = React.useCallback(() => {
@@ -99,7 +101,7 @@ export const AccessCardStaffMaster = ({
     if (staffs === null) return null;
     return staffs.filter((current) => {
       let predicate = true;
-      
+
       if (filters.staffRole) {
         predicate =
           predicate &&
@@ -122,6 +124,19 @@ export const AccessCardStaffMaster = ({
     });
   }, [staffs, filters]);
 
+  const [totalPages, paginatedApprovals] = React.useMemo(() => {
+    if (!filteredApprovals) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredApprovals, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredApprovals, page]);
+
   return (
     <Dashboard.Content>
       {/* Updated Form Name / Title */}
@@ -135,11 +150,7 @@ export const AccessCardStaffMaster = ({
           isDisabled={isLoading}
           onClick={() => setFilterModal(true)}
         />
-        <Button
-          label="RELOAD"
-          isDisabled={isLoading}
-          onClick={loadApprovals}
-        />
+        <Button label="RELOAD" isDisabled={isLoading} onClick={loadApprovals} />
         {/* FIXED: Write permission check (removed exclamation mark) */}
         {canWrite && onCreate && (
           <Button
@@ -167,7 +178,7 @@ export const AccessCardStaffMaster = ({
             <LoadingFeedback feedback="Loading Property Managemnt Approval, please wait." />
           )}
 
-          {!isLoading && filteredApprovals !== null && (
+          {!isLoading && paginatedApprovals !== null && (
             <Table
               head={
                 <Table.Row>
@@ -180,7 +191,7 @@ export const AccessCardStaffMaster = ({
               }
               body={
                 <Map
-                  items={filteredApprovals || []}
+                  items={paginatedApprovals || []}
                   renderItem={(approval) => (
                     <Table.Row key={approval.id}>
                       <Table.Cell>{approval.id}</Table.Cell>
@@ -204,9 +215,7 @@ export const AccessCardStaffMaster = ({
                                 <IconButton
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
-                                  onClick={() =>
-                                    setDeleteId(approval.id)
-                                  }
+                                  onClick={() => setDeleteId(approval.id)}
                                 />
                               </Tooltip>
                             )}
@@ -246,7 +255,9 @@ export const AccessCardStaffMaster = ({
               />
             )}
 
-          {!isLoading && filteredApprovals !== null && <Pagination />}
+          {!isLoading && paginatedApprovals !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -280,7 +291,7 @@ export const AccessCardStaffMaster = ({
             id: restoreId,
           }}
           title="UNARCHIVE ACCESS CARD STAFF"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this access card staff record?"
           serviceMaker={makeDeleteAccessCardStaffMasterService}
           onDelete={loadApprovals}

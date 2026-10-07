@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -59,12 +60,12 @@ export const CourtTimeMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "CourtTime-master"
+    "CourtTime-master",
   );
 
-  const [courtTimes, setCourtTimes] = React.useState<
-    CourtTimeItem[] | null
-  >(null);
+  const [courtTimes, setCourtTimes] = React.useState<CourtTimeItem[] | null>(
+    null,
+  );
   const [filters, setFilters] = React.useState<CourtTimeFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
   const [deleteCourtTimeId, setDeleteCourtTimeId] = React.useState<
@@ -85,9 +86,10 @@ export const CourtTimeMaster = ({
     onSuccess: handleSuccess,
   });
 
+  const [page, setPage] = React.useState<number>(1);
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadCourtTimes = React.useCallback(() => {
@@ -137,6 +139,19 @@ export const CourtTimeMaster = ({
     });
   }, [courtTimes, filters]);
 
+  const [totalPages, paginatedCourtTimes] = React.useMemo(() => {
+    if (!filteredCourtTimes) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredCourtTimes, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredCourtTimes, page]);
+
   return (
     <Dashboard.Content>
       <Actionbar title="COURT TIME SLOT MASTER">
@@ -180,7 +195,7 @@ export const CourtTimeMaster = ({
             <LoadingFeedback feedback="Loading Court Time records, please wait." />
           )}
 
-          {!isLoading && filteredCourtTimes !== null && (
+          {!isLoading && paginatedCourtTimes !== null && (
             <Table
               head={
                 <Table.Row>
@@ -194,7 +209,7 @@ export const CourtTimeMaster = ({
               }
               body={
                 <Map
-                  items={filteredCourtTimes || []}
+                  items={paginatedCourtTimes || []}
                   renderItem={(item) => (
                     <Table.Row key={item.id}>
                       <Table.Cell>{item.courtId}</Table.Cell>
@@ -205,9 +220,7 @@ export const CourtTimeMaster = ({
                         <Badge
                           value={item.isActive ? "Active" : "Inactive"}
                           color={
-                            item.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            item.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -219,9 +232,7 @@ export const CourtTimeMaster = ({
                                 <IconButton
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
-                                  onClick={() =>
-                                    setDeleteCourtTimeId(item.id)
-                                  }
+                                  onClick={() => setDeleteCourtTimeId(item.id)}
                                 />
                               </Tooltip>
                             )}
@@ -261,7 +272,9 @@ export const CourtTimeMaster = ({
               />
             )}
 
-          {!isLoading && filteredCourtTimes !== null && <Pagination />}
+          {!isLoading && paginatedCourtTimes !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -295,7 +308,7 @@ export const CourtTimeMaster = ({
             id: restoreCourtTimeId,
           }}
           title="UNARCHIVE COURT TIME SLOT "
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this Court Time record?"
           serviceMaker={makeDeleteCourtTimeMasterService}
           onDelete={loadCourtTimes}

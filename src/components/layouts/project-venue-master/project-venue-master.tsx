@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -58,17 +59,17 @@ export const ProjectVenueMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "ProjectVenue-master"
+    "ProjectVenue-master",
   );
 
-  const [projectVenues, setProjectVenues] = React.useState<ProjectVenueItem[] | null>(
-    null
-  );
+  const [projectVenues, setProjectVenues] = React.useState<
+    ProjectVenueItem[] | null
+  >(null);
   const [filters, setFilters] = React.useState<ProjectVenueFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteProjectVenueId, setDeleteProjectVenueId] = React.useState<string | null>(
-    null
-  );
+  const [deleteProjectVenueId, setDeleteProjectVenueId] = React.useState<
+    string | null
+  >(null);
   const [restoreProjectVenueId, setRestoreProjectVenueId] = React.useState<
     string | null
   >(null);
@@ -83,10 +84,11 @@ export const ProjectVenueMaster = ({
     serviceMaker: makeGetProjectVenueMasterService,
     onSuccess: handleSuccess,
   });
+  const [page, setPage] = React.useState<number>(1);
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadProjectVenues = React.useCallback(() => {
@@ -126,6 +128,19 @@ export const ProjectVenueMaster = ({
       return predicate;
     });
   }, [projectVenues, filters]);
+
+  const [totalPages, paginatedProjectVenues] = React.useMemo(() => {
+    if (!filteredProjectVenues) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredProjectVenues, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredProjectVenues, page]);
 
   return (
     <Dashboard.Content>
@@ -170,7 +185,7 @@ export const ProjectVenueMaster = ({
             <LoadingFeedback feedback="Loading Project Venue records, please wait." />
           )}
 
-          {!isLoading && filteredProjectVenues !== null && (
+          {!isLoading && paginatedProjectVenues !== null && (
             <Table
               head={
                 <Table.Row>
@@ -183,7 +198,7 @@ export const ProjectVenueMaster = ({
               }
               body={
                 <Map
-                  items={filteredProjectVenues || []}
+                  items={paginatedProjectVenues || []}
                   renderItem={(venue) => (
                     <Table.Row key={venue.id}>
                       <Table.Cell>{venue.projectCode}</Table.Cell>
@@ -192,9 +207,7 @@ export const ProjectVenueMaster = ({
                         <Badge
                           value={venue.isAccess ? "Allowed" : "Denied"}
                           color={
-                            venue.isAccess
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            venue.isAccess ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -202,9 +215,7 @@ export const ProjectVenueMaster = ({
                         <Badge
                           value={venue.isActive ? "Active" : "Inactive"}
                           color={
-                            venue.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            venue.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -258,7 +269,9 @@ export const ProjectVenueMaster = ({
               />
             )}
 
-          {!isLoading && filteredProjectVenues !== null && <Pagination />}
+          {!isLoading && paginatedProjectVenues !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -292,7 +305,7 @@ export const ProjectVenueMaster = ({
             id: restoreProjectVenueId,
           }}
           title="UNARCHIVE PROJECT VENUE"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this Project Venue record?"
           serviceMaker={makeDeleteProjectVenueMasterService}
           onDelete={loadProjectVenues}

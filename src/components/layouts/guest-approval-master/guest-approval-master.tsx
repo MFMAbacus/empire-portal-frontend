@@ -14,17 +14,21 @@ import { Modal } from "@/components/base/modal";
 import { TextInput } from "@/components/base/text-input";
 import { ListInput } from "@/components/base/list-input";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
+import { Pagination } from "@/components/base/pagination";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
 
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
+import { FilterIcon } from "@/components/icons/filter-icon";
 
 import { useForm } from "@/hooks/use-form";
+import { paginate } from "@/utility/paginate";
 import { makeGetGuestApprovalMasterService } from "@/services/get-guest-approval-master-service";
 import { makeUpdateGuestApprovalMasterService } from "@/services/update-guest-approval-master-service";
 import { GetGateMasterServiceApi } from "@/services/get-gate-master-service";
+import { GuestApprovalHistoryFilterModal } from "../guest-approval-history-master/filter-modal";
 
 export type GuestAccessRequest = {
   id: string;
@@ -100,11 +104,22 @@ export const GuestApprovalMaster = ({
   const [gateList, setGateList] = React.useState<GateMasterItem[]>([]);
   const [isLoadingGates, setIsLoadingGates] = React.useState<boolean>(false);
 
+  const [allRequests, setAllRequests] = React.useState<GuestAccessRequest[]>([]);
+
+  // Pagination State
+  const [page, setPage] = React.useState<number>(1);
+
+  // Filter States
+  const [isFilterModalOpen, setIsFilterModalOpen] = React.useState<boolean>(false);
+  const [filterRequestNo, setFilterRequestNo] = React.useState<string | null>(null);
+  const [filterStartDate, setFilterStartDate] = React.useState<string | null>(null);
+  const [filterEndDate, setFilterEndDate] = React.useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = React.useState<string | null>(null);
+
   // Automatically extract userId from props or local storage/session if available
   const effectiveUserId = React.useMemo(() => {
     if (propUserId) return propUserId;
     try {
-      // Common keys where user session / profile might be stored
       const rawUser = localStorage.getItem("user") || sessionStorage.getItem("user") || localStorage.getItem("userId");
       if (!rawUser) return undefined;
       if (rawUser.startsWith("{")) {
@@ -116,6 +131,40 @@ export const GuestApprovalMaster = ({
       return undefined;
     }
   }, [propUserId]);
+
+  // Apply filters helper function with Date Range logic
+  const applyFilters = React.useCallback(
+    (
+      reqList: GuestAccessRequest[],
+      reqNo: string | null,
+      sDate: string | null,
+      eDate: string | null,
+      stat: string | null
+    ) => {
+      return reqList.filter((item) => {
+        const matchReqNo =
+          !reqNo || item.requestNo.toLowerCase().includes(reqNo.toLowerCase());
+        const matchStatus = !stat || item.status === stat;
+
+        let matchDate = true;
+        if (item.visitDate) {
+          const itemDate = String(item.visitDate).substring(0, 10);
+          if (sDate && eDate) {
+            matchDate = itemDate >= sDate && itemDate <= eDate;
+          } else if (sDate) {
+            matchDate = itemDate >= sDate;
+          } else if (eDate) {
+            matchDate = itemDate <= eDate;
+          }
+        } else if (sDate || eDate) {
+          matchDate = false;
+        }
+
+        return matchReqNo && matchDate && matchStatus;
+      });
+    },
+    []
+  );
 
   // Fetch Gate Master list from API as fallback
   React.useEffect(() => {
@@ -155,6 +204,28 @@ export const GuestApprovalMaster = ({
       service.abort();
     };
   }, [sessionId]);
+
+  // Handle filtering execution
+  const handleFilterSubmit = (filters: {
+    requestNo: string | null;
+    startDate: string | null;
+    endDate: string | null;
+    status: string | null;
+  }) => {
+    setFilterRequestNo(filters.requestNo);
+    setFilterStartDate(filters.startDate);
+    setFilterEndDate(filters.endDate);
+    setFilterStatus(filters.status);
+    const filtered = applyFilters(
+      allRequests,
+      filters.requestNo,
+      filters.startDate,
+      filters.endDate,
+      filters.status
+    );
+    setRequests(filtered);
+    setPage(1); // Reset to page 1 on filter
+  };
 
   // Gates for current modal (uses request's project-specific gates if provided)
   const availableGatesForModal = React.useMemo(() => {
@@ -212,12 +283,12 @@ export const GuestApprovalMaster = ({
       };
     });
 
-    // Sirf wahi requests filter karein jinka status "Pending" ho
     const pendingList = mappedList.filter(
       (item: GuestAccessRequest) => item.status === "Pending"
     );
-
+    setAllRequests(pendingList);
     setRequests(pendingList);
+    setPage(1);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
@@ -227,7 +298,7 @@ export const GuestApprovalMaster = ({
   });
 
   const loadRequests = React.useCallback(() => {
-    submit({ sessionId,  userId: effectiveUserId, });
+    submit({ sessionId, userId: effectiveUserId });
   }, [sessionId, effectiveUserId, submit]);
 
   React.useEffect(() => {
@@ -240,6 +311,20 @@ export const GuestApprovalMaster = ({
       loadRequests();
     },
   });
+
+  // Paginated records computation
+  const [totalPages, paginatedRequests] = React.useMemo(() => {
+    if (!requests) {
+      return [1, []];
+    }
+
+    const pagination = paginate(requests, {
+      currentPage: page,
+      totalPerPage: 25,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [requests, page]);
 
   const openApproveModal = (req: GuestAccessRequest) => {
     setSelectedRequest(null);
@@ -332,6 +417,11 @@ export const GuestApprovalMaster = ({
         {onBack && (
           <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
         )}
+        <Button
+          label="FILTER"
+          icon={<FilterIcon />}
+          onClick={() => setIsFilterModalOpen(true)}
+        />
         <Button label="RELOAD" onClick={loadRequests} />
       </Actionbar>
 
@@ -359,7 +449,7 @@ export const GuestApprovalMaster = ({
             <LoadingFeedback feedback="Fetching pending guest approval requests..." />
           )}
 
-          {!isLoading && (
+          {!isLoading && paginatedRequests !== null && (
             <Table
               head={
                 <Table.Row>
@@ -374,7 +464,7 @@ export const GuestApprovalMaster = ({
               }
               body={
                 <Map
-                  items={requests}
+                  items={paginatedRequests}
                   renderItem={(req) => (
                     <Table.Row key={req.id}>
                       <Table.Cell>
@@ -419,14 +509,14 @@ export const GuestApprovalMaster = ({
                           {req.status === "Pending" && (
                             <>
                               <Button
-                                label="APPROVE & ASSIGN GATE"
-                                size={Button.Size.DEFAULT}
+                                label="APPROVE"
+                                size={Button.Size.SMALL}
                                 color={Button.Color.GREEN}
                                 onClick={() => openApproveModal(req)}
                               />
                               <Button
                                 label="REJECT"
-                                size={Button.Size.DEFAULT}
+                                size={Button.Size.SMALL}
                                 color={Button.Color.RED}
                                 onClick={() => openRejectModal(req)}
                               />
@@ -440,8 +530,32 @@ export const GuestApprovalMaster = ({
               }
             />
           )}
+
+          {!isLoading && requests.length === 0 && (
+            <Alert
+              className="mt-1"
+              message="No guest access requests found."
+              severity={AlertSeverity.SUCCESS}
+            />
+          )}
+
+          {!isLoading && requests.length > 0 && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
+
+      {/* Filter Modal */}
+      {isFilterModalOpen && (
+        <GuestApprovalHistoryFilterModal
+          defaultRequestNo={filterRequestNo}
+          defaultStartDate={filterStartDate}
+          defaultEndDate={filterEndDate}
+          defaultStatus={filterStatus}
+          onFilter={handleFilterSubmit}
+          onClose={() => setIsFilterModalOpen(false)}
+        />
+      )}
 
       {/* Details View Modal */}
       {selectedRequest && (
@@ -505,7 +619,7 @@ export const GuestApprovalMaster = ({
               <Grid>
                 <Grid.Cell size={Grid.CellSize.S12}>
                   <Button
-                    label="Approve "
+                    label="Approve"
                     color={Button.Color.GREEN}
                     onClick={() => openApproveModal(selectedRequest)}
                   />

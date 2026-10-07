@@ -30,6 +30,7 @@ import { FilterIcon } from "@/components/icons/filter-icon";
 
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
+import { paginate } from "@/utility/paginate";
 
 import { makeGetPropertyMasterService } from "@/services/get-property-master-service";
 import { makeDeletePropertyMasterService } from "@/services/delete-property-master-service";
@@ -76,6 +77,7 @@ export const PropertyMaster = ({
   const [restorePropertyId, setRestorePropertyId] = React.useState<
     string | null
   >(null);
+  const [page, setPage] = React.useState<number>(1);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as PropertyItem[];
@@ -133,6 +135,19 @@ export const PropertyMaster = ({
     });
   }, [properties, filters]);
 
+  const [totalPages, paginatedProperty] = React.useMemo(() => {
+    if (!filteredProperties) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredProperties, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredProperties, page]);
+
   return (
     <Dashboard.Content>
       <Actionbar title="PROJECT / PROPERTY MASTER">
@@ -176,7 +191,7 @@ export const PropertyMaster = ({
             <LoadingFeedback feedback="Loading property records, please wait." />
           )}
 
-          {!isLoading && filteredProperties !== null && (
+          {!isLoading && paginatedProperty !== null && (
             <Table
               head={
                 <Table.Row>
@@ -189,7 +204,7 @@ export const PropertyMaster = ({
               }
               body={
                 <Map
-                  items={filteredProperties || []}
+                  items={paginatedProperty || []}
                   renderItem={(property) => (
                     <Table.Row key={property.id}>
                       <Table.Cell>{property.projectCode}</Table.Cell>
@@ -255,7 +270,9 @@ export const PropertyMaster = ({
               />
             )}
 
-          {!isLoading && filteredProperties !== null && <Pagination />}
+          {!isLoading && filteredProperties !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -289,7 +306,7 @@ export const PropertyMaster = ({
             propertyId: restorePropertyId,
           }}
           title="UNARCHIVE PROPERTY"
-          isRestore = {true}
+          isRestore={true}
           message="Do you really want to unarchive this property record?"
           serviceMaker={makeDeletePropertyMasterService}
           onDelete={loadProperties}

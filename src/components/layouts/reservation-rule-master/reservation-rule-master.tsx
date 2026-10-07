@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -62,20 +63,18 @@ export const ReservationRuleMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "reservation-rule-master"
+    "reservation-rule-master",
   );
 
-  const [rules, setRules] = React.useState<ReservationRuleItem[] | null>(
-    null
-  );
+  const [rules, setRules] = React.useState<ReservationRuleItem[] | null>(null);
   const [filters, setFilters] = React.useState<ReservationRuleFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteReservationRuleId, setDeleteReservationRuleId] = React.useState<string | null>(
-    null
-  );
-  const [restoreReservationRuleId, setRestoreReservationRuleId] = React.useState<
+  const [deleteReservationRuleId, setDeleteReservationRuleId] = React.useState<
     string | null
   >(null);
+  const [restoreReservationRuleId, setRestoreReservationRuleId] =
+    React.useState<string | null>(null);
+  const [page, setPage] = React.useState<number>(1);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as ReservationRuleItem[];
@@ -90,7 +89,7 @@ export const ReservationRuleMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadReservationRules = React.useCallback(() => {
@@ -112,8 +111,7 @@ export const ReservationRuleMaster = ({
       }
       if (filters.maxGuest) {
         predicate =
-          predicate &&
-          Number(current.maxGuest) === Number(filters.maxGuest);
+          predicate && Number(current.maxGuest) === Number(filters.maxGuest);
       }
       if (filters.lateArrival) {
         predicate =
@@ -123,9 +121,7 @@ export const ReservationRuleMaster = ({
       if (filters.venueId) {
         predicate =
           predicate &&
-          current.venueId
-            .toLowerCase()
-            .includes(filters.venueId.toLowerCase());
+          current.venueId.toLowerCase().includes(filters.venueId.toLowerCase());
       }
       if (typeof filters.isActive !== "undefined") {
         predicate = predicate && current.isActive === filters.isActive;
@@ -133,6 +129,19 @@ export const ReservationRuleMaster = ({
       return predicate;
     });
   }, [rules, filters]);
+
+  const [totalPages, paginatedReservationRules] = React.useMemo(() => {
+    if (!filteredReservationRules) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredReservationRules, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredReservationRules, page]);
 
   return (
     <Dashboard.Content>
@@ -177,7 +186,7 @@ export const ReservationRuleMaster = ({
             <LoadingFeedback feedback="Loading reservation slot Rule records, please wait." />
           )}
 
-          {!isLoading && filteredReservationRules !== null && (
+          {!isLoading && paginatedReservationRules !== null && (
             <Table
               head={
                 <Table.Row>
@@ -191,7 +200,7 @@ export const ReservationRuleMaster = ({
               }
               body={
                 <Map
-                  items={filteredReservationRules || []}
+                  items={paginatedReservationRules || []}
                   renderItem={(rule) => (
                     <Table.Row key={rule.id}>
                       <Table.Cell>{rule.venueId}</Table.Cell>
@@ -202,9 +211,7 @@ export const ReservationRuleMaster = ({
                         <Badge
                           value={rule.isActive ? "Active" : "Inactive"}
                           color={
-                            rule.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            rule.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -236,7 +243,9 @@ export const ReservationRuleMaster = ({
                           <Tooltip value="Unarchive">
                             <IconButton
                               icon={<CheckIcon />}
-                              onClick={() => setRestoreReservationRuleId(rule.id)}
+                              onClick={() =>
+                                setRestoreReservationRuleId(rule.id)
+                              }
                             />
                           </Tooltip>
                         )}
@@ -258,7 +267,9 @@ export const ReservationRuleMaster = ({
               />
             )}
 
-          {!isLoading && filteredReservationRules !== null && <Pagination />}
+          {!isLoading && paginatedReservationRules !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -292,7 +303,7 @@ export const ReservationRuleMaster = ({
             id: restoreReservationRuleId,
           }}
           title="UNARCHIVE RESERVATION SLOT RULE"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this reservation slot rule record?"
           serviceMaker={makeDeleteReservationRuleMasterService}
           onDelete={loadReservationRules}

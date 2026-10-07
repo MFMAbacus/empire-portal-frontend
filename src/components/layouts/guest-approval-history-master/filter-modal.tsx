@@ -40,7 +40,7 @@ export const GuestApprovalHistoryFilterModal = ({
   const statusOptions = [
     { id: 'Approved', name: 'Approved' },
     { id: 'Rejected', name: 'Rejected' },
-    { id: 'Checked-in', name: 'Checked-in' },
+    { id: 'Used', name: 'Used' },
     { id: 'Expired', name: 'Expired' },
   ];
 

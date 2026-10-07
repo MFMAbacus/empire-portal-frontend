@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -63,7 +64,7 @@ export const AccessCardMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "access-card-master"
+    "access-card-master",
   );
 
   const [cards, setCards] = React.useState<AccessCardItem[] | null>(null);
@@ -71,6 +72,7 @@ export const AccessCardMaster = ({
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
   const [deleteCardId, setDeleteCardId] = React.useState<string | null>(null);
   const [restoreCardId, setRestoreCardId] = React.useState<string | null>(null);
+  const [page, setPage] = React.useState<number>(1);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as AccessCardItem[];
@@ -85,7 +87,7 @@ export const AccessCardMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadAccessCards = React.useCallback(() => {
@@ -103,9 +105,7 @@ export const AccessCardMaster = ({
       if (filters.cardId) {
         predicate =
           predicate &&
-          current.cardId
-            ?.toLowerCase()
-            .includes(filters.cardId.toLowerCase());
+          current.cardId?.toLowerCase().includes(filters.cardId.toLowerCase());
       }
       if (filters.serialNo) {
         predicate =
@@ -120,7 +120,7 @@ export const AccessCardMaster = ({
           Boolean(
             current.maskedSerial
               ?.toLowerCase()
-              .includes(filters.maskedSerial.toLowerCase())
+              .includes(filters.maskedSerial.toLowerCase()),
           );
       }
       if (filters.projectCode) {
@@ -136,7 +136,7 @@ export const AccessCardMaster = ({
           Boolean(
             current.apartmentId
               ?.toLowerCase()
-              .includes(filters.apartmentId.toLowerCase())
+              .includes(filters.apartmentId.toLowerCase()),
           );
       }
       if (filters.residentId) {
@@ -145,7 +145,7 @@ export const AccessCardMaster = ({
           Boolean(
             current.residentId
               ?.toLowerCase()
-              .includes(filters.residentId.toLowerCase())
+              .includes(filters.residentId.toLowerCase()),
           );
       }
       if (filters.cardStatus) {
@@ -161,7 +161,7 @@ export const AccessCardMaster = ({
           Boolean(
             current.issueDate
               ?.toLowerCase()
-              .includes(filters.issueDate.toLowerCase())
+              .includes(filters.issueDate.toLowerCase()),
           );
       }
       if (typeof filters.isActive !== "undefined") {
@@ -170,6 +170,19 @@ export const AccessCardMaster = ({
       return predicate;
     });
   }, [cards, filters]);
+
+  const [totalPages, paginatedCards] = React.useMemo(() => {
+    if (!filteredCards) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredCards, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredCards, page]);
 
   return (
     <Dashboard.Content>
@@ -214,7 +227,7 @@ export const AccessCardMaster = ({
             <LoadingFeedback feedback="Loading access card records, please wait." />
           )}
 
-          {!isLoading && filteredCards !== null && (
+          {!isLoading && paginatedCards !== null && (
             <Table
               head={
                 <Table.Row>
@@ -232,7 +245,7 @@ export const AccessCardMaster = ({
               }
               body={
                 <Map
-                  items={filteredCards || []}
+                  items={paginatedCards || []}
                   renderItem={(card) => (
                     <Table.Row key={card.id}>
                       <Table.Cell>{card.cardId}</Table.Cell>
@@ -247,9 +260,7 @@ export const AccessCardMaster = ({
                         <Badge
                           value={card.isActive ? "Active" : "Inactive"}
                           color={
-                            card.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            card.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -301,7 +312,9 @@ export const AccessCardMaster = ({
               />
             )}
 
-          {!isLoading && filteredCards !== null && <Pagination />}
+          {!isLoading && paginatedCards !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -335,7 +348,7 @@ export const AccessCardMaster = ({
             cardId: restoreCardId,
           }}
           title="UNARCHIVE ACCESS CARD"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this access card record?"
           serviceMaker={makeDeleteAccessCardMasterService}
           onDelete={loadAccessCards}

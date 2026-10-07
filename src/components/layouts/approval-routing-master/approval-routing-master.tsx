@@ -19,6 +19,7 @@ import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
 import { DeleteModal } from "@/components/layouts/delete-modal";
 import { FilterModal } from "./filter-modal";
+import { paginate } from "@/utility/paginate";
 
 import { PlusIcon } from "@/components/icons/plus-icon";
 import { EyeIcon } from "@/components/icons/eye-icon";
@@ -61,21 +62,21 @@ export const ApprovalRoutingMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "approval-routing-master"
+    "approval-routing-master",
   );
 
   const [routings, setRoutings] = React.useState<ApprovalRoutingItem[] | null>(
-    null
+    null,
   );
   const [rolesList, setRolesList] = React.useState<any[]>([]);
   const [filters, setFilters] = React.useState<ApprovalRoutingFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
   const [deleteRoutingId, setDeleteRoutingId] = React.useState<string | null>(
-    null
+    null,
   );
-  const [restoreRoutingId, setRestoreRoutingId] = React.useState<
-    string | null
-  >(null);
+  const [restoreRoutingId, setRestoreRoutingId] = React.useState<string | null>(
+    null,
+  );
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as ApprovalRoutingItem[];
@@ -87,6 +88,7 @@ export const ApprovalRoutingMaster = ({
     const items = Array.isArray(rawItems) ? rawItems : [];
     setRolesList(items);
   }, []);
+  const [page, setPage] = React.useState<number>(1);
 
   const { isLoading, alertData, submit } = useForm({
     isLoadingDefault: true,
@@ -101,7 +103,7 @@ export const ApprovalRoutingMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadRoutings = React.useCallback(() => {
@@ -119,11 +121,13 @@ export const ApprovalRoutingMaster = ({
         (r) =>
           r.id === roleIdOrName ||
           r.roleId === roleIdOrName ||
-          r._id === roleIdOrName
+          r._id === roleIdOrName,
       );
-      return found ? found.roleName || found.name || roleIdOrName : roleIdOrName;
+      return found
+        ? found.roleName || found.name || roleIdOrName
+        : roleIdOrName;
     },
-    [rolesList]
+    [rolesList],
   );
 
   const filteredRoutings = React.useMemo(() => {
@@ -140,9 +144,7 @@ export const ApprovalRoutingMaster = ({
       if (filters.module) {
         predicate =
           predicate &&
-          current.module
-            ?.toLowerCase()
-            .includes(filters.module.toLowerCase());
+          current.module?.toLowerCase().includes(filters.module.toLowerCase());
       }
       if (filters.projectCode) {
         predicate =
@@ -175,6 +177,19 @@ export const ApprovalRoutingMaster = ({
       return predicate;
     });
   }, [routings, filters, getRoleName]);
+
+  const [totalPages, paginatedApproval] = React.useMemo(() => {
+    if (!filteredRoutings) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredRoutings, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredRoutings, page]);
 
   return (
     <Dashboard.Content>
@@ -219,7 +234,7 @@ export const ApprovalRoutingMaster = ({
             <LoadingFeedback feedback="Loading routing records, please wait." />
           )}
 
-          {!isLoading && filteredRoutings !== null && (
+          {!isLoading && paginatedApproval !== null && (
             <Table
               head={
                 <Table.Row>
@@ -234,7 +249,7 @@ export const ApprovalRoutingMaster = ({
               }
               body={
                 <Map
-                  items={filteredRoutings || []}
+                  items={paginatedApproval || []}
                   renderItem={(item) => (
                     <Table.Row key={item.id}>
                       <Table.Cell>{item.routingId}</Table.Cell>
@@ -246,9 +261,7 @@ export const ApprovalRoutingMaster = ({
                         <Badge
                           value={item.isActive ? "Active" : "Inactive"}
                           color={
-                            item.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            item.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -260,9 +273,7 @@ export const ApprovalRoutingMaster = ({
                                 <IconButton
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
-                                  onClick={() =>
-                                    setDeleteRoutingId(item.id)
-                                  }
+                                  onClick={() => setDeleteRoutingId(item.id)}
                                 />
                               </Tooltip>
                             )}
@@ -302,7 +313,9 @@ export const ApprovalRoutingMaster = ({
               />
             )}
 
-          {!isLoading && filteredRoutings !== null && <Pagination />}
+          {!isLoading && paginatedApproval !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -336,7 +349,7 @@ export const ApprovalRoutingMaster = ({
             routingId: restoreRoutingId,
           }}
           title="UNARCHIVE APPROVAL ROUTING"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this approval routing record?"
           serviceMaker={makeDeleteApprovalRoutingMasterService}
           onDelete={loadRoutings}

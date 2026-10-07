@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -60,17 +61,17 @@ export const MovementTypeMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "movement-type-master"
+    "movement-type-master",
   );
 
-  const [movementTypes, setMovementTypes] = React.useState<MovementTypeItem[] | null>(
-    null
-  );
+  const [movementTypes, setMovementTypes] = React.useState<
+    MovementTypeItem[] | null
+  >(null);
   const [filters, setFilters] = React.useState<MovementTypeFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteMovementTypeId, setDeleteMovementTypeId] = React.useState<string | null>(
-    null
-  );
+  const [deleteMovementTypeId, setDeleteMovementTypeId] = React.useState<
+    string | null
+  >(null);
   const [restoreMovementTypeId, setRestoreMovementTypeId] = React.useState<
     string | null
   >(null);
@@ -79,6 +80,7 @@ export const MovementTypeMaster = ({
     const list = data as MovementTypeItem[];
     setMovementTypes(list || []);
   }, []);
+  const [page, setPage] = React.useState<number>(1);
 
   const { isLoading, alertData, submit } = useForm({
     isLoadingDefault: true,
@@ -88,7 +90,7 @@ export const MovementTypeMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadMovementTypes = React.useCallback(() => {
@@ -115,9 +117,7 @@ export const MovementTypeMaster = ({
       if (filters.type) {
         predicate =
           predicate &&
-          current.type
-            .toLowerCase()
-            .includes(filters.type.toLowerCase());
+          current.type.toLowerCase().includes(filters.type.toLowerCase());
       }
 
       if (typeof filters.isActive !== "undefined") {
@@ -127,6 +127,19 @@ export const MovementTypeMaster = ({
       return predicate;
     });
   }, [movementTypes, filters]);
+
+  const [totalPages, paginatedMovementTypes] = React.useMemo(() => {
+    if (!filteredMovementTypes) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredMovementTypes, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredMovementTypes, page]);
 
   return (
     <Dashboard.Content>
@@ -171,7 +184,7 @@ export const MovementTypeMaster = ({
             <LoadingFeedback feedback="Loading movement type records, please wait." />
           )}
 
-          {!isLoading && filteredMovementTypes !== null && (
+          {!isLoading && paginatedMovementTypes !== null && (
             <Table
               head={
                 <Table.Row>
@@ -183,7 +196,7 @@ export const MovementTypeMaster = ({
               }
               body={
                 <Map
-                  items={filteredMovementTypes || []}
+                  items={paginatedMovementTypes || []}
                   renderItem={(item) => (
                     <Table.Row key={item.id}>
                       <Table.Cell>{item.movementTypeId}</Table.Cell>
@@ -192,9 +205,7 @@ export const MovementTypeMaster = ({
                         <Badge
                           value={item.isActive ? "Active" : "Inactive"}
                           color={
-                            item.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            item.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -248,7 +259,9 @@ export const MovementTypeMaster = ({
               />
             )}
 
-          {!isLoading && filteredMovementTypes !== null && <Pagination />}
+          {!isLoading && paginatedMovementTypes !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -282,7 +295,7 @@ export const MovementTypeMaster = ({
             movementTypeId: restoreMovementTypeId,
           }}
           title="UNARCHIVE MOVEMENT TYPE"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this movement type record?"
           serviceMaker={makeDeleteMovementTypeMasterService}
           onDelete={loadMovementTypes}

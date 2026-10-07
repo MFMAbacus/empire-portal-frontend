@@ -10,12 +10,10 @@ import { Alert } from "@/components/base/alert";
 import { Badge } from "@/components/base/badge";
 import { Tooltip } from "@/components/base/tooltip";
 import { Modal } from "@/components/base/modal";
-import { TextInput } from "@/components/base/text-input";
-import { DateInput } from "@/components/base/date-input";
-import { ListInput } from "@/components/base/list-input";
-import { Grid } from "@/components/base/grid";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
+import { Pagination } from "@/components/base/pagination";
 
+import { GuestApprovalHistoryFilterModal } from "./filter-modal";
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
 
@@ -24,6 +22,7 @@ import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
 import { FilterIcon } from "@/components/icons/filter-icon";
 
 import { useForm } from "@/hooks/use-form";
+import { paginate } from "@/utility/paginate";
 import { makeGetGuestApprovalHistoryMasterService } from "@/services/get-guest-approval-history-master-service";
 
 export type GuestAccessRequest = {
@@ -62,161 +61,8 @@ export type GuestAccessRequest = {
 
 type GuestApprovalHistoryMasterProps = {
   sessionId: string;
-  userId?: string; // <--- userId prop add kar diya gaya hai
+  userId?: string;
   onBack?: () => void;
-};
-
-// Updated Filter Modal Component with Date Range (Start Date & End Date)
-type GuestApprovalHistoryFilterProps = {
-  defaultRequestNo: string | null;
-  defaultStartDate: string | null;
-  defaultEndDate: string | null;
-  defaultStatus: string | null;
-  onFilter: (filters: {
-    requestNo: string | null;
-    startDate: string | null;
-    endDate: string | null;
-    status: string | null;
-  }) => void;
-  onClose: () => void;
-};
-
-const GuestApprovalHistoryFilterModal = ({
-  defaultRequestNo,
-  defaultStartDate,
-  defaultEndDate,
-  defaultStatus,
-  onFilter,
-  onClose,
-}: GuestApprovalHistoryFilterProps): JSX.Element => {
-  const [requestNo, setRequestNo] = React.useState<string | null>(defaultRequestNo);
-  const [startDate, setStartDate] = React.useState<string | null>(defaultStartDate);
-  const [endDate, setEndDate] = React.useState<string | null>(defaultEndDate);
-  const [status, setStatus] = React.useState<string | null>(defaultStatus);
-
-  const statusOptions = [
-    { id: "Approved", name: "Approved" },
-    { id: "Rejected", name: "Rejected" },
-    { id: "Checked-in", name: "Checked-in" },
-    { id: "Expired", name: "Expired" },
-  ];
-
-  const hasFilters =
-    (requestNo !== null && requestNo !== "") ||
-    (startDate !== null && startDate !== "") ||
-    (endDate !== null && endDate !== "") ||
-    (status !== null && status !== "");
-
-  return (
-    <Modal>
-      <Modal.Header title="Filter Guest Approval History" />
-      <Modal.Body>
-        <Grid>
-          <TextInput
-            className="w-100"
-            label="Request No"
-            placeholder="Enter request number (e.g. REQ-001)"
-            value={requestNo}
-            onChange={(val: any) => {
-              const text = typeof val === "string" ? val : val?.target?.value || "";
-              setRequestNo(text);
-            }}
-          />
-        </Grid>
-        <Grid>
-          <DateInput
-            className="w-100"
-            label="Start Date"
-            placeholder="YYYY-MM-DD"
-            value={startDate !== null ? startDate : ""}
-            onChange={(val: any) => {
-              const text = typeof val === "string" ? val : val?.target?.value || "";
-              setStartDate(text);
-            }}
-          />
-        </Grid>
-        <Grid>
-          <DateInput
-            className="w-100"
-            label="End Date"
-            placeholder="YYYY-MM-DD"
-            value={endDate !== null ? endDate : ""}
-            onChange={(val: any) => {
-              const text = typeof val === "string" ? val : val?.target?.value || "";
-              setEndDate(text);
-            }}
-          />
-        </Grid>
-        <Grid>
-          <ListInput
-            className="w-100"
-            label="Status"
-            value={status || undefined}
-            placeholder="Select status filter"
-          >
-            {(listOnClose) => (
-              <React.Fragment>
-                <ListInput.Item
-                  label="All Statuses"
-                  isActive={!status}
-                  onClick={() => {
-                    setStatus(null);
-                    listOnClose();
-                  }}
-                />
-                <Map
-                  items={statusOptions}
-                  renderItem={(item) => (
-                    <ListInput.Item
-                      key={item.id}
-                      label={item.name}
-                      isActive={status === item.id}
-                      onClick={() => {
-                        setStatus(item.id);
-                        listOnClose();
-                      }}
-                    />
-                  )}
-                />
-              </React.Fragment>
-            )}
-          </ListInput>
-        </Grid>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button
-          className="ml-05"
-          label="FILTER"
-          icon={<FilterIcon />}
-          isDisabled={!hasFilters}
-          onClick={() => {
-            onFilter({
-              requestNo,
-              startDate,
-              endDate,
-              status,
-            });
-            onClose();
-          }}
-        />
-        <Button
-          className="ml-05"
-          label="CLEAR"
-          isDisabled={!hasFilters}
-          onClick={() => {
-            onFilter({
-              requestNo: null,
-              startDate: null,
-              endDate: null,
-              status: null,
-            });
-            onClose();
-          }}
-        />
-        <Button label="CLOSE" onClick={onClose} />
-      </Modal.Footer>
-    </Modal>
-  );
 };
 
 export const GuestApprovalHistoryMaster = ({
@@ -229,6 +75,9 @@ export const GuestApprovalHistoryMaster = ({
   const [selectedRequest, setSelectedRequest] =
     React.useState<GuestAccessRequest | null>(null);
   const [feedback, setFeedback] = React.useState<string | null>(null);
+
+  // Pagination State
+  const [page, setPage] = React.useState<number>(1);
 
   // Filter States
   const [isFilterModalOpen, setIsFilterModalOpen] = React.useState<boolean>(false);
@@ -323,6 +172,7 @@ export const GuestApprovalHistoryMaster = ({
 
     setAllRequests(historyList);
     setRequests(historyList);
+    setPage(1);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
@@ -333,12 +183,26 @@ export const GuestApprovalHistoryMaster = ({
 
   const loadHistoryRequests = React.useCallback(() => {
     setFeedback(null);
-    submit({ sessionId,userId: effectiveUserId, });
+    submit({ sessionId, userId: effectiveUserId });
   }, [sessionId, effectiveUserId, submit]);
 
   React.useEffect(() => {
     loadHistoryRequests();
   }, [loadHistoryRequests]);
+
+  // Paginated records computation
+  const [totalPages, paginatedRequests] = React.useMemo(() => {
+    if (!requests) {
+      return [1, []];
+    }
+
+    const pagination = paginate(requests, {
+      currentPage: page,
+      totalPerPage: 25,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [requests, page]);
 
   // Handle filtering execution
   const handleFilterSubmit = (filters: {
@@ -359,6 +223,7 @@ export const GuestApprovalHistoryMaster = ({
       filters.status
     );
     setRequests(filtered);
+    setPage(1); // Reset to page 1 on filter
   };
 
   const getStatusBadge = (status: GuestAccessRequest["status"]) => {
@@ -394,7 +259,7 @@ export const GuestApprovalHistoryMaster = ({
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="Processed Guest Requests History (Approved / Rejected)" />
+          <Paper.Title value="Processed Guest Requests History" />
         
           {feedback && (
             <Alert
@@ -416,7 +281,7 @@ export const GuestApprovalHistoryMaster = ({
             <LoadingFeedback feedback="Fetching guest approval history from Live API..." />
           )}
 
-          {!isLoading && (
+          {!isLoading && paginatedRequests !== null && (
             <Table
               head={
                 <Table.Row>
@@ -431,7 +296,7 @@ export const GuestApprovalHistoryMaster = ({
               }
               body={
                 <Map
-                  items={requests}
+                  items={paginatedRequests}
                   renderItem={(req) => (
                     <Table.Row key={req.id}>
                       <Table.Cell>
@@ -480,6 +345,18 @@ export const GuestApprovalHistoryMaster = ({
                 />
               }
             />
+          )}
+
+          {!isLoading && requests.length === 0 && (
+            <Alert
+              className="mt-1"
+              message="No guest access history records found."
+              severity={AlertSeverity.SUCCESS}
+            />
+          )}
+
+          {!isLoading && requests.length > 0 && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
           )}
         </Paper>
       </Dashboard.Page>

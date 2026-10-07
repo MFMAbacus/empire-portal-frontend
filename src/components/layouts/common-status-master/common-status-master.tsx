@@ -29,6 +29,7 @@ import { FilterIcon } from "@/components/icons/filter-icon";
 
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
+import { paginate } from "@/utility/paginate";
 
 import { makeGetCommonStatusMasterService } from "@/services/get-common-status-master-service";
 import { makeDeleteCommonStatusMasterService } from "@/services/delete-common-status-master-service";
@@ -59,7 +60,7 @@ export const CommonStatusMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "common-status-master"
+    "common-status-master",
   );
 
   const [commonStatus, setCommonStatus] = React.useState<
@@ -67,9 +68,10 @@ export const CommonStatusMaster = ({
   >(null);
   const [filters, setFilters] = React.useState<CommonStatusFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteStatusCode, setDeleteStatusCode] = React.useState<
-    string | null
-  >(null);
+  const [page, setPage] = React.useState<number>(1);
+  const [deleteStatusCode, setDeleteStatusCode] = React.useState<string | null>(
+    null,
+  );
   const [restoreStatusCode, setRestoreStatusCode] = React.useState<
     string | null
   >(null);
@@ -87,7 +89,7 @@ export const CommonStatusMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadCommonStatus = React.useCallback(() => {
@@ -112,9 +114,7 @@ export const CommonStatusMaster = ({
       if (filters.module) {
         predicate =
           predicate &&
-          current.module
-            ?.toLowerCase()
-            .includes(filters.module.toLowerCase());
+          current.module?.toLowerCase().includes(filters.module.toLowerCase());
       }
       if (filters.statusName) {
         predicate =
@@ -129,6 +129,19 @@ export const CommonStatusMaster = ({
       return predicate;
     });
   }, [commonStatus, filters]);
+
+  const [totalPages, paginatedCommonStatus] = React.useMemo(() => {
+    if (!filteredCommonStatus) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredCommonStatus, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredCommonStatus, page]);
 
   return (
     <Dashboard.Content>
@@ -173,7 +186,7 @@ export const CommonStatusMaster = ({
             <LoadingFeedback feedback="Loading Common Status, please wait." />
           )}
 
-          {!isLoading && filteredCommonStatus !== null && (
+          {!isLoading && paginatedCommonStatus !== null && (
             <Table
               head={
                 <Table.Row>
@@ -187,7 +200,7 @@ export const CommonStatusMaster = ({
               }
               body={
                 <Map
-                  items={filteredCommonStatus || []}
+                  items={paginatedCommonStatus || []}
                   renderItem={(status) => (
                     <Table.Row key={status.id || status.statusCode}>
                       <Table.Cell>{status.statusCode}</Table.Cell>
@@ -212,9 +225,7 @@ export const CommonStatusMaster = ({
                                 <IconButton
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
-                                  onClick={() =>
-                                    setDeleteStatusCode(status.id)
-                                  }
+                                  onClick={() => setDeleteStatusCode(status.id)}
                                 />
                               </Tooltip>
                             )}
@@ -256,7 +267,9 @@ export const CommonStatusMaster = ({
               />
             )}
 
-          {!isLoading && filteredCommonStatus !== null && <Pagination />}
+          {!isLoading && filteredCommonStatus !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -290,7 +303,7 @@ export const CommonStatusMaster = ({
             statusCode: restoreStatusCode,
           }}
           title="UNARCHIVE COMMON STATUS"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this common status record?"
           serviceMaker={makeDeleteCommonStatusMasterService}
           onDelete={loadCommonStatus}

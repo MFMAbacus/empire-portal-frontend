@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -61,27 +62,21 @@ export const CourtMaster = ({
   onBack,
 }: CourtMasterProps): JSX.Element => {
   const { checkSubSection } = usePermission();
-  const { canWrite } = checkSubSection(
-    ModuleName.MASTER_FORMS,
-    "court-master"
-  );
+  const { canWrite } = checkSubSection(ModuleName.MASTER_FORMS, "court-master");
 
-  const [courts, setCourts] = React.useState<CourtItem[] | null>(
-    null
-  );
+  const [courts, setCourts] = React.useState<CourtItem[] | null>(null);
   const [filters, setFilters] = React.useState<CourtFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteCourtId, setDeleteCourtId] = React.useState<string | null>(
-    null
+  const [deleteCourtId, setDeleteCourtId] = React.useState<string | null>(null);
+  const [restoreCourtId, setRestoreCourtId] = React.useState<string | null>(
+    null,
   );
-  const [restoreCourtId, setRestoreCourtId] = React.useState<
-    string | null
-  >(null);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as CourtItem[];
     setCourts(list || []);
   }, []);
+  const [page, setPage] = React.useState<number>(1);
 
   const { isLoading, alertData, submit } = useForm({
     isLoadingDefault: true,
@@ -91,7 +86,7 @@ export const CourtMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadCourts = React.useCallback(() => {
@@ -109,9 +104,7 @@ export const CourtMaster = ({
       if (filters.courtId) {
         predicate =
           predicate &&
-          current.courtId
-            .toLowerCase()
-            .includes(filters.courtId.toLowerCase());
+          current.courtId.toLowerCase().includes(filters.courtId.toLowerCase());
       }
       if (filters.courtName) {
         predicate =
@@ -149,6 +142,19 @@ export const CourtMaster = ({
     });
   }, [courts, filters]);
 
+  const [totalPages, paginatedCourts] = React.useMemo(() => {
+    if (!filteredCourts) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredCourts, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredCourts, page]);
+
   return (
     <Dashboard.Content>
       <Actionbar title="SPORT COURT MASTER">
@@ -161,11 +167,7 @@ export const CourtMaster = ({
           isDisabled={isLoading}
           onClick={() => setFilterModal(true)}
         />
-        <Button
-          label="RELOAD"
-          isDisabled={isLoading}
-          onClick={loadCourts}
-        />
+        <Button label="RELOAD" isDisabled={isLoading} onClick={loadCourts} />
         {canWrite && onCreate && (
           <Button
             label="CREATE"
@@ -192,7 +194,7 @@ export const CourtMaster = ({
             <LoadingFeedback feedback="Loading court records, please wait." />
           )}
 
-          {!isLoading && filteredCourts !== null && (
+          {!isLoading && paginatedCourts !== null && (
             <Table
               head={
                 <Table.Row>
@@ -207,7 +209,7 @@ export const CourtMaster = ({
               }
               body={
                 <Map
-                  items={filteredCourts || []}
+                  items={paginatedCourts || []}
                   renderItem={(court) => (
                     <Table.Row key={court.id}>
                       <Table.Cell>{court.courtId}</Table.Cell>
@@ -219,9 +221,7 @@ export const CourtMaster = ({
                         <Badge
                           value={court.isActive ? "Active" : "Inactive"}
                           color={
-                            court.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            court.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -233,9 +233,7 @@ export const CourtMaster = ({
                                 <IconButton
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
-                                  onClick={() =>
-                                    setDeleteCourtId(court.id)
-                                  }
+                                  onClick={() => setDeleteCourtId(court.id)}
                                 />
                               </Tooltip>
                             )}
@@ -275,7 +273,9 @@ export const CourtMaster = ({
               />
             )}
 
-          {!isLoading && filteredCourts !== null && <Pagination />}
+          {!isLoading && paginatedCourts !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -309,7 +309,7 @@ export const CourtMaster = ({
             courtId: restoreCourtId,
           }}
           title="UNARCHIVE SPORT COURT"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this Court record?"
           serviceMaker={makeDeleteCourtMasterService}
           onDelete={loadCourts}

@@ -19,6 +19,7 @@ import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
 import { DeleteModal } from "@/components/layouts/delete-modal";
 import { FilterModal } from "./filter-modal";
+import { paginate } from "@/utility/paginate";
 
 import { PlusIcon } from "@/components/icons/plus-icon";
 import { EyeIcon } from "@/components/icons/eye-icon";
@@ -37,8 +38,8 @@ import { makeDeleteRestaurantStaffMasterService } from "@/services/delete-restau
 export type RestaurantStaffItem = {
   id: string;
   approverRole: string;
-  role:string;
-  venueId:string;
+  role: string;
+  venueId: string;
   projectCode: string;
   isActive: boolean;
   isArchived?: boolean;
@@ -62,16 +63,17 @@ export const RestaurantStaffMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "restaurant-staff-master"
+    "restaurant-staff-master",
   );
 
-  const [approvals, setApprovals] = React.useState<RestaurantStaffItem[] | null>(
-    null
-  );
+  const [approvals, setApprovals] = React.useState<
+    RestaurantStaffItem[] | null
+  >(null);
   const [filters, setFilters] = React.useState<RestaurantStaffFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
   const [restoreId, setRestoreId] = React.useState<string | null>(null);
+  const [page, setPage] = React.useState<number>(1);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as RestaurantStaffItem[];
@@ -86,7 +88,7 @@ export const RestaurantStaffMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadApprovals = React.useCallback(() => {
@@ -101,7 +103,7 @@ export const RestaurantStaffMaster = ({
     if (approvals === null) return null;
     return approvals.filter((current) => {
       let predicate = true;
-      
+
       if (filters.approverRole) {
         predicate =
           predicate &&
@@ -120,16 +122,12 @@ export const RestaurantStaffMaster = ({
       if (filters.venueId) {
         predicate =
           predicate &&
-          current.venueId
-            .toLowerCase()
-            .includes(filters.venueId.toLowerCase());
+          current.venueId.toLowerCase().includes(filters.venueId.toLowerCase());
       }
       if (filters.role) {
         predicate =
           predicate &&
-          current.role
-            .toLowerCase()
-            .includes(filters.role.toLowerCase());
+          current.role.toLowerCase().includes(filters.role.toLowerCase());
       }
       if (typeof filters.isActive !== "undefined") {
         predicate = predicate && current.isActive === filters.isActive;
@@ -137,6 +135,19 @@ export const RestaurantStaffMaster = ({
       return predicate;
     });
   }, [approvals, filters]);
+
+  const [totalPages, paginatedApprovals] = React.useMemo(() => {
+    if (!filteredApprovals) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredApprovals, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredApprovals, page]);
 
   return (
     <Dashboard.Content>
@@ -151,11 +162,7 @@ export const RestaurantStaffMaster = ({
           isDisabled={isLoading}
           onClick={() => setFilterModal(true)}
         />
-        <Button
-          label="RELOAD"
-          isDisabled={isLoading}
-          onClick={loadApprovals}
-        />
+        <Button label="RELOAD" isDisabled={isLoading} onClick={loadApprovals} />
         {/* FIXED: Write permission check (removed exclamation mark) */}
         {canWrite && onCreate && (
           <Button
@@ -183,7 +190,7 @@ export const RestaurantStaffMaster = ({
             <LoadingFeedback feedback="Loading Restaurant Staff, please wait." />
           )}
 
-          {!isLoading && filteredApprovals !== null && (
+          {!isLoading && paginatedApprovals !== null && (
             <Table
               head={
                 <Table.Row>
@@ -198,7 +205,7 @@ export const RestaurantStaffMaster = ({
               }
               body={
                 <Map
-                  items={filteredApprovals || []}
+                  items={paginatedApprovals || []}
                   renderItem={(approval) => (
                     <Table.Row key={approval.id}>
                       <Table.Cell>{approval.id}</Table.Cell>
@@ -224,9 +231,7 @@ export const RestaurantStaffMaster = ({
                                 <IconButton
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
-                                  onClick={() =>
-                                    setDeleteId(approval.id)
-                                  }
+                                  onClick={() => setDeleteId(approval.id)}
                                 />
                               </Tooltip>
                             )}
@@ -266,7 +271,9 @@ export const RestaurantStaffMaster = ({
               />
             )}
 
-          {!isLoading && filteredApprovals !== null && <Pagination />}
+          {!isLoading && paginatedApprovals !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -285,7 +292,7 @@ export const RestaurantStaffMaster = ({
             id: deleteId,
           }}
           title="ARCHIVE RESTAURANT STAFF"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to archive this restaurant staff record?"
           serviceMaker={makeDeleteRestaurantStaffMasterService}
           onDelete={loadApprovals}

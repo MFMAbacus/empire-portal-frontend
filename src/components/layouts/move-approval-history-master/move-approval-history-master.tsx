@@ -12,6 +12,7 @@ import { Badge } from "@/components/base/badge";
 import { Tooltip } from "@/components/base/tooltip";
 import { Modal } from "@/components/base/modal";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
+import { Pagination } from "@/components/base/pagination";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -21,6 +22,7 @@ import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
 import { FilterIcon } from "@/components/icons/filter-icon";
 
 import { useForm } from "@/hooks/use-form";
+import { paginate } from "@/utility/paginate";
 import { makeGetMoveApprovalMasterService } from "@/services/get-move-approval-master-service";
 import { MoveApprovalHistoryFilterModal } from "./filter-modal";
 
@@ -76,6 +78,9 @@ export const MoveApprovalHistoryMaster = ({
   const [allRequests, setAllRequests] = React.useState<MoveRequest[]>([]);
   const [requests, setRequests] = React.useState<MoveRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = React.useState<MoveRequest | null>(null);
+
+  // Pagination State
+  const [page, setPage] = React.useState<number>(1);
 
   const effectiveUserId = React.useMemo(() => {
     if (propUserId) return propUserId;
@@ -150,6 +155,7 @@ export const MoveApprovalHistoryMaster = ({
 
     setAllRequests(historyList);
     setRequests(historyList);
+    setPage(1);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
@@ -186,6 +192,7 @@ export const MoveApprovalHistoryMaster = ({
       filters.status
     );
     setRequests(filtered);
+    setPage(1);
   };
 
   // ── Stats (derived) ───────────────────────────────────────────────────────
@@ -195,6 +202,20 @@ export const MoveApprovalHistoryMaster = ({
   const rejectedCount = allRequests.filter(
     (r) => r.status?.toLowerCase() === "rejected"
   ).length;
+
+  // Paginated records computation
+  const [totalPages, paginatedRequests] = React.useMemo(() => {
+    if (!requests) {
+      return [1, []];
+    }
+
+    const pagination = paginate(requests, {
+      currentPage: page,
+      totalPerPage: 25,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [requests, page]);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -237,7 +258,7 @@ export const MoveApprovalHistoryMaster = ({
         </div> */}
 
         <Paper>
-          <Paper.Title value="Processed Move Approval History (Approved / Rejected)" />
+          <Paper.Title value="Processed Move Approval History" />
 
           {alertData !== null && alertData.severity !== AlertSeverity.SUCCESS && (
             <Alert message={alertData.message} severity={alertData.severity} />
@@ -270,7 +291,7 @@ export const MoveApprovalHistoryMaster = ({
               }
               body={
                 <Map
-                  items={requests}
+                  items={paginatedRequests}
                   renderItem={(req) => (
                     <Table.Row key={req.id}>
                       <Table.Cell>
@@ -339,6 +360,10 @@ export const MoveApprovalHistoryMaster = ({
               }
             />
           )}
+
+          {!isLoading && requests.length > 0 && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -396,7 +421,7 @@ export const MoveApprovalHistoryMaster = ({
                   value={selectedRequest.isRuleValid ? "✓ Passed" : "✗ Violation"}
                   color={selectedRequest.isRuleValid ? Badge.Color.GREEN : Badge.Color.RED}
                 />
-                <div style={{ marginTop: "6px", fontSize: "13px", color: "#475569", }}>
+                <div style={{ marginTop: "6px", fontSize: "13px", color: "#475569" }}>
                   {selectedRequest.ruleValidationNotes}
                 </div>
               </div>

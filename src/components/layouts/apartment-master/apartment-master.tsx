@@ -29,6 +29,7 @@ import { FilterIcon } from "@/components/icons/filter-icon";
 
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
+import { paginate } from "@/utility/paginate";
 
 import { makeGetApartmentMasterService } from "@/services/get-apartment-master-service";
 import { makeDeleteApartmentMasterService } from "@/services/delete-apartment-master-service";
@@ -63,20 +64,21 @@ export const ApartmentMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "apartment-master"
+    "apartment-master",
   );
 
   const [apartments, setApartments] = React.useState<ApartmentItem[] | null>(
-    null
+    null,
   );
   const [filters, setFilters] = React.useState<ApartmentFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteApartmentId, setDeleteApartmentId] = React.useState<string | null>(
-    null
-  );
+  const [deleteApartmentId, setDeleteApartmentId] = React.useState<
+    string | null
+  >(null);
   const [restoreApartmentId, setRestoreApartmentId] = React.useState<
     string | null
   >(null);
+  const [page, setPage] = React.useState<number>(1);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as ApartmentItem[];
@@ -91,7 +93,7 @@ export const ApartmentMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadApartments = React.useCallback(() => {
@@ -149,6 +151,19 @@ export const ApartmentMaster = ({
     });
   }, [apartments, filters]);
 
+  const [totalPages, paginatedAparments] = React.useMemo(() => {
+    if (!filteredApartments) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredApartments, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredApartments, page]);
+
   return (
     <Dashboard.Content>
       <Actionbar title="APARTMENT MASTER">
@@ -192,7 +207,7 @@ export const ApartmentMaster = ({
             <LoadingFeedback feedback="Loading apartment records, please wait." />
           )}
 
-          {!isLoading && filteredApartments !== null && (
+          {!isLoading && paginatedAparments !== null && (
             <Table
               head={
                 <Table.Row>
@@ -207,7 +222,7 @@ export const ApartmentMaster = ({
               }
               body={
                 <Map
-                  items={filteredApartments || []}
+                  items={paginatedAparments || []}
                   renderItem={(apartment) => (
                     <Table.Row key={apartment.id}>
                       <Table.Cell>{apartment.apartmentId}</Table.Cell>
@@ -253,7 +268,9 @@ export const ApartmentMaster = ({
                           <Tooltip value="Unarchive">
                             <IconButton
                               icon={<CheckIcon />}
-                              onClick={() => setRestoreApartmentId(apartment.id)}
+                              onClick={() =>
+                                setRestoreApartmentId(apartment.id)
+                              }
                             />
                           </Tooltip>
                         )}
@@ -275,7 +292,9 @@ export const ApartmentMaster = ({
               />
             )}
 
-          {!isLoading && filteredApartments !== null && <Pagination />}
+          {!isLoading && filteredApartments !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -309,7 +328,7 @@ export const ApartmentMaster = ({
             apartmentId: restoreApartmentId,
           }}
           title="UNARCHIVE APARTMENT"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this apartment record?"
           serviceMaker={makeDeleteApartmentMasterService}
           onDelete={loadApartments}

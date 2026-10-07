@@ -26,6 +26,7 @@ import { ArchiveIcon } from "@/components/icons/archive-icon";
 import { CheckIcon } from "@/components/icons/check-icon";
 import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
 import { FilterIcon } from "@/components/icons/filter-icon";
+import { paginate } from "@/utility/paginate";
 
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
@@ -71,14 +72,15 @@ export const SecurityCoordinatorMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "security-coordinator-master"
+    "security-coordinator-master",
   );
 
-  const [securitys, setSecuritys] = React.useState<SecurityCoordinatorItem[] | null>(
-    null
-  );
+  const [securitys, setSecuritys] = React.useState<
+    SecurityCoordinatorItem[] | null
+  >(null);
   const [userList, setUserList] = React.useState<UserItem[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = React.useState<boolean>(false);
+  const [page, setPage] = React.useState<number>(1);
 
   const [filters, setFilters] = React.useState<SecurityCoordinatorFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
@@ -98,7 +100,7 @@ export const SecurityCoordinatorMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadSecuritys = React.useCallback(() => {
@@ -127,8 +129,8 @@ export const SecurityCoordinatorMaster = ({
           const rawData = Array.isArray(response.data)
             ? response.data
             : Array.isArray(response)
-            ? response
-            : [];
+              ? response
+              : [];
 
           setUserList(rawData);
         }
@@ -154,24 +156,33 @@ export const SecurityCoordinatorMaster = ({
     (userId: string) => {
       const user = userList.find((u) => (u.id || u._id) === userId);
       if (!user) return userId; // Fallback to ID if user not found
-      const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+      const fullName = [user.firstName, user.lastName]
+        .filter(Boolean)
+        .join(" ");
       return fullName || user.jobTitle || user.email || userId;
     },
-    [userList]
+    [userList],
   );
 
   const filteredSecuritys = React.useMemo(() => {
     if (securitys === null) return null;
     return securitys.filter((current) => {
       let predicate = true;
-      
+
       if (filters.coordinatorRole) {
         // Filter by resolved user name or raw ID
-        const resolvedName = getUserNameById(current.coordinatorRole).toLowerCase();
+        const resolvedName = getUserNameById(
+          current.coordinatorRole,
+        ).toLowerCase();
         predicate =
           predicate &&
-          (resolvedName.includes(filters.coordinatorRole.toString().toLowerCase()) ||
-            current.coordinatorRole.toString().toLowerCase().includes(filters.coordinatorRole.toString().toLowerCase()));
+          (resolvedName.includes(
+            filters.coordinatorRole.toString().toLowerCase(),
+          ) ||
+            current.coordinatorRole
+              .toString()
+              .toLowerCase()
+              .includes(filters.coordinatorRole.toString().toLowerCase()));
       }
       if (filters.projectCode) {
         predicate =
@@ -186,7 +197,18 @@ export const SecurityCoordinatorMaster = ({
       return predicate;
     });
   }, [securitys, filters, getUserNameById]);
+  const [totalPages, paginatedSecuritys] = React.useMemo(() => {
+    if (!filteredSecuritys) {
+      return [1, []];
+    }
 
+    const pagination = paginate(filteredSecuritys, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredSecuritys, page]);
   return (
     <Dashboard.Content>
       <Actionbar title="SECURITY COORDINATOR MAPPING">
@@ -199,11 +221,7 @@ export const SecurityCoordinatorMaster = ({
           isDisabled={isLoading}
           onClick={() => setFilterModal(true)}
         />
-        <Button
-          label="RELOAD"
-          isDisabled={isLoading}
-          onClick={loadSecuritys}
-        />
+        <Button label="RELOAD" isDisabled={isLoading} onClick={loadSecuritys} />
         {canWrite && onCreate && (
           <Button
             label="CREATE"
@@ -230,7 +248,7 @@ export const SecurityCoordinatorMaster = ({
             <LoadingFeedback feedback="Loading Security Coordinator mappings, please wait." />
           )}
 
-          {!isLoading && filteredSecuritys !== null && (
+          {!isLoading && paginatedSecuritys !== null && (
             <Table
               head={
                 <Table.Row>
@@ -243,13 +261,15 @@ export const SecurityCoordinatorMaster = ({
               }
               body={
                 <Map
-                  items={filteredSecuritys || []}
+                  items={paginatedSecuritys || []}
                   renderItem={(security) => (
                     <Table.Row key={security.id}>
                       <Table.Cell>{security.id}</Table.Cell>
                       <Table.Cell>{security.projectCode}</Table.Cell>
                       {/* Displays the resolved user name instead of the ID */}
-                      <Table.Cell>{getUserNameById(security.coordinatorRole)}</Table.Cell>
+                      <Table.Cell>
+                        {getUserNameById(security.coordinatorRole)}
+                      </Table.Cell>
                       <Table.Cell>
                         <Badge
                           value={security.isActive ? "Active" : "Inactive"}
@@ -268,9 +288,7 @@ export const SecurityCoordinatorMaster = ({
                                 <IconButton
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
-                                  onClick={() =>
-                                    setDeleteId(security.id)
-                                  }
+                                  onClick={() => setDeleteId(security.id)}
                                 />
                               </Tooltip>
                             )}
@@ -310,7 +328,9 @@ export const SecurityCoordinatorMaster = ({
               />
             )}
 
-          {!isLoading && filteredSecuritys !== null && <Pagination />}
+          {!isLoading && paginatedSecuritys !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -344,7 +364,7 @@ export const SecurityCoordinatorMaster = ({
             id: restoreId,
           }}
           title="UNARCHIVE SECURITY COORDINATOR MAPPING"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this security coordinator mapping record?"
           serviceMaker={makeDeleteSecurityCoordinatorMasterService}
           onDelete={loadSecuritys}

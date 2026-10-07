@@ -26,6 +26,7 @@ import { ArchiveIcon } from "@/components/icons/archive-icon";
 import { CheckIcon } from "@/components/icons/check-icon";
 import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
 import { FilterIcon } from "@/components/icons/filter-icon";
+import { paginate } from "@/utility/paginate";
 
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
@@ -60,7 +61,7 @@ export const VenueOperatingMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "VenueOperating-master"
+    "VenueOperating-master",
   );
 
   const [venueOperatings, setVenueOperatings] = React.useState<
@@ -79,6 +80,7 @@ export const VenueOperatingMaster = ({
     const list = data as VenueOperatingItem[];
     setVenueOperatings(list || []);
   }, []);
+  const [page, setPage] = React.useState<number>(1);
 
   const { isLoading, alertData, submit } = useForm({
     isLoadingDefault: true,
@@ -88,7 +90,7 @@ export const VenueOperatingMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadVenueOperatings = React.useCallback(() => {
@@ -141,6 +143,19 @@ export const VenueOperatingMaster = ({
     });
   }, [venueOperatings, filters]);
 
+  const [totalPages, paginatedVenueOperatings] = React.useMemo(() => {
+    if (!filteredVenueOperatings) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredVenueOperatings, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredVenueOperatings, page]);
+
   return (
     <Dashboard.Content>
       <Actionbar title="VENUE OPERATING MASTER">
@@ -184,7 +199,7 @@ export const VenueOperatingMaster = ({
             <LoadingFeedback feedback="Loading Venue Operating records, please wait." />
           )}
 
-          {!isLoading && filteredVenueOperatings !== null && (
+          {!isLoading && paginatedVenueOperatings !== null && (
             <Table
               head={
                 <Table.Row>
@@ -199,7 +214,7 @@ export const VenueOperatingMaster = ({
               }
               body={
                 <Map
-                  items={filteredVenueOperatings || []}
+                  items={paginatedVenueOperatings || []}
                   renderItem={(item) => (
                     <Table.Row key={item.id}>
                       <Table.Cell>{item.venueId}</Table.Cell>
@@ -210,9 +225,7 @@ export const VenueOperatingMaster = ({
                         <Badge
                           value={item.isClosed ? "Yes" : "No"}
                           color={
-                            item.isClosed
-                              ? Badge.Color.RED
-                              : Badge.Color.GREEN
+                            item.isClosed ? Badge.Color.RED : Badge.Color.GREEN
                           }
                         />
                       </Table.Cell>
@@ -220,9 +233,7 @@ export const VenueOperatingMaster = ({
                         <Badge
                           value={item.isActive ? "Active" : "Inactive"}
                           color={
-                            item.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            item.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -254,7 +265,9 @@ export const VenueOperatingMaster = ({
                           <Tooltip value="Unarchive">
                             <IconButton
                               icon={<CheckIcon />}
-                              onClick={() => setRestoreVenueOperatingId(item.id)}
+                              onClick={() =>
+                                setRestoreVenueOperatingId(item.id)
+                              }
                             />
                           </Tooltip>
                         )}
@@ -276,7 +289,9 @@ export const VenueOperatingMaster = ({
               />
             )}
 
-          {!isLoading && filteredVenueOperatings !== null && <Pagination />}
+          {!isLoading && paginatedVenueOperatings !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -310,7 +325,7 @@ export const VenueOperatingMaster = ({
             id: restoreVenueOperatingId,
           }}
           title="UNARCHIVE VENUE OPERATING"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this Venue Operating record?"
           serviceMaker={makeDeleteVenueOperatingMasterService}
           onDelete={loadVenueOperatings}

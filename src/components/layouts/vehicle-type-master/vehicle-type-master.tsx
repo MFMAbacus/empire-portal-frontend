@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -60,16 +61,17 @@ export const VehicleTypeMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "vehicle-type-master"
+    "vehicle-type-master",
   );
 
-  const [vehicleTypes, setVehicleTypes] = React.useState<VehicleTypeItem[] | null>(
-    null
-  );
+  const [vehicleTypes, setVehicleTypes] = React.useState<
+    VehicleTypeItem[] | null
+  >(null);
   const [filters, setFilters] = React.useState<VehicleTypeFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
   const [restoreId, setRestoreId] = React.useState<string | null>(null);
+  const [page, setPage] = React.useState<number>(1);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as VehicleTypeItem[];
@@ -84,7 +86,7 @@ export const VehicleTypeMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadVehicleTypes = React.useCallback(() => {
@@ -120,6 +122,18 @@ export const VehicleTypeMaster = ({
     });
   }, [vehicleTypes, filters]);
 
+  const [totalPages, paginatedVehicleTypes] = React.useMemo(() => {
+    if (!filteredVehicleTypes) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredVehicleTypes, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredVehicleTypes, page]);
   return (
     <Dashboard.Content>
       <Actionbar title="VEHICLE TYPE MASTER">
@@ -163,7 +177,7 @@ export const VehicleTypeMaster = ({
             <LoadingFeedback feedback="Loading vehicle type records, please wait." />
           )}
 
-          {!isLoading && filteredVehicleTypes !== null && (
+          {!isLoading && paginatedVehicleTypes !== null && (
             <Table
               head={
                 <Table.Row>
@@ -175,7 +189,7 @@ export const VehicleTypeMaster = ({
               }
               body={
                 <Map
-                  items={filteredVehicleTypes || []}
+                  items={paginatedVehicleTypes || []}
                   renderItem={(item) => (
                     <Table.Row key={item.id}>
                       <Table.Cell>{item.vehicleTypeId}</Table.Cell>
@@ -184,9 +198,7 @@ export const VehicleTypeMaster = ({
                         <Badge
                           value={item.isActive ? "Active" : "Inactive"}
                           color={
-                            item.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            item.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -238,7 +250,9 @@ export const VehicleTypeMaster = ({
               />
             )}
 
-          {!isLoading && filteredVehicleTypes !== null && <Pagination />}
+          {!isLoading && paginatedVehicleTypes !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -272,7 +286,7 @@ export const VehicleTypeMaster = ({
             id: restoreId,
           }}
           title="UNARCHIVE VEHICLE TYPE"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this vehicle type record?"
           serviceMaker={makeDeleteVehicleTypeMasterService}
           onDelete={loadVehicleTypes}

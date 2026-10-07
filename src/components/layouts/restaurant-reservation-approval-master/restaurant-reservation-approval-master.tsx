@@ -12,6 +12,7 @@ import { Tooltip } from "@/components/base/tooltip";
 import { Modal } from "@/components/base/modal";
 import { TextInput } from "@/components/base/text-input";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
+import { Pagination } from "@/components/base/pagination";
 
 import { Grid } from "@/components/base/grid";
 import { Dashboard } from "@/components/layouts/dashboard";
@@ -21,6 +22,7 @@ import { EyeIcon } from "@/components/icons/eye-icon";
 import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
 
 import { useForm } from "@/hooks/use-form";
+import { paginate } from "@/utility/paginate";
 import { makeGetRestaurantReservationApprovalMasterService } from "@/services/get-restaurant-reservation-approval-master-service";
 import { makeUpdateRestaurantReservationApprovalMasterService } from "@/services/update-restaurant-reservation-approval-master-service";
 
@@ -63,6 +65,9 @@ export const RestaurantReservationApprovalMaster = ({
   const [rejectionReason, setRejectionReason] = React.useState<string>("");
   const [feedback, setFeedback] = React.useState<string | null>(null);
 
+  // Pagination State
+  const [page, setPage] = React.useState<number>(1);
+
   const effectiveUserId = React.useMemo(() => {
     if (propUserId) return propUserId;
     try {
@@ -95,6 +100,7 @@ export const RestaurantReservationApprovalMaster = ({
       return st === "pending" || st === "approved";
     });
     setReservations(activeList);
+    setPage(1);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
@@ -156,6 +162,20 @@ export const RestaurantReservationApprovalMaster = ({
     setSelectedRes(null);
   };
 
+  // Paginated records computation
+  const [totalPages, paginatedReservations] = React.useMemo(() => {
+    if (!reservations) {
+      return [1, []];
+    }
+
+    const pagination = paginate(reservations, {
+      currentPage: page,
+      totalPerPage: 25,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [reservations, page]);
+
   const getStatusBadge = (status: RestaurantReservation["status"]) => {
     switch (status) {
       case "Pending":
@@ -185,7 +205,7 @@ export const RestaurantReservationApprovalMaster = ({
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="Pending Restaurant & Cafe Reservation Approvals" />
+          <Paper.Title value="Restaurant & Cafe Reservation Approvals" />
 
           {feedback && (
             <Alert
@@ -203,13 +223,13 @@ export const RestaurantReservationApprovalMaster = ({
             <LoadingFeedback feedback="Fetching restaurant reservation approvals from Live API..." />
           )}
 
-          {isLoading && (
+          {!isLoading && reservations.length === 0 && (
             <div style={{ padding: "32px", textAlign: "center", color: "#94a3b8" }}>
               No pending or active restaurant reservation requests found.
             </div>
           )}
 
-          {!isLoading  && (
+          {!isLoading && reservations.length > 0 && (
             <Table
               head={
                 <Table.Row>
@@ -224,7 +244,7 @@ export const RestaurantReservationApprovalMaster = ({
               }
               body={
                 <Map
-                  items={reservations}
+                  items={paginatedReservations}
                   renderItem={(res) => (
                     <Table.Row key={res.id}>
                       <Table.Cell><strong>{res.reservationNo}</strong></Table.Cell>
@@ -294,6 +314,10 @@ export const RestaurantReservationApprovalMaster = ({
               }
             />
           )}
+
+          {!isLoading && reservations.length > 0 && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -359,7 +383,7 @@ export const RestaurantReservationApprovalMaster = ({
                   </Grid.Cell>
                   <Grid.Cell size={Grid.CellSize.S12}>
                     
-                <Button label="Reject " color={Button.Color.RED} onClick={() => setRejectModal(selectedRes)} />
+                    <Button label="Reject " color={Button.Color.RED} onClick={() => setRejectModal(selectedRes)} />
                   </Grid.Cell>
                 </Grid>
               </>

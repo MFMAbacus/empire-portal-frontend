@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -63,7 +64,7 @@ export const QRConfigurationMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "qr-configuration-master"
+    "qr-configuration-master",
   );
 
   const [qrConfigs, setQrConfigs] = React.useState<
@@ -72,11 +73,12 @@ export const QRConfigurationMaster = ({
   const [filters, setFilters] = React.useState<QRConfigurationFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
   const [deleteQrConfigId, setDeleteQrConfigId] = React.useState<string | null>(
-    null
+    null,
   );
   const [restoreQrConfigId, setRestoreQrConfigId] = React.useState<
     string | null
   >(null);
+  const [page, setPage] = React.useState<number>(1);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as QRConfigurationItem[];
@@ -91,7 +93,7 @@ export const QRConfigurationMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadQrConfigs = React.useCallback(() => {
@@ -118,14 +120,16 @@ export const QRConfigurationMaster = ({
           predicate && current.expiryHours === Number(filters.expiryHours);
       }
       if (typeof filters.isOneTimeScan !== "undefined") {
-        predicate = predicate && current.isOneTimeScan === filters.isOneTimeScan;
+        predicate =
+          predicate && current.isOneTimeScan === filters.isOneTimeScan;
       }
       if (typeof filters.isGateValidation !== "undefined") {
         predicate =
           predicate && current.isGateValidation === filters.isGateValidation;
       }
       if (typeof filters.isPdfRequired !== "undefined") {
-        predicate = predicate && current.isPdfRequired === filters.isPdfRequired;
+        predicate =
+          predicate && current.isPdfRequired === filters.isPdfRequired;
       }
       if (typeof filters.isActive !== "undefined") {
         predicate = predicate && current.isActive === filters.isActive;
@@ -133,6 +137,19 @@ export const QRConfigurationMaster = ({
       return predicate;
     });
   }, [qrConfigs, filters]);
+
+  const [totalPages, paginatedQrConfigs] = React.useMemo(() => {
+    if (!filteredQrConfigs) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredQrConfigs, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredQrConfigs, page]);
 
   return (
     <Dashboard.Content>
@@ -146,11 +163,7 @@ export const QRConfigurationMaster = ({
           isDisabled={isLoading}
           onClick={() => setFilterModal(true)}
         />
-        <Button
-          label="RELOAD"
-          isDisabled={isLoading}
-          onClick={loadQrConfigs}
-        />
+        <Button label="RELOAD" isDisabled={isLoading} onClick={loadQrConfigs} />
         {canWrite && onCreate && (
           <Button
             label="CREATE"
@@ -177,7 +190,7 @@ export const QRConfigurationMaster = ({
             <LoadingFeedback feedback="Loading QR configuration records, please wait." />
           )}
 
-          {!isLoading && filteredQrConfigs !== null && (
+          {!isLoading && paginatedQrConfigs !== null && (
             <Table
               head={
                 <Table.Row>
@@ -192,7 +205,7 @@ export const QRConfigurationMaster = ({
               }
               body={
                 <Map
-                  items={filteredQrConfigs || []}
+                  items={paginatedQrConfigs || []}
                   renderItem={(config) => (
                     <Table.Row key={config.id}>
                       <Table.Cell>{config.qrConfigId}</Table.Cell>
@@ -245,9 +258,7 @@ export const QRConfigurationMaster = ({
                                 <IconButton
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
-                                  onClick={() =>
-                                    setDeleteQrConfigId(config.id)
-                                  }
+                                  onClick={() => setDeleteQrConfigId(config.id)}
                                 />
                               </Tooltip>
                             )}
@@ -287,7 +298,9 @@ export const QRConfigurationMaster = ({
               />
             )}
 
-          {!isLoading && filteredQrConfigs !== null && <Pagination />}
+          {!isLoading && paginatedQrConfigs !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -321,7 +334,7 @@ export const QRConfigurationMaster = ({
             qrConfigId: restoreQrConfigId,
           }}
           title="UNARCHIVE QR CONFIGURATION"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this QR configuration record?"
           serviceMaker={makeDeleteQRConfigurationMasterService}
           onDelete={loadQrConfigs}

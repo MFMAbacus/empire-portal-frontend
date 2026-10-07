@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -61,20 +62,19 @@ export const ItemTypeMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "item-type-master"
+    "item-type-master",
   );
 
-  const [itemTypes, setItemTypes] = React.useState<ItemTypeItem[] | null>(
-    null
-  );
+  const [itemTypes, setItemTypes] = React.useState<ItemTypeItem[] | null>(null);
   const [filters, setFilters] = React.useState<ItemTypeFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
   const [deleteItemTypeId, setDeleteItemTypeId] = React.useState<string | null>(
-    null
+    null,
   );
   const [restoreItemTypeId, setRestoreItemTypeId] = React.useState<
     string | null
   >(null);
+  const [page, setPage] = React.useState<number>(1);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as ItemTypeItem[];
@@ -89,7 +89,7 @@ export const ItemTypeMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadItemTypes = React.useCallback(() => {
@@ -127,7 +127,7 @@ export const ItemTypeMaster = ({
           Boolean(
             current.description
               ?.toLowerCase()
-              .includes(filters.description.toLowerCase())
+              .includes(filters.description.toLowerCase()),
           );
       }
 
@@ -139,6 +139,18 @@ export const ItemTypeMaster = ({
     });
   }, [itemTypes, filters]);
 
+  const [totalPages, paginatedItemTypes] = React.useMemo(() => {
+    if (!filteredItemTypes) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredItemTypes, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredItemTypes, page]);
   return (
     <Dashboard.Content>
       <Actionbar title="ITEM TYPE MASTER">
@@ -151,11 +163,7 @@ export const ItemTypeMaster = ({
           isDisabled={isLoading}
           onClick={() => setFilterModal(true)}
         />
-        <Button
-          label="RELOAD"
-          isDisabled={isLoading}
-          onClick={loadItemTypes}
-        />
+        <Button label="RELOAD" isDisabled={isLoading} onClick={loadItemTypes} />
         {canWrite && onCreate && (
           <Button
             label="CREATE"
@@ -182,7 +190,7 @@ export const ItemTypeMaster = ({
             <LoadingFeedback feedback="Loading item type records, please wait." />
           )}
 
-          {!isLoading && filteredItemTypes !== null && (
+          {!isLoading && paginatedItemTypes !== null && (
             <Table
               head={
                 <Table.Row>
@@ -195,7 +203,7 @@ export const ItemTypeMaster = ({
               }
               body={
                 <Map
-                  items={filteredItemTypes || []}
+                  items={paginatedItemTypes || []}
                   renderItem={(item) => (
                     <Table.Row key={item.id}>
                       <Table.Cell>{item.itemTypeId}</Table.Cell>
@@ -205,9 +213,7 @@ export const ItemTypeMaster = ({
                         <Badge
                           value={item.isActive ? "Active" : "Inactive"}
                           color={
-                            item.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            item.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -219,9 +225,7 @@ export const ItemTypeMaster = ({
                                 <IconButton
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
-                                  onClick={() =>
-                                    setDeleteItemTypeId(item.id)
-                                  }
+                                  onClick={() => setDeleteItemTypeId(item.id)}
                                 />
                               </Tooltip>
                             )}
@@ -261,7 +265,9 @@ export const ItemTypeMaster = ({
               />
             )}
 
-          {!isLoading && filteredItemTypes !== null && <Pagination />}
+          {!isLoading && paginatedItemTypes !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -295,7 +301,7 @@ export const ItemTypeMaster = ({
             itemTypeId: restoreItemTypeId,
           }}
           title="UNARCHIVE ITEM TYPE"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this item type record?"
           serviceMaker={makeDeleteItemTypeMasterService}
           onDelete={loadItemTypes}

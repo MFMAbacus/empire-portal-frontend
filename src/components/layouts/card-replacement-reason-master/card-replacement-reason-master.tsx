@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -61,20 +62,23 @@ export const CardReplacementReasonMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "card-replacement-reason-master"
+    "card-replacement-reason-master",
   );
 
-  const [reasons, setReasons] = React.useState<CardReplacementReasonItem[] | null>(
-    null
+  const [reasons, setReasons] = React.useState<
+    CardReplacementReasonItem[] | null
+  >(null);
+  const [filters, setFilters] = React.useState<CardReplacementReasonFilters>(
+    {},
   );
-  const [filters, setFilters] = React.useState<CardReplacementReasonFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
   const [deleteReasonId, setDeleteReasonId] = React.useState<string | null>(
-    null
+    null,
   );
-  const [restoreReasonId, setRestoreReasonId] = React.useState<
-    string | null
-  >(null);
+  const [restoreReasonId, setRestoreReasonId] = React.useState<string | null>(
+    null,
+  );
+  const [page, setPage] = React.useState<number>(1);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as CardReplacementReasonItem[];
@@ -89,7 +93,7 @@ export const CardReplacementReasonMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadCardReplacementReasons = React.useCallback(() => {
@@ -134,6 +138,19 @@ export const CardReplacementReasonMaster = ({
     });
   }, [reasons, filters]);
 
+  const [totalPages, paginatedReasons] = React.useMemo(() => {
+    if (!filteredReasons) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredReasons, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredReasons, page]);
+
   return (
     <Dashboard.Content>
       <Actionbar title="CARD REPLACEMENT REASON MASTER">
@@ -177,7 +194,7 @@ export const CardReplacementReasonMaster = ({
             <LoadingFeedback feedback="Loading card replacement reason records, please wait." />
           )}
 
-          {!isLoading && filteredReasons !== null && (
+          {!isLoading && paginatedReasons !== null && (
             <Table
               head={
                 <Table.Row>
@@ -190,7 +207,7 @@ export const CardReplacementReasonMaster = ({
               }
               body={
                 <Map
-                  items={filteredReasons || []}
+                  items={paginatedReasons || []}
                   renderItem={(item) => (
                     <Table.Row key={item.id}>
                       <Table.Cell>{item.reasonId}</Table.Cell>
@@ -209,9 +226,7 @@ export const CardReplacementReasonMaster = ({
                         <Badge
                           value={item.isActive ? "Active" : "Inactive"}
                           color={
-                            item.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            item.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -223,9 +238,7 @@ export const CardReplacementReasonMaster = ({
                                 <IconButton
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
-                                  onClick={() =>
-                                    setDeleteReasonId(item.id)
-                                  }
+                                  onClick={() => setDeleteReasonId(item.id)}
                                 />
                               </Tooltip>
                             )}
@@ -265,7 +278,9 @@ export const CardReplacementReasonMaster = ({
               />
             )}
 
-          {!isLoading && filteredReasons !== null && <Pagination />}
+          {!isLoading && paginatedReasons !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -299,7 +314,7 @@ export const CardReplacementReasonMaster = ({
             reasonId: restoreReasonId,
           }}
           title="UNARCHIVE CARD REPLACEMENT REASON"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this card replacement reason record?"
           serviceMaker={makeDeleteCardReplacementReasonMasterService}
           onDelete={loadCardReplacementReasons}

@@ -26,6 +26,7 @@ import { ArchiveIcon } from "@/components/icons/archive-icon";
 import { CheckIcon } from "@/components/icons/check-icon";
 import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
 import { FilterIcon } from "@/components/icons/filter-icon";
+import { paginate } from "@/utility/paginate";
 
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
@@ -60,17 +61,17 @@ export const GuardAccountMappingMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "guard-account-mapping-master"
+    "guard-account-mapping-master",
   );
 
   const [guards, setGuards] = React.useState<GuardAccountMappingItem[] | null>(
-    null
+    null,
   );
   const [filters, setFilters] = React.useState<GuardAccountMappingFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteGuardAccountId, setDeleteGuardAccountId] = React.useState<string | null>(
-    null
-  );
+  const [deleteGuardAccountId, setDeleteGuardAccountId] = React.useState<
+    string | null
+  >(null);
   const [restoreGuardAccountId, setRestoreGuardAccountId] = React.useState<
     string | null
   >(null);
@@ -79,6 +80,7 @@ export const GuardAccountMappingMaster = ({
     const list = data as GuardAccountMappingItem[];
     setGuards(list || []);
   }, []);
+  const [page, setPage] = React.useState<number>(1);
 
   const { isLoading, alertData, submit } = useForm({
     isLoadingDefault: true,
@@ -88,7 +90,7 @@ export const GuardAccountMappingMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadGuards = React.useCallback(() => {
@@ -120,9 +122,7 @@ export const GuardAccountMappingMaster = ({
       if (filters.gateId) {
         predicate =
           predicate &&
-          current.gateId
-            ?.toLowerCase()
-            .includes(filters.gateId.toLowerCase());
+          current.gateId?.toLowerCase().includes(filters.gateId.toLowerCase());
       }
       if (filters.projectCode) {
         predicate =
@@ -137,7 +137,7 @@ export const GuardAccountMappingMaster = ({
           Boolean(
             current.deviceId
               ?.toLowerCase()
-              .includes(filters.deviceId.toLowerCase())
+              .includes(filters.deviceId.toLowerCase()),
           );
       }
       if (typeof filters.isActive !== "undefined") {
@@ -146,6 +146,19 @@ export const GuardAccountMappingMaster = ({
       return predicate;
     });
   }, [guards, filters]);
+
+  const [totalPages, paginatedGuardAccountMappings] = React.useMemo(() => {
+    if (!filteredGuardAccountMappings) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredGuardAccountMappings, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredGuardAccountMappings, page]);
 
   return (
     <Dashboard.Content>
@@ -190,7 +203,7 @@ export const GuardAccountMappingMaster = ({
             <LoadingFeedback feedback="Loading guard records, please wait." />
           )}
 
-          {!isLoading && filteredGuardAccountMappings !== null && (
+          {!isLoading && paginatedGuardAccountMappings !== null && (
             <Table
               head={
                 <Table.Row>
@@ -205,7 +218,7 @@ export const GuardAccountMappingMaster = ({
               }
               body={
                 <Map
-                  items={filteredGuardAccountMappings || []}
+                  items={paginatedGuardAccountMappings || []}
                   renderItem={(guard) => (
                     <Table.Row key={guard.id}>
                       <Table.Cell>{guard.guardAccountId}</Table.Cell>
@@ -217,9 +230,7 @@ export const GuardAccountMappingMaster = ({
                         <Badge
                           value={guard.isActive ? "Active" : "Inactive"}
                           color={
-                            guard.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            guard.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -273,7 +284,9 @@ export const GuardAccountMappingMaster = ({
               />
             )}
 
-          {!isLoading && filteredGuardAccountMappings !== null && <Pagination />}
+          {!isLoading && paginatedGuardAccountMappings !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -307,7 +320,7 @@ export const GuardAccountMappingMaster = ({
             guardAccountId: restoreGuardAccountId,
           }}
           title="UNARCHIVE GUARD ACCOUNT MAPPING"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this guard record?"
           serviceMaker={makeDeleteGuardAccountMappingMasterService}
           onDelete={loadGuards}

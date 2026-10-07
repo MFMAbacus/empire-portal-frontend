@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -58,17 +59,18 @@ export const ProjectCourtMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "ProjectCourt-master"
+    "ProjectCourt-master",
   );
+  const [page, setPage] = React.useState<number>(1);
 
-  const [projectCourts, setProjectCourts] = React.useState<ProjectCourtItem[] | null>(
-    null
-  );
+  const [projectCourts, setProjectCourts] = React.useState<
+    ProjectCourtItem[] | null
+  >(null);
   const [filters, setFilters] = React.useState<ProjectCourtFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteProjectCourtId, setDeleteProjectCourtId] = React.useState<string | null>(
-    null
-  );
+  const [deleteProjectCourtId, setDeleteProjectCourtId] = React.useState<
+    string | null
+  >(null);
   const [restoreProjectCourtId, setRestoreProjectCourtId] = React.useState<
     string | null
   >(null);
@@ -86,7 +88,7 @@ export const ProjectCourtMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadProjectCourts = React.useCallback(() => {
@@ -126,6 +128,19 @@ export const ProjectCourtMaster = ({
       return predicate;
     });
   }, [projectCourts, filters]);
+
+  const [totalPages, paginatedProjectCourts] = React.useMemo(() => {
+    if (!filteredProjectCourts) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredProjectCourts, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredProjectCourts, page]);
 
   return (
     <Dashboard.Content>
@@ -170,7 +185,7 @@ export const ProjectCourtMaster = ({
             <LoadingFeedback feedback="Loading Project Court records, please wait." />
           )}
 
-          {!isLoading && filteredProjectCourts !== null && (
+          {!isLoading && paginatedProjectCourts !== null && (
             <Table
               head={
                 <Table.Row>
@@ -183,7 +198,7 @@ export const ProjectCourtMaster = ({
               }
               body={
                 <Map
-                  items={filteredProjectCourts || []}
+                  items={paginatedProjectCourts || []}
                   renderItem={(court) => (
                     <Table.Row key={court.id}>
                       <Table.Cell>{court.projectCode}</Table.Cell>
@@ -192,9 +207,7 @@ export const ProjectCourtMaster = ({
                         <Badge
                           value={court.isAccess ? "Allowed" : "Denied"}
                           color={
-                            court.isAccess
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            court.isAccess ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -202,9 +215,7 @@ export const ProjectCourtMaster = ({
                         <Badge
                           value={court.isActive ? "Active" : "Inactive"}
                           color={
-                            court.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            court.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -258,7 +269,9 @@ export const ProjectCourtMaster = ({
               />
             )}
 
-          {!isLoading && filteredProjectCourts !== null && <Pagination />}
+          {!isLoading && paginatedProjectCourts !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -292,7 +305,7 @@ export const ProjectCourtMaster = ({
             id: restoreProjectCourtId,
           }}
           title="UNARCHIVE PROJECT VENUE"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this Project Court record?"
           serviceMaker={makeDeleteProjectCourtMasterService}
           onDelete={loadProjectCourts}

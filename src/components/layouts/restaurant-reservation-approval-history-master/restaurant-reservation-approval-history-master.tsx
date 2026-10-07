@@ -11,6 +11,7 @@ import { Badge } from "@/components/base/badge";
 import { Tooltip } from "@/components/base/tooltip";
 import { Modal } from "@/components/base/modal";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
+import { Pagination } from "@/components/base/pagination";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -20,6 +21,7 @@ import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
 import { FilterIcon } from "@/components/icons/filter-icon";
 
 import { useForm } from "@/hooks/use-form";
+import { paginate } from "@/utility/paginate";
 import { makeGetRestaurantReservationApprovalMasterService } from "@/services/get-restaurant-reservation-approval-master-service";
 import { RestaurantReservationHistoryFilterModal } from "./filter-modal";
 
@@ -68,6 +70,9 @@ export const RestaurantReservationApprovalHistoryMaster = ({
   const [allReservations, setAllReservations] = React.useState<RestaurantReservation[]>([]);
   const [reservations, setReservations] = React.useState<RestaurantReservation[]>([]);
   const [selectedRes, setSelectedRes] = React.useState<RestaurantReservation | null>(null);
+
+  // Pagination State
+  const [page, setPage] = React.useState<number>(1);
 
   const effectiveUserId = React.useMemo(() => {
     if (propUserId) return propUserId;
@@ -144,6 +149,7 @@ export const RestaurantReservationApprovalHistoryMaster = ({
 
     setAllReservations(historyList);
     setReservations(historyList);
+    setPage(1);
   }, []);
 
   const { isLoading, alertData, submit } = useForm({
@@ -179,7 +185,22 @@ export const RestaurantReservationApprovalHistoryMaster = ({
       filters.status
     );
     setReservations(filtered);
+    setPage(1);
   };
+
+  // Paginated records computation
+  const [totalPages, paginatedReservations] = React.useMemo(() => {
+    if (!reservations) {
+      return [1, []];
+    }
+
+    const pagination = paginate(reservations, {
+      currentPage: page,
+      totalPerPage: 25,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [reservations, page]);
 
   const getStatusBadge = (status: string) => {
     const lower = status?.toLowerCase();
@@ -242,7 +263,7 @@ export const RestaurantReservationApprovalHistoryMaster = ({
               }
               body={
                 <Map
-                  items={reservations}
+                  items={paginatedReservations}
                   renderItem={(res) => (
                     <Table.Row key={res.id}>
                       <Table.Cell>
@@ -288,6 +309,10 @@ export const RestaurantReservationApprovalHistoryMaster = ({
                 />
               }
             />
+          )}
+
+          {!isLoading && reservations.length > 0 && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
           )}
         </Paper>
       </Dashboard.Page>

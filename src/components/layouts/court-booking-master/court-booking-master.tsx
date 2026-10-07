@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -59,17 +60,18 @@ export const CourtBookingMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "CourtBooking-master"
+    "CourtBooking-master",
   );
+  const [page, setPage] = React.useState<number>(1);
 
-  const [projectVenues, setCourtBookings] = React.useState<CourtBookingItem[] | null>(
-    null
-  );
+  const [projectVenues, setCourtBookings] = React.useState<
+    CourtBookingItem[] | null
+  >(null);
   const [filters, setFilters] = React.useState<CourtBookingFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteCourtBookingId, setDeleteCourtBookingId] = React.useState<string | null>(
-    null
-  );
+  const [deleteCourtBookingId, setDeleteCourtBookingId] = React.useState<
+    string | null
+  >(null);
   const [restoreCourtBookingId, setRestoreCourtBookingId] = React.useState<
     string | null
   >(null);
@@ -87,7 +89,7 @@ export const CourtBookingMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadCourtBookings = React.useCallback(() => {
@@ -131,6 +133,19 @@ export const CourtBookingMaster = ({
     });
   }, [projectVenues, filters]);
 
+  const [totalPages, paginatedCourtBookings] = React.useMemo(() => {
+    if (!filteredCourtBookings) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredCourtBookings, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredCourtBookings, page]);
+
   return (
     <Dashboard.Content>
       <Actionbar title="COURT BOOKING RULE MASTER">
@@ -160,7 +175,7 @@ export const CourtBookingMaster = ({
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="court Booking Rule Master" />
+          <Paper.Title value="Court Booking Rule Master" />
 
           {alertData !== null &&
             alertData.severity !== AlertSeverity.SUCCESS && (
@@ -174,7 +189,7 @@ export const CourtBookingMaster = ({
             <LoadingFeedback feedback="Loading court booking records, please wait." />
           )}
 
-          {!isLoading && filteredCourtBookings !== null && (
+          {!isLoading && paginatedCourtBookings !== null && (
             <Table
               head={
                 <Table.Row>
@@ -188,7 +203,7 @@ export const CourtBookingMaster = ({
               }
               body={
                 <Map
-                  items={filteredCourtBookings || []}
+                  items={paginatedCourtBookings || []}
                   renderItem={(rule) => (
                     <Table.Row key={rule.id}>
                       <Table.Cell>{rule.projectCode}</Table.Cell>
@@ -208,9 +223,7 @@ export const CourtBookingMaster = ({
                         <Badge
                           value={rule.isActive ? "Active" : "Inactive"}
                           color={
-                            rule.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            rule.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -264,7 +277,9 @@ export const CourtBookingMaster = ({
               />
             )}
 
-          {!isLoading && filteredCourtBookings !== null && <Pagination />}
+          {!isLoading && paginatedCourtBookings !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -298,7 +313,7 @@ export const CourtBookingMaster = ({
             id: restoreCourtBookingId,
           }}
           title="UNARCHIVE COURT BOOKING RULE"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this Court Booking record?"
           serviceMaker={makeDeleteCourtBookingMasterService}
           onDelete={loadCourtBookings}

@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -63,8 +64,9 @@ export const ReplacementFeeMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "replacement-fee-master"
+    "replacement-fee-master",
   );
+  const [page, setPage] = React.useState<number>(1);
 
   const [replacementFees, setReplacementFees] = React.useState<
     ReplacementFeeItem[] | null
@@ -87,7 +89,7 @@ export const ReplacementFeeMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadReplacementFees = React.useCallback(() => {
@@ -106,12 +108,13 @@ export const ReplacementFeeMaster = ({
       if (filters.feeId) {
         predicate =
           predicate &&
-          current.feeId
-            .toLowerCase()
-            .includes(filters.feeId.toLowerCase());
+          current.feeId.toLowerCase().includes(filters.feeId.toLowerCase());
       }
 
-      if (typeof filters.feeAmount !== "undefined" && filters.feeAmount !== null) {
+      if (
+        typeof filters.feeAmount !== "undefined" &&
+        filters.feeAmount !== null
+      ) {
         predicate =
           predicate &&
           current.feeAmount.toString().includes(filters.feeAmount.toString());
@@ -128,9 +131,7 @@ export const ReplacementFeeMaster = ({
       if (filters.tax) {
         predicate =
           predicate &&
-          current.tax
-            .toLowerCase()
-            .includes(filters.tax.toLowerCase());
+          current.tax.toLowerCase().includes(filters.tax.toLowerCase());
       }
 
       if (filters.projectCode) {
@@ -148,6 +149,19 @@ export const ReplacementFeeMaster = ({
       return predicate;
     });
   }, [replacementFees, filters]);
+
+  const [totalPages, paginatedReplacementFees] = React.useMemo(() => {
+    if (!filteredReplacementFees) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredReplacementFees, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredReplacementFees, page]);
 
   return (
     <Dashboard.Content>
@@ -192,7 +206,7 @@ export const ReplacementFeeMaster = ({
             <LoadingFeedback feedback="Loading replacement fee records, please wait." />
           )}
 
-          {!isLoading && filteredReplacementFees !== null && (
+          {!isLoading && paginatedReplacementFees !== null && (
             <Table
               head={
                 <Table.Row>
@@ -207,7 +221,7 @@ export const ReplacementFeeMaster = ({
               }
               body={
                 <Map
-                  items={filteredReplacementFees || []}
+                  items={paginatedReplacementFees || []}
                   renderItem={(fee) => (
                     <Table.Row key={fee.id}>
                       <Table.Cell>{fee.feeId}</Table.Cell>
@@ -219,9 +233,7 @@ export const ReplacementFeeMaster = ({
                         <Badge
                           value={fee.isActive ? "Active" : "Inactive"}
                           color={
-                            fee.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            fee.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -273,7 +285,9 @@ export const ReplacementFeeMaster = ({
               />
             )}
 
-          {!isLoading && filteredReplacementFees !== null && <Pagination />}
+          {!isLoading && paginatedReplacementFees !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -307,7 +321,7 @@ export const ReplacementFeeMaster = ({
             feeId: restoreFeeId,
           }}
           title="UNARCHIVE REPLACEMENT FEE"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this replacement fee record?"
           serviceMaker={makeDeleteReplacementFeeMasterService}
           onDelete={loadReplacementFees}

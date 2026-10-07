@@ -19,6 +19,7 @@ import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
 import { DeleteModal } from "@/components/layouts/delete-modal";
 import { FilterModal } from "./filter-modal";
+import { paginate } from "@/utility/paginate";
 
 import { PlusIcon } from "@/components/icons/plus-icon";
 import { EyeIcon } from "@/components/icons/eye-icon";
@@ -57,27 +58,19 @@ export const GateMaster = ({
   onBack,
 }: GateMasterProps): JSX.Element => {
   const { checkSubSection } = usePermission();
-  const { canWrite } = checkSubSection(
-    ModuleName.MASTER_FORMS,
-    "gate-master"
-  );
+  const { canWrite } = checkSubSection(ModuleName.MASTER_FORMS, "gate-master");
 
-  const [gates, setGates] = React.useState<GateItem[] | null>(
-    null
-  );
+  const [gates, setGates] = React.useState<GateItem[] | null>(null);
   const [filters, setFilters] = React.useState<GateFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteGateId, setDeleteGateId] = React.useState<string | null>(
-    null
-  );
-  const [restoreGateId, setRestoreGateId] = React.useState<
-    string | null
-  >(null);
+  const [deleteGateId, setDeleteGateId] = React.useState<string | null>(null);
+  const [restoreGateId, setRestoreGateId] = React.useState<string | null>(null);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as GateItem[];
     setGates(list || []);
   }, []);
+  const [page, setPage] = React.useState<number>(1);
 
   const { isLoading, alertData, submit } = useForm({
     isLoadingDefault: true,
@@ -87,7 +80,7 @@ export const GateMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadGates = React.useCallback(() => {
@@ -105,9 +98,7 @@ export const GateMaster = ({
       if (filters.gateId) {
         predicate =
           predicate &&
-          current.gateId
-            ?.toLowerCase()
-            .includes(filters.gateId.toLowerCase());
+          current.gateId?.toLowerCase().includes(filters.gateId.toLowerCase());
       }
       if (filters.gateName) {
         predicate =
@@ -136,6 +127,19 @@ export const GateMaster = ({
       return predicate;
     });
   }, [gates, filters]);
+
+  const [totalPages, paginatedGates] = React.useMemo(() => {
+    if (!filteredGates) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredGates, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredGates, page]);
 
   return (
     <Dashboard.Content>
@@ -180,7 +184,7 @@ export const GateMaster = ({
             <LoadingFeedback feedback="Loading gate records, please wait." />
           )}
 
-          {!isLoading && filteredGates !== null && (
+          {!isLoading && paginatedGates !== null && (
             <Table
               head={
                 <Table.Row>
@@ -194,7 +198,7 @@ export const GateMaster = ({
               }
               body={
                 <Map
-                  items={filteredGates || []}
+                  items={paginatedGates || []}
                   renderItem={(gate) => (
                     <Table.Row key={gate.id}>
                       <Table.Cell>{gate.gateId}</Table.Cell>
@@ -205,9 +209,7 @@ export const GateMaster = ({
                         <Badge
                           value={gate.isActive ? "Active" : "Inactive"}
                           color={
-                            gate.isActive
-                              ? Badge.Color.GREEN
-                              : Badge.Color.RED
+                            gate.isActive ? Badge.Color.GREEN : Badge.Color.RED
                           }
                         />
                       </Table.Cell>
@@ -219,9 +221,7 @@ export const GateMaster = ({
                                 <IconButton
                                   color={IconButton.Color.RED}
                                   icon={<ArchiveIcon />}
-                                  onClick={() =>
-                                    setDeleteGateId(gate.id)
-                                  }
+                                  onClick={() => setDeleteGateId(gate.id)}
                                 />
                               </Tooltip>
                             )}
@@ -261,7 +261,9 @@ export const GateMaster = ({
               />
             )}
 
-          {!isLoading && filteredGates !== null && <Pagination />}
+          {!isLoading && paginatedGates !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -295,7 +297,7 @@ export const GateMaster = ({
             gateId: restoreGateId,
           }}
           title="UNARCHIVE GATE"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this gate record?"
           serviceMaker={makeDeleteGateMasterService}
           onDelete={loadGates}

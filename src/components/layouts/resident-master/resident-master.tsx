@@ -26,6 +26,7 @@ import { ArchiveIcon } from "@/components/icons/archive-icon";
 import { CheckIcon } from "@/components/icons/check-icon";
 import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
 import { FilterIcon } from "@/components/icons/filter-icon";
+import { paginate } from "@/utility/paginate";
 
 import { useForm } from "@/hooks/use-form";
 import { usePermission } from "@/hooks/use-permission";
@@ -63,16 +64,14 @@ export const ResidentMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "resident-master"
+    "resident-master",
   );
 
-  const [residents, setResidents] = React.useState<ResidentItem[] | null>(
-    null
-  );
+  const [residents, setResidents] = React.useState<ResidentItem[] | null>(null);
   const [filters, setFilters] = React.useState<ResidentFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
   const [deleteResidentId, setDeleteResidentId] = React.useState<string | null>(
-    null
+    null,
   );
   const [restoreResidentId, setRestoreResidentId] = React.useState<
     string | null
@@ -82,6 +81,7 @@ export const ResidentMaster = ({
     const list = data as ResidentItem[];
     setResidents(list || []);
   }, []);
+  const [page, setPage] = React.useState<number>(1);
 
   const { isLoading, alertData, submit } = useForm({
     isLoadingDefault: true,
@@ -91,7 +91,7 @@ export const ResidentMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadResidents = React.useCallback(() => {
@@ -116,23 +116,17 @@ export const ResidentMaster = ({
       if (filters.name) {
         predicate =
           predicate &&
-          current.name
-            ?.toLowerCase()
-            .includes(filters.name.toLowerCase());
+          current.name?.toLowerCase().includes(filters.name.toLowerCase());
       }
       if (filters.email) {
         predicate =
           predicate &&
-          current.email
-            ?.toLowerCase()
-            .includes(filters.email.toLowerCase());
+          current.email?.toLowerCase().includes(filters.email.toLowerCase());
       }
       if (filters.mobileNo !== undefined && filters.mobileNo !== null) {
         predicate =
           predicate &&
-          current.mobileNo
-            ?.toString()
-            .includes(filters.mobileNo.toString());
+          current.mobileNo?.toString().includes(filters.mobileNo.toString());
       }
       if (filters.apartmentId) {
         predicate =
@@ -154,7 +148,7 @@ export const ResidentMaster = ({
           Boolean(
             current.loginUserId
               ?.toLowerCase()
-              .includes(filters.loginUserId.toLowerCase())
+              .includes(filters.loginUserId.toLowerCase()),
           );
       }
       if (filters.residentType) {
@@ -163,7 +157,7 @@ export const ResidentMaster = ({
           Boolean(
             current.residentType
               ?.toLowerCase()
-              .includes(filters.residentType.toLowerCase())
+              .includes(filters.residentType.toLowerCase()),
           );
       }
       if (typeof filters.isActive !== "undefined") {
@@ -173,6 +167,18 @@ export const ResidentMaster = ({
     });
   }, [residents, filters]);
 
+  const [totalPages, paginatedResidents] = React.useMemo(() => {
+    if (!filteredResidents) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredResidents, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredResidents, page]);
   return (
     <Dashboard.Content>
       <Actionbar title="RESIDENT MASTER">
@@ -216,7 +222,7 @@ export const ResidentMaster = ({
             <LoadingFeedback feedback="Loading resident records, please wait." />
           )}
 
-          {!isLoading && filteredResidents !== null && (
+          {!isLoading && paginatedResidents !== null && (
             <Table
               head={
                 <Table.Row>
@@ -233,7 +239,7 @@ export const ResidentMaster = ({
               }
               body={
                 <Map
-                  items={filteredResidents || []}
+                  items={paginatedResidents || []}
                   renderItem={(resident) => (
                     <Table.Row key={resident.id}>
                       <Table.Cell>{resident.residentId}</Table.Cell>
@@ -303,7 +309,9 @@ export const ResidentMaster = ({
               />
             )}
 
-          {!isLoading && filteredResidents !== null && <Pagination />}
+          {!isLoading && paginatedResidents !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -337,7 +345,7 @@ export const ResidentMaster = ({
             residentId: restoreResidentId,
           }}
           title="UNARCHIVE RESIDENT"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this resident record?"
           serviceMaker={makeDeleteResidentMasterService}
           onDelete={loadResidents}

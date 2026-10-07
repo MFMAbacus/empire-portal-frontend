@@ -14,6 +14,7 @@ import { Pagination } from "@/components/base/pagination";
 import { Alert } from "@/components/base/alert";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Badge } from "@/components/base/badge";
+import { paginate } from "@/utility/paginate";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
@@ -65,20 +66,21 @@ export const CourtBlockingMaster = ({
   const { checkSubSection } = usePermission();
   const { canWrite } = checkSubSection(
     ModuleName.MASTER_FORMS,
-    "court-blocking-master"
+    "court-blocking-master",
   );
 
-  const [courtBlockings, setCourtBlockings] = React.useState<CourtBlockingItem[] | null>(
-    null
-  );
+  const [courtBlockings, setCourtBlockings] = React.useState<
+    CourtBlockingItem[] | null
+  >(null);
   const [filters, setFilters] = React.useState<CourtBlockingFilters>({});
   const [filterModal, setFilterModal] = React.useState<boolean>(false);
-  const [deleteCourtBlockingId, setDeleteCourtBlockingId] = React.useState<string | null>(
-    null
-  );
+  const [deleteCourtBlockingId, setDeleteCourtBlockingId] = React.useState<
+    string | null
+  >(null);
   const [restoreCourtBlockingId, setRestoreCourtBlockingId] = React.useState<
     string | null
   >(null);
+  const [page, setPage] = React.useState<number>(1);
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const list = data as CourtBlockingItem[];
@@ -93,7 +95,7 @@ export const CourtBlockingMaster = ({
 
   const showArchived = React.useMemo(
     () => Boolean(filters.showArchived),
-    [filters]
+    [filters],
   );
 
   const loadCourtBlockings = React.useCallback(() => {
@@ -111,16 +113,12 @@ export const CourtBlockingMaster = ({
       if (filters.blockId) {
         predicate =
           predicate &&
-          current.blockId
-            .toLowerCase()
-            .includes(filters.blockId.toLowerCase());
+          current.blockId.toLowerCase().includes(filters.blockId.toLowerCase());
       }
       if (filters.courtId) {
         predicate =
           predicate &&
-          current.courtId
-            .toLowerCase()
-            .includes(filters.courtId.toLowerCase());
+          current.courtId.toLowerCase().includes(filters.courtId.toLowerCase());
       }
       if (filters.blockDate) {
         predicate =
@@ -150,6 +148,19 @@ export const CourtBlockingMaster = ({
       return predicate;
     });
   }, [courtBlockings, filters]);
+
+  const [totalPages, paginatedCourtBlockings] = React.useMemo(() => {
+    if (!filteredCourtBlockings) {
+      return [1, []];
+    }
+
+    const pagination = paginate(filteredCourtBlockings, {
+      currentPage: page,
+      totalPerPage: 10,
+    });
+
+    return [pagination.totalPages, pagination.records];
+  }, [filteredCourtBlockings, page]);
 
   return (
     <Dashboard.Content>
@@ -194,7 +205,7 @@ export const CourtBlockingMaster = ({
             <LoadingFeedback feedback="Loading court Blocking records, please wait." />
           )}
 
-          {!isLoading && filteredCourtBlockings !== null && (
+          {!isLoading && paginatedCourtBlockings !== null && (
             <Table
               head={
                 <Table.Row>
@@ -210,7 +221,7 @@ export const CourtBlockingMaster = ({
               }
               body={
                 <Map
-                  items={filteredCourtBlockings || []}
+                  items={paginatedCourtBlockings || []}
                   renderItem={(courtBlocking) => (
                     <Table.Row key={courtBlocking.id}>
                       <Table.Cell>{courtBlocking.blockId}</Table.Cell>
@@ -257,7 +268,9 @@ export const CourtBlockingMaster = ({
                           <Tooltip value="Unarchive">
                             <IconButton
                               icon={<CheckIcon />}
-                              onClick={() => setRestoreCourtBlockingId(courtBlocking.id)}
+                              onClick={() =>
+                                setRestoreCourtBlockingId(courtBlocking.id)
+                              }
                             />
                           </Tooltip>
                         )}
@@ -279,7 +292,9 @@ export const CourtBlockingMaster = ({
               />
             )}
 
-          {!isLoading && filteredCourtBlockings !== null && <Pagination />}
+          {!isLoading && paginatedCourtBlockings !== null && (
+            <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+          )}
         </Paper>
       </Dashboard.Page>
 
@@ -313,7 +328,7 @@ export const CourtBlockingMaster = ({
             blockId: restoreCourtBlockingId,
           }}
           title="UNARCHIVE COURT BLOCKING"
-          isRestore= {true}
+          isRestore={true}
           message="Do you really want to unarchive this court Blocking record?"
           serviceMaker={makeDeleteCourtBlockingMasterService}
           onDelete={loadCourtBlockings}
