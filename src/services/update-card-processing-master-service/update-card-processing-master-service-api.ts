@@ -19,7 +19,7 @@ export class UpdateCardProcessingMasterServiceApi extends Service<UpdateCardProc
 
   public async execute(input: UpdateCardProcessingInput): Promise<ServiceOutput> {
     const { sessionId, id, ...bodyData } = input;
-    const endpoint = `${apiUrl}/card-processing-master/${id}?sessionId=${sessionId}`;
+    const endpoint = `${apiUrl}/card-processing-request/${id}?sessionId=${sessionId}`;
 
     const response = await fetch(endpoint, {
       method: 'PATCH',

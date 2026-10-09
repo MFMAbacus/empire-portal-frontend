@@ -4,6 +4,7 @@ import { apiUrl } from '@/config';
 
 export type GetCardProcessingInput = {
   sessionId: string;
+  userId?: string;
 };
 
 export class GetCardProcessingMasterServiceApi extends Service<GetCardProcessingInput> {
@@ -15,8 +16,9 @@ export class GetCardProcessingMasterServiceApi extends Service<GetCardProcessing
   }
 
   public async execute(input: GetCardProcessingInput): Promise<ServiceOutput> {
-    const { sessionId } = input;
-    const endpoint = `${apiUrl}/card-processing-master?sessionId=${sessionId}`;
+    const { sessionId, userId } = input;
+    const userQuery = userId ? `&userId=${encodeURIComponent(userId)}` : '';
+    const endpoint = `${apiUrl}/card-processing-request?sessionId=${sessionId}${userQuery}`;
 
     const response = await fetch(endpoint, {
       method: 'GET',
