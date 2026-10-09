@@ -59,7 +59,7 @@ type ResidentMasterItem = {
   [key: string]: any;
 };
 
-const CARD_STATUS_OPTIONS = ["Active", "Suspended", "Lost", "Deallocated"];
+const CARD_STATUS_OPTIONS = ["Active", "Suspended", "Lost", "Deallocated","Replaced"];
 const delayAfterSuccess = 1000;
 
 export const EditAccessCardMaster = ({

@@ -10,7 +10,6 @@ import { Alert } from "@/components/base/alert";
 import { Badge } from "@/components/base/badge";
 import { Tooltip } from "@/components/base/tooltip";
 import { Modal } from "@/components/base/modal";
-import { ListInput } from "@/components/base/list-input";
 import { LoadingFeedback } from "@/components/base/loading-feedback";
 import { Pagination } from "@/components/base/pagination";
 
@@ -24,10 +23,9 @@ import { FilterIcon } from "@/components/icons/filter-icon";
 import { useForm } from "@/hooks/use-form";
 import { paginate } from "@/utility/paginate";
 import { makeGetCardProcessingMasterService } from "@/services/get-card-processing-master-service";
-import { makeUpdateCardProcessingMasterService } from "@/services/update-card-processing-master-service";
-import { CardProcessingFilterModal } from "./filter-modal";
+import { CardProcessingHistoryFilterModal } from "./filter-modal";
 
-export type AccessCardRequest = {
+export type CardHistoryRequest = {
   id: string;
   requestNo: string;
   residentId?: string;
@@ -50,25 +48,20 @@ export type AccessCardRequest = {
   createdAt: string;
 };
 
-type CardProcessingMasterProps = {
+type CardProcessingHistoryMasterProps = {
   sessionId: string;
   userId?: string;
   onBack?: () => void;
-  onHistory?: () => void;
 };
 
-export const CardProcessingMaster = ({
+export const CardProcessingHistoryMaster = ({
   sessionId,
   userId: propUserId,
   onBack,
-  onHistory,
-}: CardProcessingMasterProps): JSX.Element => {
-  const [allRequests, setAllRequests] = React.useState<AccessCardRequest[]>([]);
-  const [requests, setRequests] = React.useState<AccessCardRequest[]>([]);
-  const [selectedCard, setSelectedCard] = React.useState<AccessCardRequest | null>(null);
-  const [statusUpdateModal, setStatusUpdateModal] = React.useState<AccessCardRequest | null>(null);
-  const [newStatus, setNewStatus] = React.useState<AccessCardRequest["replacementStatus"]>("In Process");
-  const [feedback, setFeedback] = React.useState<string | null>(null);
+}: CardProcessingHistoryMasterProps): JSX.Element => {
+  const [allRequests, setAllRequests] = React.useState<CardHistoryRequest[]>([]);
+  const [requests, setRequests] = React.useState<CardHistoryRequest[]>([]);
+  const [selectedCard, setSelectedCard] = React.useState<CardHistoryRequest | null>(null);
 
   // Pagination State
   const [page, setPage] = React.useState<number>(1);
@@ -98,7 +91,7 @@ export const CardProcessingMaster = ({
   // Filter Helper Function
   const applyFilters = React.useCallback(
     (
-      reqList: AccessCardRequest[],
+      reqList: CardHistoryRequest[],
       reqNo: string | null,
       sDate: string | null,
       eDate: string | null,
@@ -108,7 +101,7 @@ export const CardProcessingMaster = ({
         const matchReqNo =
           !reqNo || item.requestNo.toLowerCase().includes(reqNo.toLowerCase());
         const matchStatus =
-          !stat || (item.replacementStatus || "Pending").toLowerCase() === stat.toLowerCase();
+          !stat || (item.replacementStatus || "").toLowerCase() === stat.toLowerCase();
 
         let matchDate = true;
         if (item.createdAt) {
@@ -132,20 +125,20 @@ export const CardProcessingMaster = ({
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const raw = data as any;
-    const list: AccessCardRequest[] = Array.isArray(raw)
+    const list: CardHistoryRequest[] = Array.isArray(raw)
       ? raw
       : Array.isArray(raw?.data)
       ? raw.data
       : [];
 
-    // Hide Delivered and Rejected requests from approval screen (they belong in History)
-    const activeRequests = list.filter((r) => {
+    // History filter: requests that are Delivered, Rejected, or processed
+    const historyList = list.filter((r) => {
       const status = (r.replacementStatus || "Pending").toLowerCase();
-      return status !== "delivered" && status !== "rejected";
+      return status === "delivered" || status === "rejected" || status !== "pending";
     });
 
-    setAllRequests(activeRequests);
-    setRequests(activeRequests);
+    setAllRequests(historyList);
+    setRequests(historyList);
     setPage(1);
   }, []);
 
@@ -155,20 +148,13 @@ export const CardProcessingMaster = ({
     onSuccess: handleSuccess,
   });
 
-  const loadRequests = React.useCallback(() => {
+  const loadHistoryRequests = React.useCallback(() => {
     submit({ sessionId, userId: effectiveUserId });
   }, [sessionId, effectiveUserId, submit]);
 
   React.useEffect(() => {
-    loadRequests();
-  }, [loadRequests]);
-
-  const { submit: submitUpdate } = useForm({
-    serviceMaker: makeUpdateCardProcessingMasterService,
-    onSuccess: () => {
-      loadRequests();
-    },
-  });
+    loadHistoryRequests();
+  }, [loadHistoryRequests]);
 
   const handleFilterSubmit = (filters: {
     requestNo: string | null;
@@ -192,27 +178,6 @@ export const CardProcessingMaster = ({
     setPage(1);
   };
 
-  const toggleSuspension = (card: AccessCardRequest) => {
-    submitUpdate({
-      sessionId,
-      id: card.id,
-      isSuspended: !card.isSuspended,
-    });
-    setFeedback(`Card ${card.maskedSerialNo} suspension toggled: ${!card.isSuspended ? "SUSPENDED (Portal-Only)" : "ACTIVE"}`);
-  };
-
-  const handleUpdateStatus = () => {
-    if (!statusUpdateModal) return;
-    submitUpdate({
-      sessionId,
-      id: statusUpdateModal.id,
-      replacementStatus: newStatus,
-    });
-    setFeedback(`Card Request ${statusUpdateModal.requestNo} status updated to '${newStatus}'.`);
-    setStatusUpdateModal(null);
-    setSelectedCard(null);
-  };
-
   // Paginated records computation
   const [totalPages, paginatedRequests] = React.useMemo(() => {
     if (!requests) {
@@ -229,47 +194,45 @@ export const CardProcessingMaster = ({
 
   return (
     <Dashboard.Content>
-      <Actionbar title="ACCESS CARD PROCESSING & SUSPENSION">
+      <Actionbar title="ACCESS CARD PROCESSING HISTORY">
         {onBack && <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />}
-        {onHistory && <Button label="HISTORY" onClick={onHistory} />}
         <Button
           label="FILTER"
           icon={<FilterIcon />}
           onClick={() => setIsFilterModalOpen(true)}
         />
-        <Button label="RELOAD" onClick={loadRequests} />
+        <Button label="RELOAD" onClick={loadHistoryRequests} />
       </Actionbar>
 
       <Dashboard.Page>
         <Paper>
-          <Paper.Title value="Access Card Processing" />
-
-          {feedback && (
-            <Alert
-              className="mb-1"
-              message={feedback}
-              severity={AlertSeverity.SUCCESS}
-            />
-          )}
+          <Paper.Title value="Processed Access Card Requests History Log" />
 
           {alertData !== null && alertData.severity !== AlertSeverity.SUCCESS && (
             <Alert message={alertData.message} severity={alertData.severity} />
           )}
 
           {isLoading && (
-            <LoadingFeedback feedback="Fetching card processing requests from Live API..." />
+            <LoadingFeedback feedback="Fetching card processing history..." />
           )}
 
-          {!isLoading && (
+          {!isLoading && requests.length === 0 && (
+            <div style={{ padding: "32px", textAlign: "center", color: "#94a3b8" }}>
+              No processed access card request history found.
+            </div>
+          )}
+
+          {!isLoading && requests.length > 0 && (
             <Table
               head={
                 <Table.Row>
                   <Table.Header value="REQUEST NO" />
                   <Table.Header value="RESIDENT & APARTMENT" />
+                  <Table.Header value="PROJECT" />
                   <Table.Header value="CARD SERIAL (PORTAL / MASKED)" />
                   <Table.Header value="REASON & FEE" />
-                  <Table.Header value="SUSPENSION STATUS" />
-                  <Table.Header value="REPLACEMENT STATUS" />
+                  <Table.Header value="PORTAL SUSPENSION" />
+                  <Table.Header value="FINAL STATUS" />
                   <Table.Header value="ACTIONS" />
                 </Table.Row>
               }
@@ -280,9 +243,10 @@ export const CardProcessingMaster = ({
                     <Table.Row key={req.id}>
                       <Table.Cell><strong>{req.requestNo}</strong></Table.Cell>
                       <Table.Cell>
-                        <div>{req.residentName}</div>
-                        <small style={{ color: "#666" }}>{req.apartmentNo}</small>
+                        <div style={{ fontWeight: 600 }}>{req.residentName}</div>
+                        <small style={{ color: "#64748b" }}>{req.apartmentNo}</small>
                       </Table.Cell>
+                      <Table.Cell>{req.projectCode}</Table.Cell>
                       <Table.Cell>
                         <div style={{ fontFamily: "monospace", color: "#2563eb", fontWeight: "bold" }}>
                           {req.fullSerialNo}
@@ -305,9 +269,7 @@ export const CardProcessingMaster = ({
                           color={
                             req.replacementStatus === "Delivered"
                               ? Badge.Color.GREEN
-                              : req.replacementStatus === "Ready"
-                              ? Badge.Color.BLUE
-                              : req.replacementStatus === "In Process"
+                              : req.replacementStatus === "Ready" || req.replacementStatus === "In Process"
                               ? Badge.Color.BLUE
                               : req.replacementStatus === "Rejected"
                               ? Badge.Color.RED
@@ -323,19 +285,6 @@ export const CardProcessingMaster = ({
                               onClick={() => setSelectedCard(req)}
                             />
                           </Tooltip>
-                          <Button
-                            label={req.isSuspended ? "UNSUSPEND" : "MARK SUSPENDED"}
-                            size={Button.Size.SMALL}
-                            onClick={() => toggleSuspension(req)}
-                          />
-                          <Button
-                            label="UPDATE STATUS"
-                            size={Button.Size.SMALL}
-                            onClick={() => {
-                              setStatusUpdateModal(req);
-                              setNewStatus(req.replacementStatus);
-                            }}
-                          />
                         </div>
                       </Table.Cell>
                     </Table.Row>
@@ -343,12 +292,6 @@ export const CardProcessingMaster = ({
                 />
               }
             />
-          )}
-
-          {!isLoading && requests.length === 0 && (
-            <div style={{ padding: "32px", textAlign: "center", color: "#94a3b8" }}>
-              No card processing requests found.
-            </div>
           )}
 
           {!isLoading && requests.length > 0 && (
@@ -359,7 +302,7 @@ export const CardProcessingMaster = ({
 
       {/* Filter Modal */}
       {isFilterModalOpen && (
-        <CardProcessingFilterModal
+        <CardProcessingHistoryFilterModal
           defaultRequestNo={filterRequestNo}
           defaultStartDate={filterStartDate}
           defaultEndDate={filterEndDate}
@@ -372,23 +315,23 @@ export const CardProcessingMaster = ({
       {/* Details View Modal */}
       {selectedCard && (
         <Modal isLong={true}>
-          <Modal.Header title={`Card Request - ${selectedCard.requestNo}`} />
+          <Modal.Header title={`Card Request History - ${selectedCard.requestNo}`} />
           <Modal.Body>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div><strong>Resident Name:</strong> {selectedCard.residentName}</div>
               <div><strong>Apartment:</strong> {selectedCard.apartmentNo}</div>
-              <div><strong>Project:</strong> {selectedCard.projectCode}</div>
+              <div><strong>Project Code:</strong> {selectedCard.projectCode}</div>
               <div><strong>Full Card Serial No:</strong> <span style={{ fontFamily: "monospace", color: "#2563eb" }}>{selectedCard.fullSerialNo}</span></div>
               <div><strong>Masked Serial (Resident View):</strong> {selectedCard.maskedSerialNo}</div>
               <div><strong>Replacement Reason:</strong> {selectedCard.reason}</div>
               <div><strong>Fee & Payment:</strong> {selectedCard.feeAmount} ({selectedCard.paymentStatus})</div>
-              <div><strong>Portal Suspension:</strong> {selectedCard.isSuspended ? "SUSPENDED" : "ACTIVE"}</div>
-              <div><strong>Fulfillment Status:</strong> {selectedCard.replacementStatus}</div>
+              <div><strong>Portal Suspension Status:</strong> {selectedCard.isSuspended ? "SUSPENDED" : "ACTIVE"}</div>
+              <div><strong>Processing Final Status:</strong> {selectedCard.replacementStatus}</div>
 
               {/* Approval Audit Logs */}
               {selectedCard.approvalHistory && selectedCard.approvalHistory.length > 0 && (
                 <div style={{ gridColumn: "span 2", marginTop: "12px" }}>
-                  <strong>Approval & Processing Log:</strong>
+                  <strong>Approval Audit Trail Log:</strong>
                   <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "6px" }}>
                     {selectedCard.approvalHistory.map((entry, i) => (
                       <div
@@ -427,72 +370,7 @@ export const CardProcessingMaster = ({
             </div>
           </Modal.Body>
           <Modal.Footer>
-            <Button
-              label={selectedCard.isSuspended ? "Unsuspend Card" : "Mark Card Suspended"}
-              onClick={() => toggleSuspension(selectedCard)}
-            />
-            <Button
-              label="Update Processing Status"
-              onClick={() => {
-                setStatusUpdateModal(selectedCard);
-                setNewStatus(selectedCard.replacementStatus);
-              }}
-            />
             <Button label="Close" onClick={() => setSelectedCard(null)} />
-          </Modal.Footer>
-        </Modal>
-      )}
-
-      {/* Update Status Modal */}
-      {statusUpdateModal && (
-        <Modal>
-          <Modal.Header title={`Update Card Status & Notify Resident - ${statusUpdateModal.requestNo}`} />
-          <Modal.Body>
-            <ListInput label="Replacement Status Step *" value={newStatus}>
-              {(onClose) => (
-                <>
-                  <ListInput.Item
-                    label="Pending Processing"
-                    onClick={() => {
-                      setNewStatus("Pending");
-                      onClose();
-                    }}
-                  />
-                  <ListInput.Item
-                    label="In Process"
-                    onClick={() => {
-                      setNewStatus("In Process");
-                      onClose();
-                    }}
-                  />
-                  <ListInput.Item
-                    label="Ready for Delivery"
-                    onClick={() => {
-                      setNewStatus("Ready");
-                      onClose();
-                    }}
-                  />
-                  <ListInput.Item
-                    label="Delivered "
-                    onClick={() => {
-                      setNewStatus("Delivered");
-                      onClose();
-                    }}
-                  />
-                  <ListInput.Item
-                    label="Rejected"
-                    onClick={() => {
-                      setNewStatus("Rejected");
-                      onClose();
-                    }}
-                  />
-                </>
-              )}
-            </ListInput>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button label="Save" onClick={handleUpdateStatus} />
-            <Button label="Cancel" onClick={() => setStatusUpdateModal(null)} />
           </Modal.Footer>
         </Modal>
       )}
