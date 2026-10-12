@@ -128,8 +128,10 @@ export const EditMovementRuleMaster = ({
           setStartTime(item.startTime || "08:00 AM");
           setEndTime(item.endTime || "04:00 PM");
 
-          // Parse comma-separated blocked days back into array
-          if (item.blockedDays) {
+          // CHANGE 1: Handle blockedDays as array or fallback to string split if old data exists
+          if (Array.isArray(item.blockedDays)) {
+            setBlockedDays(item.blockedDays);
+          } else if (item.blockedDays) {
             const parsedDays = String(item.blockedDays)
               .split(",")
               .map((d) => d.trim())
@@ -174,7 +176,7 @@ export const EditMovementRuleMaster = ({
       projectCode,
       startTime,
       endTime,
-      blockedDays: blockedDays.join(", "),
+      blockedDays: blockedDays,
       isActive,
     } as any);
   }, [

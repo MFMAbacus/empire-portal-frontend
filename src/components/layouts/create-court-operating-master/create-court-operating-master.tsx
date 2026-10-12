@@ -113,8 +113,8 @@ export const CreateCourtOperatingMaster = ({
   const handleSubmit = React.useCallback(() => {
     submit({
       sessionId,
-      courtId, // Payload mein strictly courtId hi jayega
-      day: daysSelected.join(", "),
+      courtId,
+      day: daysSelected,
       openTime,
       closeTime,
       isClosed,

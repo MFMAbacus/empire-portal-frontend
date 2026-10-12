@@ -42,7 +42,7 @@ export class CreateCourtOperatingMasterServiceApi extends Service<Input> {
       body: JSON.stringify({
         id: isUpdating ? id : undefined,
         courtId:courtId !=="" ? courtId : undefined,
-        day: day !=="" ? day :undefined,
+        day: Array.isArray(day) && day.length > 0 ? day :undefined,
         openTime :openTime !== ""? openTime : undefined,
         closeTime : closeTime !== "" ? closeTime:undefined,
         isClosed,

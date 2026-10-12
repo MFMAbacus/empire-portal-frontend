@@ -40,7 +40,7 @@ export type MovementRuleItem = {
   projectCode: string;
   startTime: string;
   endTime: string;
-  blockedDays: string;
+  blockedDays: string[];
   isActive: boolean;
   isArchived?: boolean;
 };
@@ -128,10 +128,12 @@ export const MovementRuleMaster = ({
             .indexOf(filters.endTime.toLowerCase()) !== -1;
       }
       if (filters.blockedDays) {
+        // Array ko string mein join karke filter check kar rahe hain
+        const blockedString = (current.blockedDays || []).join(", ");
         predicate =
           predicate &&
-          current.blockedDays
-            ?.toLowerCase()
+          blockedString
+            .toLowerCase()
             .indexOf(filters.blockedDays.toLowerCase()) !== -1;
       }
       if (typeof filters.isActive !== "undefined") {
@@ -217,7 +219,11 @@ export const MovementRuleMaster = ({
                       <Table.Cell>{item.projectCode}</Table.Cell>
                       <Table.Cell>{item.startTime}</Table.Cell>
                       <Table.Cell>{item.endTime}</Table.Cell>
-                      <Table.Cell>{item.blockedDays}</Table.Cell>
+                      <Table.Cell>
+                        {Array.isArray(item.blockedDays)
+                          ? item.blockedDays.join(", ")
+                          : item.blockedDays}
+                      </Table.Cell>
                       <Table.Cell>
                         <Badge
                           value={item.isActive ? "Active" : "Inactive"}

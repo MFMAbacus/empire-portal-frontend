@@ -122,9 +122,10 @@ export const EditCourtOperatingMaster = ({
           const item = response.data;
           setCourtId(item.courtId || "");
           
-          // Parse comma separated string into Array for multi-selection
-          if (item.day) {
-            const parsedDays = item.day
+          if (Array.isArray(item.day)) {
+            setDaysSelected(item.day);
+          } else if (item.day) {
+            const parsedDays = String(item.day)
               .split(",")
               .map((d: string) => d.trim())
               .filter(Boolean);
@@ -170,7 +171,7 @@ export const EditCourtOperatingMaster = ({
       sessionId,
       id, // Record Primary Key to update
       courtId,
-      day: daysSelected.join(", "),
+      day: daysSelected,
       openTime,
       closeTime,
       isClosed,

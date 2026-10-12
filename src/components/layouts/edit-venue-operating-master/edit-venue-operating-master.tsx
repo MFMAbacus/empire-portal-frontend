@@ -126,9 +126,11 @@ export const EditVenueOperatingMaster = ({
           const item = response.data;
           setVenueId(item.venueId || "");
           
-          // Parse comma separated string into Array for multi-selection
-          if (item.day) {
-            const parsedDays = item.day
+          // CHANGE 1: Handle day as array or fallback to split if string
+          if (Array.isArray(item.day)) {
+            setDaysSelected(item.day);
+          } else if (item.day) {
+            const parsedDays = String(item.day)
               .split(",")
               .map((d: string) => d.trim())
               .filter(Boolean);
@@ -174,7 +176,7 @@ export const EditVenueOperatingMaster = ({
       sessionId,
       id, // Record Primary Key to update
       venueId, // Payload mein strictly venueId hi jayega
-      day: daysSelected.join(", "),
+      day: daysSelected,
       openTime,
       closeTime,
       isClosed,

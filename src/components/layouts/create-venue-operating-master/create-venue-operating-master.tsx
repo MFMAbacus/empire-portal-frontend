@@ -118,7 +118,7 @@ export const CreateVenueOperatingMaster = ({
     submit({
       sessionId,
       venueId, // Payload mein strictly venueId hi jayega
-      day: daysSelected.join(", "),
+      day: daysSelected,
       openTime,
       closeTime,
       isClosed,

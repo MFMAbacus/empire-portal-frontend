@@ -37,7 +37,7 @@ import { makeDeleteVenueOperatingMasterService } from "@/services/delete-venue-o
 export type VenueOperatingItem = {
   id: string;
   venueId: string;
-  day: string;
+  day: string[];
   openTime: string;
   closeTime: string;
   isClosed: boolean;
@@ -114,9 +114,11 @@ export const VenueOperatingMaster = ({
             .includes(filters.venueId.toLowerCase());
       }
       if (filters.day) {
-        predicate =
-          predicate &&
-          current.day?.toLowerCase().includes(filters.day.toLowerCase());
+        // Array ko string mein join karke filter check kar rahe hain
+        const daysString = Array.isArray(current.day)
+          ? current.day.join(", ").toLowerCase()
+          : String(current.day || "").toLowerCase();
+        predicate = predicate && daysString.includes(filters.day.toLowerCase());
       }
       if (filters.openTime) {
         predicate =
@@ -218,7 +220,11 @@ export const VenueOperatingMaster = ({
                   renderItem={(item) => (
                     <Table.Row key={item.id}>
                       <Table.Cell>{item.venueId}</Table.Cell>
-                      <Table.Cell>{item.day}</Table.Cell>
+                      <Table.Cell>
+                        {Array.isArray(item.day)
+                          ? item.day.join(", ")
+                          : item.day}
+                      </Table.Cell>
                       <Table.Cell>{item.openTime}</Table.Cell>
                       <Table.Cell>{item.closeTime}</Table.Cell>
                       <Table.Cell>

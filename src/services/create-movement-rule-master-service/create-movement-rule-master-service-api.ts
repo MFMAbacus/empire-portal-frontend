@@ -42,7 +42,7 @@ export class CreateMovementRuleMasterServiceApi extends Service<Input> {
         projectCode: projectCode !== "" ? projectCode : undefined,
         startTime: startTime !== "" ? startTime : undefined,
         endTime: endTime !== "" ? endTime : undefined,
-        blockedDays: blockedDays !== "" ? blockedDays : undefined,
+        blockedDays: Array.isArray(blockedDays) && blockedDays.length > 0 ? blockedDays : undefined,
         isActive,
       }),
       mode: "cors",

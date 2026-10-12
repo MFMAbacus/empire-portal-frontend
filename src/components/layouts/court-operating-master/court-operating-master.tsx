@@ -37,7 +37,7 @@ import { makeDeleteCourtOperatingMasterService } from "@/services/delete-court-o
 export type CourtOperatingItem = {
   id: string;
   courtId: string;
-  day: string;
+  day: string[];
   openTime: string;
   closeTime: string;
   isClosed: boolean;
@@ -114,9 +114,10 @@ export const CourtOperatingMaster = ({
             .includes(filters.courtId.toLowerCase());
       }
       if (filters.day) {
-        predicate =
-          predicate &&
-          current.day?.toLowerCase().includes(filters.day.toLowerCase());
+        const daysString = Array.isArray(current.day)
+          ? current.day.join(", ").toLowerCase()
+          : String(current.day || "").toLowerCase();
+        predicate = predicate && daysString.includes(filters.day.toLowerCase());
       }
       if (filters.openTime) {
         predicate =
@@ -218,7 +219,11 @@ export const CourtOperatingMaster = ({
                   renderItem={(item) => (
                     <Table.Row key={item.id}>
                       <Table.Cell>{item.courtId}</Table.Cell>
-                      <Table.Cell>{item.day}</Table.Cell>
+                      <Table.Cell>
+                        {Array.isArray(item.day)
+                          ? item.day.join(", ")
+                          : item.day}
+                      </Table.Cell>
                       <Table.Cell>{item.openTime}</Table.Cell>
                       <Table.Cell>{item.closeTime}</Table.Cell>
                       <Table.Cell>

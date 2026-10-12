@@ -115,7 +115,7 @@ export const CreateMovementRuleMaster = ({
       projectCode,
       startTime,
       endTime,
-      blockedDays: blockedDays.join(", "),
+      blockedDays: blockedDays,
       isActive,
     });
   }, [

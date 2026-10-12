@@ -42,7 +42,7 @@ export class CreateVenueOperatingMasterServiceApi extends Service<Input> {
       body: JSON.stringify({
         id: isUpdating ? id : undefined,
         venueId:venueId !=="" ? venueId : undefined,
-        day: day !=="" ? day :undefined,
+        day: Array.isArray(day) && day.length > 0 ? day :undefined,
         openTime :openTime !== ""? openTime : undefined,
         closeTime : closeTime !== "" ? closeTime:undefined,
         isClosed,
