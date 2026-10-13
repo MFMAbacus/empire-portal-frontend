@@ -149,7 +149,7 @@ export const EditCardReplacementReasonMaster = ({
                   placeholder="Enter reason ID (e.g., RSN001)"
                   value={reasonId}
                   hasError={typeof validation["reasonId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={true}
                   onChange={setReasonId}
                 />
               </Grid.Cell>

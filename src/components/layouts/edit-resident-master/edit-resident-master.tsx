@@ -345,7 +345,7 @@ export const EditResidentMaster = ({
                   placeholder="Enter resident ID"
                   value={residentCode}
                   hasError={typeof validation["residentId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={true}
                   onChange={setResidentCode}
                 />
               </Grid.Cell>

@@ -72,7 +72,7 @@ export const CreateVehicleTypeMaster = ({
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
           isDisabled={
             isLoading ||
-            !vehicleTypeId ||
+            !vehicleType ||
             isSuccess
           }
           onClick={handleSubmit}
@@ -94,10 +94,10 @@ export const CreateVehicleTypeMaster = ({
               <TextInput
                 className="w-100"
                 label="Vehicle Type ID"
-                placeholder="Enter vehicle type ID"
+                placeholder="Auto Generated vehicle type ID"
                 value={vehicleTypeId}
                 hasError={typeof validation["vehicleTypeId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
+                isDisabled={true}
                 onChange={setVehicleTypeId}
               />
             </Grid.Cell>

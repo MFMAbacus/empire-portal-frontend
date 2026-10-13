@@ -68,7 +68,6 @@ export const CreateCardReplacementReasonMaster = ({
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
           isDisabled={
             isLoading ||
-            !reasonId ||
             !reasonName ||
             isSuccess
           }
@@ -91,10 +90,10 @@ export const CreateCardReplacementReasonMaster = ({
               <TextInput
                 className="w-100"
                 label="Reason ID"
-                placeholder="Enter reason ID (e.g., RSN001)"
+                placeholder="Auto-generated reason ID (e.g., CRR-000001)"
                 value={reasonId}
                 hasError={typeof validation["reasonId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
+                isDisabled={true}
                 onChange={setReasonId}
               />
             </Grid.Cell>

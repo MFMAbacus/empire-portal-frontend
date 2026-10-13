@@ -276,7 +276,7 @@ export const EditVenueMaster = ({
                   placeholder="e.g., VEN-001"
                   value={venueId}
                   hasError={typeof validation["venueId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={true}
                   onChange={setVenueId}
                 />
               </Grid.Cell>

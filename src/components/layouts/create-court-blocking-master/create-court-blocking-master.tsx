@@ -162,7 +162,6 @@ export const CreateCourtBlockingMaster = ({
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
           isDisabled={
             isLoading ||
-            !blockId ||
             !blockDate ||
             !createdBy ||
             !reason ||
@@ -190,10 +189,10 @@ export const CreateCourtBlockingMaster = ({
               <TextInput
                 className="w-100"
                 label="Block ID."
-                placeholder="Enter block ID"
+                placeholder="Auto Generated block ID"
                 value={blockId}
                 hasError={typeof validation["blockId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
+                isDisabled={true}
                 onChange={setBlockId}
               />
             </Grid.Cell>

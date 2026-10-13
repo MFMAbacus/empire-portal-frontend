@@ -156,7 +156,6 @@ export const CreateGateMaster = ({
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
           isDisabled={
             isLoading ||
-            !gateId ||
             !gateName ||
             !location ||
             !projectCode ||
@@ -181,10 +180,10 @@ export const CreateGateMaster = ({
               <TextInput
                 className="w-100"
                 label="Gate ID"
-                placeholder="Enter gate ID"
+                placeholder="Auto-generated (GTE-XXXXXX)"
                 value={gateId}
                 hasError={typeof validation["gateId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
+                isDisabled={true}
                 onChange={setgateId}
               />
             </Grid.Cell>

@@ -201,7 +201,6 @@ export const EditApartmentMaster = ({
           isDisabled={
             isLoading ||
             isFetching ||
-            !apartmentCode ||
             !apartmentNo ||
             !buildingOrTower ||
             !floor ||
@@ -237,7 +236,7 @@ export const EditApartmentMaster = ({
                   placeholder="Enter apartment ID"
                   value={apartmentCode}
                   hasError={typeof validation["apartmentId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={true}
                   onChange={setApartmentCode}
                 />
               </Grid.Cell>

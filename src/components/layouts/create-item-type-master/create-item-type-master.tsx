@@ -68,7 +68,6 @@ export const CreateItemTypeMaster = ({
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
           isDisabled={
             isLoading ||
-            !itemTypeId ||
             !itemTypeName ||
             isSuccess
           }
@@ -91,10 +90,10 @@ export const CreateItemTypeMaster = ({
               <TextInput
                 className="w-100"
                 label="Item Type ID"
-                placeholder="Enter item type ID"
+                placeholder="Auto Generated item type ID"
                 value={itemTypeId}
                 hasError={typeof validation["itemTypeId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
+                isDisabled={true}
                 onChange={setItemTypeId}
               />
             </Grid.Cell>

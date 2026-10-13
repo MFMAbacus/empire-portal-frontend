@@ -300,6 +300,11 @@ export const App = (): JSX.Element => {
             setId(customerId);
             setCurrentPage("view-customer");
           }}
+          onCreateResident={(customer) => {
+            // Customer ka ID save karein aur page change kar dein
+            setId(customer.id); 
+            setCurrentPage("create-resident-master"); // Yahan apna resident page ka state key dein
+       }}
         />
       )}
       {currentPage === "view-customer" && (

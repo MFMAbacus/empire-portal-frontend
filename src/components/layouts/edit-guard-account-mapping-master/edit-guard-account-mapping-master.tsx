@@ -415,7 +415,7 @@ export const EditGuardAccountMappingMaster = ({
                   placeholder="Enter guard account ID"
                   value={guardAccountCode}
                   hasError={typeof validation["guardAccountId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={true}
                   onChange={setGuardAccountCode}
                 />
               </Grid.Cell>

@@ -149,7 +149,7 @@ export const EditItemTypeMaster = ({
                   placeholder="Enter item type ID"
                   value={itemTypeCode}
                   hasError={typeof validation["itemTypeId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={true}
                   onChange={setItemTypeCode}
                 />
               </Grid.Cell>

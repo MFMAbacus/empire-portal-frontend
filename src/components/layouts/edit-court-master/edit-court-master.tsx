@@ -243,7 +243,7 @@ export const EditCourtMaster = ({
                   placeholder="Enter court ID"
                   value={courtCode}
                   hasError={typeof validation["courtId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={true}
                   onChange={setCourtCode}
                 />
               </Grid.Cell>

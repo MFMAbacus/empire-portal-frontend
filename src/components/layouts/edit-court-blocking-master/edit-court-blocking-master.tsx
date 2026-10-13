@@ -249,7 +249,7 @@ export const EditCourtBlockingMaster = ({
                   placeholder="Enter block ID"
                   value={blockCode}
                   hasError={typeof validation["blockId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={true}
                   onChange={setBlockCode}
                 />
               </Grid.Cell>

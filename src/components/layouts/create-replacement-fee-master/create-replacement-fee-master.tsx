@@ -161,7 +161,6 @@ export const CreateReplacementFeeMaster = ({
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
           isDisabled={
             isLoading ||
-            !feeId ||
             !feeAmount ||
             !currency ||
             !tax ||
@@ -187,10 +186,10 @@ export const CreateReplacementFeeMaster = ({
               <TextInput
                 className="w-100"
                 label="Fee ID"
-                placeholder="Enter fee ID"
+                placeholder="Auto-generated fee ID"
                 value={feeId}
                 hasError={typeof validation["feeId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
+                isDisabled={true}
                 onChange={setFeeId}
               />
             </Grid.Cell>

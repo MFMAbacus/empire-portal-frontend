@@ -69,7 +69,6 @@ export const CreateMovementTypeMaster = ({
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
           isDisabled={
             isLoading ||
-            !movementTypeId ||
             !type ||
             isSuccess
           }
@@ -92,10 +91,10 @@ export const CreateMovementTypeMaster = ({
               <TextInput
                 className="w-100"
                 label="Movement Type ID"
-                placeholder="Enter movement type ID"
+                placeholder="Auto Generated movement type ID"
                 value={movementTypeId}
                 hasError={typeof validation["movementTypeId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
+                isDisabled={true}
                 onChange={setMovementTypeId}
               />
             </Grid.Cell>

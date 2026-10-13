@@ -113,6 +113,7 @@ export const EditVehicleTypeMaster = ({
             isLoading ||
             isFetching ||
             !vehicleTypeCode ||
+            !vehicleType ||
             isSuccess
           }
           onClick={handleSubmit}
@@ -144,7 +145,7 @@ export const EditVehicleTypeMaster = ({
                   placeholder="Enter vehicle type ID"
                   value={vehicleTypeCode}
                   hasError={typeof validation["vehicleTypeId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={true}
                   onChange={setVehicleTypeCode}
                 />
               </Grid.Cell>

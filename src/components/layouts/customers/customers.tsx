@@ -32,6 +32,7 @@ import { MailIcon } from "@/components/icons/mail-icon";
 import { SlashIcon } from "@/components/icons/slash-icon";
 import { CheckIcon } from "@/components/icons/check-icon";
 import { FilterIcon } from "@/components/icons/filter-icon";
+import { UserIcon } from "@/components/icons/user-icon"; // Resident ke liye Icon (Agar icon library me ho)
 
 import { useForm } from "@/hooks/use-form";
 import { UsePermissionContext } from "@/context/PermissionContext";
@@ -46,11 +47,13 @@ import { apiUrl } from "@/config";
 type CustomersProps = {
   sessionId: string;
   onShow: (customerId: string) => void;
+  onCreateResident?: (customer: Customer) => void; // Resident create/open karne ke liye prop
 };
 
 export const Customers = ({
   sessionId,
   onShow,
+  onCreateResident,
 }: CustomersProps): JSX.Element => {
   const [customers, setCustomers] = React.useState<Customer[] | null>(null);
   const { checkModule, checkSubSection, checkAction } = usePermission();
@@ -159,7 +162,6 @@ export const Customers = ({
     }
     return customers.filter((current) => {
       let predicate = true;
-      console.log(filters);
 
       if (filters.id) {
         predicate &&= Boolean(
@@ -187,18 +189,6 @@ export const Customers = ({
               .match(filters.subProject.toLowerCase()),
           );
         }
-      }
-      if (filters.firstName) {
-        predicate &&= Boolean(
-          current.firstName
-            .toLowerCase()
-            .match(filters.firstName.toLowerCase()),
-        );
-      }
-      if (filters.lastName) {
-        predicate &&= Boolean(
-          current.lastName.toLowerCase().match(filters.lastName.toLowerCase()),
-        );
       }
       if (filters.firstName) {
         predicate &&= Boolean(
@@ -435,6 +425,19 @@ export const Customers = ({
                           />
                         </Table.Cell>
                         <Table.Cell align={Table.Align.RIGHT}>
+                          {!customer.isResident && canWrite && (
+                            <Tooltip value="Add Resident">
+                              <IconButton
+                                icon={<UserIcon />}
+                                onClick={() => {
+                                  if (onCreateResident) {
+                                    onCreateResident(customer);
+                                  }
+                                }}
+                              />
+                            </Tooltip>
+                          )}
+
                           {!customer.isInvited &&
                             !customer.isBlocked &&
                             canWrite &&

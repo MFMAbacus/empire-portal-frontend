@@ -334,7 +334,6 @@ export const CreateGuardAccountMappingMaster = ({
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
           isDisabled={
             isLoading ||
-            !guardAccountId ||
             !gateId ||
             !guardUserId ||
             !deviceId ||
@@ -360,10 +359,10 @@ export const CreateGuardAccountMappingMaster = ({
               <TextInput
                 className="w-100"
                 label="Guard Account ID"
-                placeholder="Enter guard account ID"
+                placeholder="Auto Generated guard account ID"
                 value={guardAccountId}
                 hasError={typeof validation["guardAccountId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
+                isDisabled={true}
                 onChange={setGuardAccountId}
               />
             </Grid.Cell>

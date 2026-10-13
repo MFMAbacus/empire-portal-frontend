@@ -17,7 +17,7 @@ export const Dashboard: DashboardComponent = ({
 }: DashboardProps): JSX.Element => {
   return (
     <div className={cls["dashboard"]}>
-      {/* <div className={cls["test_env"]}>Test Environment</div> */}
+       <div className={cls["test_env"]}>Test Environment 2.0 </div> 
       {children}
     </div>
   );

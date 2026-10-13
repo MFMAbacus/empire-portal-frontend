@@ -63,7 +63,7 @@ export const SignIn = (props: SignInProps): JSX.Element => {
 
   return (
     <>
-      {/* <div className={cls["test_env"]}>Test Environment</div> */}
+       <div className={cls["test_env"]}>Test Environment 2.0</div>
       <div className={cls["sign-in"]}>
         <div className={cls["sign-in__box"]}>
           <img

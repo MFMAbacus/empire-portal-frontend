@@ -33,4 +33,5 @@ export type Customer = {
   isInvited: boolean;
   isActive: boolean;
   isBlocked: boolean;
+  isResident: boolean;
 };

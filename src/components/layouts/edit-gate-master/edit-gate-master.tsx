@@ -234,7 +234,7 @@ export const EditGateMaster = ({
                   placeholder="Enter gate ID"
                   value={gateCode}
                   hasError={typeof validation["gateId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={true}
                   onChange={setGateCode}
                 />
               </Grid.Cell>

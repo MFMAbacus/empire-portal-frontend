@@ -157,7 +157,7 @@ export const EditMovementTypeMaster = ({
                   placeholder="Enter movement type ID"
                   value={movementTypeCode}
                   hasError={typeof validation["movementTypeId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={true}
                   onChange={setMovementTypeCode}
                 />
               </Grid.Cell>

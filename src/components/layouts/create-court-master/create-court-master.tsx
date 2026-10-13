@@ -162,7 +162,6 @@ export const CreateCourtMaster = ({
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
           isDisabled={
             isLoading ||
-            !courtId ||
             !courtName ||
             !courtType ||
             !location ||
@@ -188,10 +187,10 @@ export const CreateCourtMaster = ({
               <TextInput
                 className="w-100"
                 label="Court ID."
-                placeholder="Enter court ID"
+                placeholder="auto generate court ID"
                 value={courtId}
                 hasError={typeof validation["courtId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
+                isDisabled={true}
                 onChange={setCourtId}
               />
             </Grid.Cell>

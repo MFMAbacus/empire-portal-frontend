@@ -158,7 +158,6 @@ export const CreateMenuMaster = ({
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
           isDisabled={
             isLoading ||
-            !menuId ||
             !menuName ||
             !menuItem ||
             !venueId ||
@@ -183,10 +182,10 @@ export const CreateMenuMaster = ({
               <TextInput
                 className="w-100"
                 label="Menu ID."
-                placeholder="Enter menu ID"
+                placeholder="Auto Generated menu ID"
                 value={menuId}
                 hasError={typeof validation["menuId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
+                isDisabled={true}
                 onChange={setMenuId}
               />
             </Grid.Cell>

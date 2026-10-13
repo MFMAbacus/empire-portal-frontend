@@ -57,8 +57,8 @@ export const CreateResidentMaster = ({
   const [email, setEmail] = React.useState<string>("");
   const [mobileNo, setMobileNo] = React.useState<number | undefined>(undefined);
 
-  const currentUserId = session?.userId || (session as any)?.user?.id || (session as any)?.id || "";
-  const [loginUserId, setLoginUserId] = React.useState<string>(currentUserId);
+  // const currentUserId = session?.userId || (session as any)?.user?.id || (session as any)?.id || "";
+  const [loginUserId, setLoginUserId] = React.useState<string>("");
   const [residentType, setResidentType] = React.useState<string>("");
   
   const [apartmentId, setApartmentId] = React.useState<string>("");
@@ -74,11 +74,11 @@ export const CreateResidentMaster = ({
 
   const { startTimeout } = useTimeout();
 
-  React.useEffect(() => {
-    if (currentUserId) {
-      setLoginUserId(currentUserId);
-    }
-  }, [currentUserId]);
+  // React.useEffect(() => {
+  //   if (currentUserId) {
+  //     setLoginUserId(currentUserId);
+  //   }
+  // }, [currentUserId]);
 
   const isEmailValid = React.useMemo(() => {
     if (!email) return false;
@@ -257,7 +257,6 @@ export const CreateResidentMaster = ({
 
   const isFormInvalid =
     isLoading ||
-    !residentId ||
     !name ||
     !email ||
     !isEmailValid ||
@@ -293,10 +292,10 @@ export const CreateResidentMaster = ({
               <TextInput
                 className="w-100"
                 label="Resident ID"
-                placeholder="Enter resident ID"
+                placeholder="Auto-generated (RES-XXXXXX)"
                 value={residentId}
                 hasError={typeof validation["residentId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
+                isDisabled={true}
                 onChange={setResidentId}
               />
             </Grid.Cell>

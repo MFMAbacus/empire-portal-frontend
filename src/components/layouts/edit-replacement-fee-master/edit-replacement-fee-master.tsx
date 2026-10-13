@@ -251,7 +251,7 @@ export const EditReplacementFeeMaster = ({
                   placeholder="Enter fee ID"
                   value={feeId}
                   hasError={typeof validation["feeId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={true}
                   onChange={setFeeId}
                 />
               </Grid.Cell>

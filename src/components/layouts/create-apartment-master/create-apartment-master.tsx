@@ -158,7 +158,6 @@ export const CreateApartmentMaster = ({
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
           isDisabled={
             isLoading ||
-            !apartmentId ||
             !apartmentNo ||
             !buildingOrTower ||
             !floor ||
@@ -184,10 +183,10 @@ export const CreateApartmentMaster = ({
               <TextInput
                 className="w-100"
                 label="Apartment ID."
-                placeholder="Enter apartment ID"
+                placeholder="Auto Generated apartment ID"
                 value={apartmentId}
                 hasError={typeof validation["apartmentId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
+                isDisabled={true} 
                 onChange={setApartmentId}
               />
             </Grid.Cell>

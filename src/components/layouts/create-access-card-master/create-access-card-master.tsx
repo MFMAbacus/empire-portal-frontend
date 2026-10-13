@@ -321,7 +321,6 @@ export const CreateAccessCardMaster = ({
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
           isDisabled={
             isLoading ||
-            !cardId ||
             !serialNo ||
             !projectCode ||
             !apartmentId ||
@@ -348,11 +347,11 @@ export const CreateAccessCardMaster = ({
               <TextInput
                 className="w-100"
                 label="Card ID"
-                placeholder="Enter card ID"
+                placeholder="Auto Generated card ID"
                 value={cardId}
                 feedback={validation["cardId"]}
                 hasError={typeof validation["cardId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
+                isDisabled={true}
                 onChange={setCardId}
               />
             </Grid.Cell>

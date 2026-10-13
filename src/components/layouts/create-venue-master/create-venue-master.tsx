@@ -171,7 +171,6 @@ export const CreateVenueMaster = ({
           icon={isLoading ? <SpinnerIcon /> : <CheckIcon />}
           isDisabled={
             isLoading ||
-            !venueId ||
             !venueName ||
             !type ||
             !projectCode ||
@@ -198,10 +197,10 @@ export const CreateVenueMaster = ({
               <TextInput
                 className="w-100"
                 label="Venue ID"
-                placeholder="e.g., VEN-001"
+                placeholder="Auto Generated venue ID"
                 value={venueId}
                 hasError={typeof validation["venueId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
+                isDisabled={true}
                 onChange={setVenueId}
               />
             </Grid.Cell>

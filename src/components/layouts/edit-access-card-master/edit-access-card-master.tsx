@@ -415,7 +415,7 @@ export const EditAccessCardMaster = ({
                   placeholder="Enter card ID"
                   value={cardId}
                   hasError={typeof validation["cardId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={true}
                   onChange={setCardId}
                 />
               </Grid.Cell>

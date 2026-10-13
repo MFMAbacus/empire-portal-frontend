@@ -240,7 +240,7 @@ export const EditMenuMaster = ({
                   placeholder="Enter menu ID"
                   value={menuCode}
                   hasError={typeof validation["menuId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={true}
                   onChange={setMenuCode}
                 />
               </Grid.Cell>
