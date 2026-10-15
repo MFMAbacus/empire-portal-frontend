@@ -30,7 +30,7 @@ import { MoveApprovalHistoryFilterModal } from "./filter-modal";
 
 export type MoveRequest = {
   id: string;
-  requestNo: string;
+  requestId: string;
   residentId: string;
   residentName?: string;
   residentEmail?: string;
@@ -115,7 +115,7 @@ export const MoveApprovalHistoryMaster = ({
     ) => {
       return reqList.filter((item) => {
         const matchReqNo =
-          !reqNo || item.requestNo.toLowerCase().includes(reqNo.toLowerCase());
+          !reqNo || item.requestId.toLowerCase().includes(reqNo.toLowerCase());
         const matchStatus =
           !stat || item.status?.toLowerCase() === stat.toLowerCase();
 
@@ -174,19 +174,19 @@ export const MoveApprovalHistoryMaster = ({
 
   // Handle Filter Submission
   const handleFilterSubmit = (filters: {
-    requestNo: string | null;
+    requestId: string | null;
     startDate: string | null;
     endDate: string | null;
     status: string | null;
   }) => {
-    setFilterRequestNo(filters.requestNo);
+    setFilterRequestNo(filters.requestId);
     setFilterStartDate(filters.startDate);
     setFilterEndDate(filters.endDate);
     setFilterStatus(filters.status);
 
     const filtered = applyFilters(
       allRequests,
-      filters.requestNo,
+      filters.requestId,
       filters.startDate,
       filters.endDate,
       filters.status
@@ -295,7 +295,7 @@ export const MoveApprovalHistoryMaster = ({
                   renderItem={(req) => (
                     <Table.Row key={req.id}>
                       <Table.Cell>
-                        <strong style={{ color: "#1e293b" }}>{req.requestNo}</strong>
+                        <strong style={{ color: "#1e293b" }}>{req.requestId}</strong>
                       </Table.Cell>
                       <Table.Cell>
                         <div style={{ fontWeight: 600 }}>{req.residentName || req.residentId}</div>
@@ -382,7 +382,7 @@ export const MoveApprovalHistoryMaster = ({
       {/* ── Detail View Modal ─────────────────────────────────────────────── */}
       {selectedRequest && (
         <Modal isLong={true}>
-          <Modal.Header title={`Move Request History Details — ${selectedRequest.requestNo}`} />
+          <Modal.Header title={`Move Request History Details — ${selectedRequest.requestId}`} />
           <Modal.Body>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
               <div><strong>Resident:</strong> {selectedRequest.residentName || selectedRequest.residentId}</div>

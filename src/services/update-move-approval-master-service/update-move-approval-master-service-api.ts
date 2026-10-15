@@ -23,11 +23,11 @@ export class UpdateMoveApprovalMasterServiceApi extends Service<UpdateMoveApprov
     const { sessionId, id, ...bodyData } = input;
 
     // Use action-specific endpoints for approve/reject
-    let endpoint = `${apiUrl}/move-approval-request/${id}`;
+    let endpoint = `${apiUrl}/move-approval-request/${id}?sessionId=${sessionId}`;
     if (bodyData.status === 'Approved') {
-      endpoint = `${apiUrl}/move-approval-request/${id}/approve`;
+      endpoint = `${apiUrl}/move-approval-request/${id}/approve?sessionId=${sessionId}`;
     } else if (bodyData.status === 'Rejected') {
-      endpoint = `${apiUrl}/move-approval-request/${id}/reject`;
+      endpoint = `${apiUrl}/move-approval-request/${id}/reject?sessionId=${sessionId}`;
     }
 
     const response = await fetch(endpoint, {

@@ -27,7 +27,7 @@ import { CardProcessingHistoryFilterModal } from "./filter-modal";
 
 export type CardHistoryRequest = {
   id: string;
-  requestNo: string;
+  requestId: string;
   residentId?: string;
   residentName: string;
   apartmentNo: string;
@@ -99,7 +99,7 @@ export const CardProcessingHistoryMaster = ({
     ) => {
       return reqList.filter((item) => {
         const matchReqNo =
-          !reqNo || item.requestNo.toLowerCase().includes(reqNo.toLowerCase());
+          !reqNo || item.requestId.toLowerCase().includes(reqNo.toLowerCase());
         const matchStatus =
           !stat || (item.replacementStatus || "").toLowerCase() === stat.toLowerCase();
 
@@ -157,19 +157,19 @@ export const CardProcessingHistoryMaster = ({
   }, [loadHistoryRequests]);
 
   const handleFilterSubmit = (filters: {
-    requestNo: string | null;
+    requestId: string | null;
     startDate: string | null;
     endDate: string | null;
     status: string | null;
   }) => {
-    setFilterRequestNo(filters.requestNo);
+    setFilterRequestNo(filters.requestId);
     setFilterStartDate(filters.startDate);
     setFilterEndDate(filters.endDate);
     setFilterStatus(filters.status);
 
     const filtered = applyFilters(
       allRequests,
-      filters.requestNo,
+      filters.requestId,
       filters.startDate,
       filters.endDate,
       filters.status
@@ -241,7 +241,7 @@ export const CardProcessingHistoryMaster = ({
                   items={paginatedRequests}
                   renderItem={(req) => (
                     <Table.Row key={req.id}>
-                      <Table.Cell><strong>{req.requestNo}</strong></Table.Cell>
+                      <Table.Cell><strong>{req.requestId}</strong></Table.Cell>
                       <Table.Cell>
                         <div style={{ fontWeight: 600 }}>{req.residentName}</div>
                         <small style={{ color: "#64748b" }}>{req.apartmentNo}</small>
@@ -315,7 +315,7 @@ export const CardProcessingHistoryMaster = ({
       {/* Details View Modal */}
       {selectedCard && (
         <Modal isLong={true}>
-          <Modal.Header title={`Card Request History - ${selectedCard.requestNo}`} />
+          <Modal.Header title={`Card Request History - ${selectedCard.requestId}`} />
           <Modal.Body>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div><strong>Resident Name:</strong> {selectedCard.residentName}</div>

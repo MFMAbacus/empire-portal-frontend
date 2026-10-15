@@ -16,7 +16,7 @@ type CardProcessingFilterProps = {
   defaultEndDate: string | null;
   defaultStatus: string | null;
   onFilter: (filters: {
-    requestNo: string | null;
+    requestId: string | null;
     startDate: string | null;
     endDate: string | null;
     status: string | null;
@@ -32,7 +32,7 @@ export const CardProcessingFilterModal = ({
   onFilter,
   onClose,
 }: CardProcessingFilterProps): JSX.Element => {
-  const [requestNo, setRequestNo] = React.useState<string | null>(defaultRequestNo);
+  const [requestId, setRequestNo] = React.useState<string | null>(defaultRequestNo);
   const [startDate, setStartDate] = React.useState<string | null>(defaultStartDate);
   const [endDate, setEndDate] = React.useState<string | null>(defaultEndDate);
   const [status, setStatus] = React.useState<string | null>(defaultStatus);
@@ -46,7 +46,7 @@ export const CardProcessingFilterModal = ({
   ];
 
   const hasFilters =
-    (requestNo !== null && requestNo !== '') ||
+    (requestId !== null && requestId !== '') ||
     (startDate !== null && startDate !== '') ||
     (endDate !== null && endDate !== '') ||
     (status !== null && status !== '');
@@ -60,7 +60,7 @@ export const CardProcessingFilterModal = ({
             className='w-100'
             label='Request No'
             placeholder='Enter request number (e.g. ACR-000001)'
-            value={requestNo}
+            value={requestId}
             onChange={(val: any) => {
               const text = typeof val === 'string' ? val : val?.target?.value || '';
               setRequestNo(text);
@@ -135,7 +135,7 @@ export const CardProcessingFilterModal = ({
           isDisabled={!hasFilters}
           onClick={() => {
             onFilter({
-              requestNo,
+              requestId,
               startDate,
               endDate,
               status,
@@ -149,7 +149,7 @@ export const CardProcessingFilterModal = ({
           isDisabled={!hasFilters}
           onClick={() => {
             onFilter({
-              requestNo: null,
+              requestId: null,
               startDate: null,
               endDate: null,
               status: null,

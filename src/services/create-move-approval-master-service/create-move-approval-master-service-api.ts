@@ -3,6 +3,7 @@ import { ServiceOutput } from '@/types/service';
 import { apiUrl } from '@/config';
 
 export type CreateMoveApprovalInput = {
+  sessionId: string;
   residentId: string;
   apartmentId: string;
   projectCode: string;
@@ -23,14 +24,17 @@ export class CreateMoveApprovalMasterServiceApi extends Service<CreateMoveApprov
   }
 
   public async execute(input: CreateMoveApprovalInput): Promise<ServiceOutput> {
-    const response = await fetch(`${apiUrl}/move-approval-request`, {
+    const { sessionId, ...bodyData } = input;
+    const endpoint = `${apiUrl}/move-approval-request?sessionId=${sessionId}`;
+
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json; charset=utf-8',
       },
       mode: 'cors',
-      body: JSON.stringify(input),
+      body: JSON.stringify(bodyData),
       signal: this._abortController.signal,
     });
     const body = await response.json();

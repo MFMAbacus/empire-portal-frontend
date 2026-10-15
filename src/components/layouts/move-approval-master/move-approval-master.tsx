@@ -31,7 +31,7 @@ import { makeUpdateMoveApprovalMasterService } from "@/services/update-move-appr
 
 export type MoveRequest = {
   id: string;
-  requestNo: string;
+  requestId: string;
   residentId: string;
   residentName?: string;
   residentEmail?: string;
@@ -181,7 +181,7 @@ export const MoveApprovalMaster = ({
       status: "Approved",
     });
     setFeedback({
-      msg: `Move Request ${req.requestNo} approved successfully.`,
+      msg: `Move Request ${req.requestId} approved successfully.`,
       ok: true,
     });
     setSelectedRequest(null);
@@ -196,7 +196,7 @@ export const MoveApprovalMaster = ({
       rejectionReason: rejectionReason.trim() || "Movement rule violation",
     });
     setFeedback({
-      msg: `Move Request ${rejectModal.requestNo} rejected.`,
+      msg: `Move Request ${rejectModal.requestId} rejected.`,
       ok: false,
     });
     setRejectModal(null);
@@ -308,7 +308,7 @@ export const MoveApprovalMaster = ({
                     <Table.Row key={req.id}>
                       <Table.Cell>
                         <strong style={{ color: "#1e293b" }}>
-                          {req.requestNo}
+                          {req.requestId}
                         </strong>
                       </Table.Cell>
                       <Table.Cell>
@@ -426,7 +426,7 @@ export const MoveApprovalMaster = ({
       {selectedRequest && (
         <Modal isLong={true}>
           <Modal.Header
-            title={`Move Request Review — ${selectedRequest.requestNo}`}
+            title={`Move Request Review — ${selectedRequest.requestId}`}
           />
           <Modal.Body>
             <div
@@ -646,7 +646,7 @@ export const MoveApprovalMaster = ({
       {rejectModal && (
         <Modal>
           <Modal.Header
-            title={`Reject Move Request — ${rejectModal.requestNo}`}
+            title={`Reject Move Request — ${rejectModal.requestId}`}
           />
           <Modal.Body>
             <div

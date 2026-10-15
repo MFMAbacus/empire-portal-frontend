@@ -18,7 +18,7 @@ import { makeGetRequestHistoryMasterService } from "@/services/get-request-histo
 
 export type ApprovalRequestHistory = {
   id: string;
-  requestNo: string;
+  requestId: string;
   module: string;
   residentName: string;
   actionTaken: string;
@@ -94,7 +94,7 @@ export const RequestHistoryMaster = ({
                   items={history}
                   renderItem={(item) => (
                     <Table.Row key={item.id}>
-                      <Table.Cell><strong>{item.requestNo}</strong></Table.Cell>
+                      <Table.Cell><strong>{item.requestId}</strong></Table.Cell>
                       <Table.Cell>{item.module}</Table.Cell>
                       <Table.Cell>{item.residentName}</Table.Cell>
                       <Table.Cell>{item.actionTaken}</Table.Cell>

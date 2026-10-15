@@ -33,7 +33,7 @@ import { GuestApprovalHistoryFilterModal } from "../guest-approval-history-maste
 export type GuestAccessRequest = {
   id: string;
   _id?: string;
-  requestNo: string;
+  requestId: string;
   residentName: string;
   residentEmail?: string;
   residentMobile?: string;
@@ -143,7 +143,7 @@ export const GuestApprovalMaster = ({
     ) => {
       return reqList.filter((item) => {
         const matchReqNo =
-          !reqNo || item.requestNo.toLowerCase().includes(reqNo.toLowerCase());
+          !reqNo || item.requestId.toLowerCase().includes(reqNo.toLowerCase());
         const matchStatus = !stat || item.status === stat;
 
         let matchDate = true;
@@ -207,18 +207,18 @@ export const GuestApprovalMaster = ({
 
   // Handle filtering execution
   const handleFilterSubmit = (filters: {
-    requestNo: string | null;
+    requestId: string | null;
     startDate: string | null;
     endDate: string | null;
     status: string | null;
   }) => {
-    setFilterRequestNo(filters.requestNo);
+    setFilterRequestNo(filters.requestId);
     setFilterStartDate(filters.startDate);
     setFilterEndDate(filters.endDate);
     setFilterStatus(filters.status);
     const filtered = applyFilters(
       allRequests,
-      filters.requestNo,
+      filters.requestId,
       filters.startDate,
       filters.endDate,
       filters.status
@@ -358,13 +358,13 @@ export const GuestApprovalMaster = ({
       status: "Approved",
       approvalStatus: "Approved",
       assignedGateId: gateId,
-      qrCodeUrl: `QR-${approveModal.requestNo}.png`,
-      qrCode: `QR-${approveModal.requestNo}.png`,
+      qrCodeUrl: `QR-${approveModal.requestId}.png`,
+      qrCode: `QR-${approveModal.requestId}.png`,
       qrStatus: "Active",
     });
 
     setFeedback(
-      `Request ${approveModal.requestNo} approved! Assigned to Gate: ${gateId}.`
+      `Request ${approveModal.requestId} approved! Assigned to Gate: ${gateId}.`
     );
     closeApproveModal();
   };
@@ -384,7 +384,7 @@ export const GuestApprovalMaster = ({
       rejectionReason: rejectionReason.trim() || "Security criteria not met",
     });
 
-    setFeedback(`Request ${rejectModal.requestNo} rejected.`);
+    setFeedback(`Request ${rejectModal.requestId} rejected.`);
     setRejectModal(null);
     setRejectionReason("");
   };
@@ -468,7 +468,7 @@ export const GuestApprovalMaster = ({
                   renderItem={(req) => (
                     <Table.Row key={req.id}>
                       <Table.Cell>
-                        <strong>{req.requestNo}</strong>
+                        <strong>{req.requestId}</strong>
                       </Table.Cell>
                       <Table.Cell>
                         <div>{req.residentName}</div>
@@ -561,7 +561,7 @@ export const GuestApprovalMaster = ({
       {selectedRequest && (
         <Modal isLong={true}>
           <Modal.Header
-            title={`Guest Access Details - ${selectedRequest.requestNo}`}
+            title={`Guest Access Details - ${selectedRequest.requestId}`}
           />
           <Modal.Body>
             <div
@@ -642,7 +642,7 @@ export const GuestApprovalMaster = ({
       {approveModal && (
         <Modal>
           <Modal.Header
-            title={`Approve Guest Access & Assign Gate - ${approveModal.requestNo}`}
+            title={`Approve Guest Access & Assign Gate - ${approveModal.requestId}`}
           />
           <Modal.Body>
             <p style={{ marginBottom: "12px" }}>
@@ -706,7 +706,7 @@ export const GuestApprovalMaster = ({
       {/* Reject Modal */}
       {rejectModal && (
         <Modal>
-          <Modal.Header title={`Reject Request - ${rejectModal.requestNo}`} />
+          <Modal.Header title={`Reject Request - ${rejectModal.requestId}`} />
           <Modal.Body>
             <TextInput
               label="Rejection Reason *"

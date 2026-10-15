@@ -35,7 +35,7 @@ export type ReservationHistoryEntry = {
 export type RestaurantReservation = {
   id: string;
   reservationNo: string;
-  requestNo?: string;
+  requestId?: string;
   venueId: string;
   venueName?: string;
   projectCode: string;
@@ -108,7 +108,7 @@ export const RestaurantReservationApprovalHistoryMaster = ({
       stat: string | null
     ) => {
       return resList.filter((item) => {
-        const targetNo = item.reservationNo || item.requestNo || item.id;
+        const targetNo = item.reservationNo || item.requestId || item.id;
         const matchNo =
           !resNo || targetNo.toLowerCase().includes(resNo.toLowerCase());
         const matchStatus =
@@ -268,7 +268,7 @@ export const RestaurantReservationApprovalHistoryMaster = ({
                     <Table.Row key={res.id}>
                       <Table.Cell>
                         <strong style={{ color: "#1e293b" }}>
-                          {res.reservationNo || res.requestNo || res.id}
+                          {res.reservationNo || res.requestId || res.id}
                         </strong>
                       </Table.Cell>
                       <Table.Cell>

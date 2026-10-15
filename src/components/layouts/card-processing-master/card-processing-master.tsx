@@ -29,7 +29,7 @@ import { CardProcessingFilterModal } from "./filter-modal";
 
 export type AccessCardRequest = {
   id: string;
-  requestNo: string;
+  requestId: string;
   residentId?: string;
   residentName: string;
   apartmentNo: string;
@@ -106,7 +106,7 @@ export const CardProcessingMaster = ({
     ) => {
       return reqList.filter((item) => {
         const matchReqNo =
-          !reqNo || item.requestNo.toLowerCase().includes(reqNo.toLowerCase());
+          !reqNo || item.requestId.toLowerCase().includes(reqNo.toLowerCase());
         const matchStatus =
           !stat || (item.replacementStatus || "Pending").toLowerCase() === stat.toLowerCase();
 
@@ -171,19 +171,19 @@ export const CardProcessingMaster = ({
   });
 
   const handleFilterSubmit = (filters: {
-    requestNo: string | null;
+    requestId: string | null;
     startDate: string | null;
     endDate: string | null;
     status: string | null;
   }) => {
-    setFilterRequestNo(filters.requestNo);
+    setFilterRequestNo(filters.requestId);
     setFilterStartDate(filters.startDate);
     setFilterEndDate(filters.endDate);
     setFilterStatus(filters.status);
 
     const filtered = applyFilters(
       allRequests,
-      filters.requestNo,
+      filters.requestId,
       filters.startDate,
       filters.endDate,
       filters.status
@@ -208,7 +208,7 @@ export const CardProcessingMaster = ({
       id: statusUpdateModal.id,
       replacementStatus: newStatus,
     });
-    setFeedback(`Card Request ${statusUpdateModal.requestNo} status updated to '${newStatus}'.`);
+    setFeedback(`Card Request ${statusUpdateModal.requestId} status updated to '${newStatus}'.`);
     setStatusUpdateModal(null);
     setSelectedCard(null);
   };
@@ -278,7 +278,7 @@ export const CardProcessingMaster = ({
                   items={paginatedRequests}
                   renderItem={(req) => (
                     <Table.Row key={req.id}>
-                      <Table.Cell><strong>{req.requestNo}</strong></Table.Cell>
+                      <Table.Cell><strong>{req.requestId}</strong></Table.Cell>
                       <Table.Cell>
                         <div>{req.residentName}</div>
                         <small style={{ color: "#666" }}>{req.apartmentNo}</small>
@@ -372,7 +372,7 @@ export const CardProcessingMaster = ({
       {/* Details View Modal */}
       {selectedCard && (
         <Modal isLong={true}>
-          <Modal.Header title={`Card Request - ${selectedCard.requestNo}`} />
+          <Modal.Header title={`Card Request - ${selectedCard.requestId}`} />
           <Modal.Body>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div><strong>Resident Name:</strong> {selectedCard.residentName}</div>
@@ -446,7 +446,7 @@ export const CardProcessingMaster = ({
       {/* Update Status Modal */}
       {statusUpdateModal && (
         <Modal>
-          <Modal.Header title={`Update Card Status & Notify Resident - ${statusUpdateModal.requestNo}`} />
+          <Modal.Header title={`Update Card Status & Notify Resident - ${statusUpdateModal.requestId}`} />
           <Modal.Body>
             <ListInput label="Replacement Status Step *" value={newStatus}>
               {(onClose) => (

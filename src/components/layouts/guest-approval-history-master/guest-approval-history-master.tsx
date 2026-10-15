@@ -28,7 +28,7 @@ import { makeGetGuestApprovalHistoryMasterService } from "@/services/get-guest-a
 export type GuestAccessRequest = {
   id: string;
   _id?: string;
-  requestNo: string;
+  requestId: string;
   residentName: string;
   residentEmail?: string;
   residentMobile?: string;
@@ -113,7 +113,7 @@ export const GuestApprovalHistoryMaster = ({
     ) => {
       return reqList.filter((item) => {
         const matchReqNo =
-          !reqNo || item.requestNo.toLowerCase().includes(reqNo.toLowerCase());
+          !reqNo || item.requestId.toLowerCase().includes(reqNo.toLowerCase());
         const matchStatus = !stat || item.status === stat;
 
         let matchDate = true;
@@ -206,18 +206,18 @@ export const GuestApprovalHistoryMaster = ({
 
   // Handle filtering execution
   const handleFilterSubmit = (filters: {
-    requestNo: string | null;
+    requestId: string | null;
     startDate: string | null;
     endDate: string | null;
     status: string | null;
   }) => {
-    setFilterRequestNo(filters.requestNo);
+    setFilterRequestNo(filters.requestId);
     setFilterStartDate(filters.startDate);
     setFilterEndDate(filters.endDate);
     setFilterStatus(filters.status);
     const filtered = applyFilters(
       allRequests,
-      filters.requestNo,
+      filters.requestId,
       filters.startDate,
       filters.endDate,
       filters.status
@@ -300,7 +300,7 @@ export const GuestApprovalHistoryMaster = ({
                   renderItem={(req) => (
                     <Table.Row key={req.id}>
                       <Table.Cell>
-                        <strong>{req.requestNo}</strong>
+                        <strong>{req.requestId}</strong>
                       </Table.Cell>
                       <Table.Cell>
                         <div>{req.residentName}</div>
@@ -377,7 +377,7 @@ export const GuestApprovalHistoryMaster = ({
       {selectedRequest && (
         <Modal isLong={true}>
           <Modal.Header
-            title={`Guest Access History Details - ${selectedRequest.requestNo}`}
+            title={`Guest Access History Details - ${selectedRequest.requestId}`}
           />
           <Modal.Body>
             <div
