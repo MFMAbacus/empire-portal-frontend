@@ -5,7 +5,7 @@ export type Input = {
   residentId: string;
   name: string;
   email: string;
-  mobileNo: number;
+  mobileNo: string;
   apartmentId: string;
   projectCode: string;
   loginUserId: string;

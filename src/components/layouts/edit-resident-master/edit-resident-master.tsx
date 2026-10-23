@@ -89,7 +89,7 @@ export const EditResidentMaster = ({
 
   const isMobileNoValid = React.useMemo(() => {
     if (!mobileNo) return false;
-    return mobileNo.length === 10;
+    return mobileNo.length === 11;
   }, [mobileNo]);
 
   // Fetch Property Master List for Dropdown
@@ -187,7 +187,7 @@ export const EditResidentMaster = ({
           setEmail(item.email || "");
           
           const rawMobile = item.mobileNo ? String(item.mobileNo) : "";
-          const cleanedMobile = rawMobile.replace(/[^0-9]/g, "").slice(0, 10);
+          const cleanedMobile = rawMobile.replace(/[^0-9]/g, "").slice(0, 11);
           setMobileNo(cleanedMobile);
 
           setApartmentId(item.apartmentId || "");
@@ -226,11 +226,11 @@ export const EditResidentMaster = ({
 
     submit({
       sessionId,
-      id: residentId,              // Target Record Primary Key
+      id: residentId,            // Target Record Primary Key
       residentId: residentCode,    // User Input Field Value
       name,
       email,
-      mobileNo: Number(mobileNo),
+      mobileNo,                    // String format mein pass ho raha hai
       apartmentId,
       projectCode,
       loginUserId,
@@ -291,7 +291,7 @@ export const EditResidentMaster = ({
     const found = filteredApartments.find((a) => a.apartmentId === apartmentId);
     if (!found) return "";
     return found.apartmentNo
-      ? `${found.apartmentNo} > ${found.apartmentId}`
+      ? `${found.apartmentId} > ${found.apartmentNo}`
       : found.apartmentId || "";
   }, [filteredApartments, apartmentId]);
 
@@ -304,6 +304,7 @@ export const EditResidentMaster = ({
     !isEmailValid ||
     !mobileNo ||
     !isMobileNoValid ||
+    !loginUserId ||
     !apartmentId ||
     !projectCode ||
     !residentType ||
@@ -384,7 +385,7 @@ export const EditResidentMaster = ({
                 <TextInput
                   className="w-100"
                   label="Mobile No."
-                  placeholder="Enter 10-digit mobile number"
+                  placeholder="Enter 11-digit mobile number"
                   value={mobileNo}
                   hasError={
                     typeof validation["mobileNo"] !== "undefined" ||
@@ -393,8 +394,10 @@ export const EditResidentMaster = ({
                   isDisabled={isLoading || isSuccess}
                   onChange={(val) => {
                     const cleaned = val.replace(/[^0-9]/g, "");
-                    const limited = cleaned.slice(0, 10);
+                    const limited = cleaned.slice(0, 11);
                     setMobileNo(limited);
+                    // Mobile number ko hi Login User ID auto-sync kar rahe hain
+                    setLoginUserId(limited);
                   }}
                 />
               </Grid.Cell>
@@ -508,10 +511,10 @@ export const EditResidentMaster = ({
                 <TextInput
                   className="w-100"
                   label="Login User ID"
-                  placeholder="Enter login user ID"
+                  placeholder="Auto-filled from mobile no"
                   value={loginUserId}
                   hasError={typeof validation["loginUserId"] !== "undefined"}
-                  isDisabled={isLoading || isSuccess}
+                  isDisabled={true}
                   onChange={setLoginUserId}
                 />
               </Grid.Cell>

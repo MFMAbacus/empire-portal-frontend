@@ -55,9 +55,9 @@ export const CreateResidentMaster = ({
   const [residentId, setResidentId] = React.useState<string>("");
   const [name, setName] = React.useState<string>("");
   const [email, setEmail] = React.useState<string>("");
-  const [mobileNo, setMobileNo] = React.useState<number | undefined>(undefined);
+  // MobileNo ko string bana diya taake shuru ka '0' save rahay
+  const [mobileNo, setMobileNo] = React.useState<string>("");
 
-  // const currentUserId = session?.userId || (session as any)?.user?.id || (session as any)?.id || "";
   const [loginUserId, setLoginUserId] = React.useState<string>("");
   const [residentType, setResidentType] = React.useState<string>("");
   
@@ -74,12 +74,6 @@ export const CreateResidentMaster = ({
 
   const { startTimeout } = useTimeout();
 
-  // React.useEffect(() => {
-  //   if (currentUserId) {
-  //     setLoginUserId(currentUserId);
-  //   }
-  // }, [currentUserId]);
-
   const isEmailValid = React.useMemo(() => {
     if (!email) return false;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -87,10 +81,8 @@ export const CreateResidentMaster = ({
   }, [email]);
 
   const isMobileNoValid = React.useMemo(() => {
-    if (mobileNo === undefined) return false;
-    const mobileStr = mobileNo.toString();
-    // 10 digits exact check (Requirement ke mutabiq aap range bhi de sakte hain, e.g., mobileStr.length >= 10 && mobileStr.length <= 11)
-    return mobileStr.length === 10;
+    if (!mobileNo) return false;
+    return mobileNo.length === 11;
   }, [mobileNo]);
 
   // Fetch Property Master list from API
@@ -191,7 +183,7 @@ export const CreateResidentMaster = ({
       residentId,
       name,
       email,
-      mobileNo: mobileNo ?? 0,
+      mobileNo,
       loginUserId,
       residentType,
       apartmentId,
@@ -260,10 +252,12 @@ export const CreateResidentMaster = ({
     !name ||
     !email ||
     !isEmailValid ||
-    mobileNo === undefined ||
+    !mobileNo ||
     !isMobileNoValid ||
+    !loginUserId ||
     !apartmentId ||
     !projectCode ||
+    !residentType ||
     isSuccess;
 
   return (
@@ -331,17 +325,19 @@ export const CreateResidentMaster = ({
               <TextInput
                 className="w-100"
                 label="Mobile No."
-                placeholder="Enter 10-digit mobile number"
-                value={mobileNo !== undefined ? mobileNo.toString() : ""}
+                placeholder="Enter 11-digit mobile number"
+                value={mobileNo}
                 hasError={
                   typeof validation["mobileNo"] !== "undefined" ||
-                  (mobileNo !== undefined && !isMobileNoValid)
+                  (mobileNo.length > 0 && !isMobileNoValid)
                 }
                 isDisabled={isLoading || isSuccess}
                 onChange={(val) => {
                   const cleaned = val.replace(/[^0-9]/g, "");
-                  const limited = cleaned.slice(0, 10);
-                  setMobileNo(limited ? Number(limited) : undefined);
+                  const limited = cleaned.slice(0, 11);
+                  setMobileNo(limited);
+                  // Mobile number ko hi Login User ID set kar rahe hain
+                  setLoginUserId(limited);
                 }}
               />
             </Grid.Cell>
@@ -398,7 +394,7 @@ export const CreateResidentMaster = ({
               </ListInput>
             </Grid.Cell>
 
-            {/* Apartment ID Dropdown (Shows Apartment No > Apartment ID, sends only Apartment ID) */}
+            {/* Apartment ID Dropdown */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <ListInput
                 className="w-100"
@@ -438,7 +434,7 @@ export const CreateResidentMaster = ({
                             isActive={apartmentId === apartment.apartmentId}
                             onClick={() => {
                               if (apartment.apartmentId) {
-                                setApartmentId(apartment.apartmentId); // Payload gets strictly the ID
+                                setApartmentId(apartment.apartmentId);
                               }
                               onClose();
                             }}
@@ -464,15 +460,15 @@ export const CreateResidentMaster = ({
               />
             </Grid.Cell>
 
-            {/* Login User ID */}
+            {/* Login User ID (Auto-synced with Mobile No, but editable if needed) */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <TextInput
                 className="w-100"
                 label="Login User ID"
-                placeholder="Enter login user ID"
+                placeholder="Auto-filled from mobile no"
                 value={loginUserId}
                 hasError={typeof validation["loginUserId"] !== "undefined"}
-                isDisabled={isLoading || isSuccess}
+                isDisabled={true}
                 onChange={setLoginUserId}
               />
             </Grid.Cell>
