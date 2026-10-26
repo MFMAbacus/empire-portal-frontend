@@ -123,6 +123,18 @@ export const FilterModal = ({
         {/* Checkbox: Is Active */}
         <Grid>
           <Checkbox
+            label='is Access Allowed'
+            isChecked={filters.isAccessAllowed || false}
+            onChange={(value) =>
+              setFilters((prev) => ({
+                ...prev,
+                isAccessAllowed: value,
+              }))
+            }
+          /> 
+          </Grid>
+          <Grid>
+          <Checkbox
             label='Is Active'
             isChecked={filters.isActive || false}
             onChange={(value) =>

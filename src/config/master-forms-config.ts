@@ -196,12 +196,12 @@ export const MASTER_FORM_CATEGORIES: MasterFormCategory[] = [
         description: "Assign kitchen and service staff to venue locations.",
         badgeColor: "indigo",
       },
-      {
-        id: "project-venue-master",
-        title: "Project-Venue Mapping",
-        description: "Link dining facilities to residential complexes.",
-        badgeColor: "purple",
-      },
+      // {
+      //   id: "project-venue-master",
+      //   title: "Project-Venue Mapping",
+      //   description: "Link dining facilities to residential complexes.",
+      //   badgeColor: "purple",
+      // },
       {
         id: "reservation-rule-master",
         title: "Reservation Slot Rules",

@@ -57,6 +57,7 @@ export const CreateVenueMaster = ({
     React.useState<boolean>(false);
 
   const [isActive, setIsActive] = React.useState<boolean>(true);
+  const [isAccessAllowed, setIsAccessAllowed] = React.useState<boolean>(true);
   const [isSuccess, setIsSuccess] = React.useState<boolean>(false);
 
   const { startTimeout } = useTimeout();
@@ -124,6 +125,7 @@ export const CreateVenueMaster = ({
       description,
       imageOrLogo,
       isActive,
+      isAccessAllowed,
     });
   }, [
     sessionId,
@@ -348,6 +350,15 @@ export const CreateVenueMaster = ({
             </Grid.Cell>
           </Grid>
           <Grid>
+            <Grid.Cell size={Grid.CellSize.S3}>
+              <Checkbox
+                className="mt-4"
+                label="Access Allowed"
+                isChecked={isAccessAllowed}
+                isDisabled={isLoading || isSuccess}
+                onChange={setIsAccessAllowed}
+              />
+            </Grid.Cell>
             {/* Field 9: Active Status */}
             <Grid.Cell size={Grid.CellSize.S3}>
               <Checkbox

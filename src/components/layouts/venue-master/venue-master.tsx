@@ -80,6 +80,7 @@ export type VenueItem = {
   fileType?: string;
   fileSize?: number;
   isActive: boolean;
+  isAccessAllowed: boolean;
   isArchived?: boolean;
 };
 
@@ -180,6 +181,9 @@ export const VenueMaster = ({
       if (typeof filters.isActive !== "undefined") {
         predicate = predicate && current.isActive === filters.isActive;
       }
+      if (typeof filters.isAccessAllowed !== "undefined") {
+        predicate = predicate && current.isAccessAllowed === filters.isAccessAllowed;
+      }
       return predicate;
     });
   }, [venues, filters]);
@@ -248,6 +252,7 @@ export const VenueMaster = ({
                   <Table.Header value="CONTACT" />
                   <Table.Header value="DESCRIPTION" />
                   <Table.Header value="FILE TYPE" />
+                  <Table.Header value="ACCESS" />
                   <Table.Header value="STATUS" />
                   <Table.Header />
                 </Table.Row>
@@ -266,6 +271,14 @@ export const VenueMaster = ({
                       <Table.Cell>{venue.description}</Table.Cell>
                       <Table.Cell>
                         {getFileType(venue.imageOrLogo || venue.fileType)}
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Badge
+                          value={venue.isAccessAllowed ? "Allowed" : "Not Allowed"}
+                          color={
+                            venue.isAccessAllowed ? Badge.Color.GREEN : Badge.Color.RED
+                          }
+                        />
                       </Table.Cell>
                       <Table.Cell>
                         <Badge

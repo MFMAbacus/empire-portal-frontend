@@ -27,6 +27,7 @@ import { useForm } from "@/hooks/use-form";
 import { makeGetCourtApprovalMasterService } from "@/services/get-court-approval-master-service";
 import { makeCreateCourtApprovalMasterService } from "@/services/create-court-approval-master-service";
 import { makeUpdateCourtApprovalMasterService } from "@/services/update-court-approval-master-service";
+import { GuestApprovalFilterModal } from "@/components/layouts/court-approval-master/filter-modal"; // Apne path ke mutabiq adjust kar lein
 
 export type CourtBooking = {
   id: string;
@@ -71,6 +72,13 @@ export const CourtApprovalMaster = ({
   // Pagination State
   const [page, setPage] = React.useState<number>(1);
 
+  // Filter Modal States
+  const [isFilterModalOpen, setIsFilterModalOpen] = React.useState<boolean>(false);
+  const [filterRequestId, setFilterRequestId] = React.useState<string | null>(null);
+  const [filterStartDate, setFilterStartDate] = React.useState<string | null>(null);
+  const [filterEndDate, setFilterEndDate] = React.useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = React.useState<string | null>(null);
+
   const effectiveUserId = React.useMemo(() => {
     if (propUserId) return propUserId;
     try {
@@ -96,6 +104,46 @@ export const CourtApprovalMaster = ({
   const [blockTime, setBlockTime] = React.useState<string>("02:00 PM - 03:00 PM");
 
   const [feedback, setFeedback] = React.useState<string | null>(null);
+
+  // Filter Helper Function
+  const applyFilters = React.useCallback(
+    (
+      reqList: CourtBooking[],
+      reqId: string | null,
+      sDate: string | null,
+      eDate: string | null,
+      stat: string | null
+    ) => {
+      return reqList.filter((item) => {
+        const matchReqId =
+          !reqId || 
+          item.reservationNo?.toLowerCase().includes(reqId.toLowerCase()) || 
+          item.id?.toLowerCase().includes(reqId.toLowerCase());
+        
+        const matchStatus =
+          !stat || 
+          item.slotStatus?.toLowerCase() === stat.toLowerCase() || 
+          item.status?.toLowerCase() === stat.toLowerCase();
+
+        let matchDate = true;
+        if (item.bookingDate) {
+          const itemDate = String(item.bookingDate).substring(0, 10);
+          if (sDate && eDate) {
+            matchDate = itemDate >= sDate && itemDate <= eDate;
+          } else if (sDate) {
+            matchDate = itemDate >= sDate;
+          } else if (eDate) {
+            matchDate = itemDate <= eDate;
+          }
+        } else if (sDate || eDate) {
+          matchDate = false;
+        }
+
+        return matchReqId && matchDate && matchStatus;
+      });
+    },
+    []
+  );
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const raw = data as any;
@@ -192,24 +240,47 @@ export const CourtApprovalMaster = ({
     setBlockSlotModal(false);
   };
 
-  // Paginated records computation
+  // Handle Filter Submit from Filter Modal
+  const handleFilterSubmit = (filters: {
+    requestId: string | null;
+    startDate: string | null;
+    endDate: string | null;
+    status: string | null;
+  }) => {
+    setFilterRequestId(filters.requestId ?? null);
+    setFilterStartDate(filters.startDate ?? null);
+    setFilterEndDate(filters.endDate ?? null);
+    setFilterStatus(filters.status ?? null);
+    setPage(1);
+    setIsFilterModalOpen(false);
+  };
+
+  // Filtered and Paginated records computation
   const [totalPages, paginatedBookings] = React.useMemo(() => {
     if (!bookings) {
       return [1, []];
     }
 
-    const pagination = paginate(bookings, {
+    const filtered = applyFilters(
+      bookings,
+      filterRequestId,
+      filterStartDate,
+      filterEndDate,
+      filterStatus
+    );
+
+    const pagination = paginate(filtered, {
       currentPage: page,
       totalPerPage: 10,
     });
 
     return [pagination.totalPages, pagination.records];
-  }, [bookings, page]);
+  }, [bookings, page, filterRequestId, filterStartDate, filterEndDate, filterStatus, applyFilters]);
 
   const getSlotBadge = (status: string | undefined) => {
     switch (status) {
       case "Pending Blocked":
-        return <Badge value="Pending " color={Badge.Color.BLUE} />;
+        return <Badge value="Pending" color={Badge.Color.BLUE} />;
       case "Approved":
         return <Badge value="Approved & Confirmed" color={Badge.Color.GREEN} />;
       case "Maintenance Blocked":
@@ -226,10 +297,10 @@ export const CourtApprovalMaster = ({
   return (
     <Dashboard.Content>
       <Actionbar title="SPORTS COURT RESERVATION & SLOT BLOCKING">
-        {onBack && <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />}
-        {onHistory && <Button label="HISTORY" onClick={onHistory} />}
+        <Button label="FILTER" onClick={() => setIsFilterModalOpen(true)} />
         <Button label="RELOAD" onClick={loadBookings} />
-        {/* <Button label="+ BLOCK SLOT FOR MAINTENANCE / PT" onClick={() => setBlockSlotModal(true)} /> */}
+        {onHistory && <Button label="HISTORY" onClick={onHistory} />}
+        {onBack && <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />}
       </Actionbar>
 
       <Dashboard.Page>
@@ -252,7 +323,13 @@ export const CourtApprovalMaster = ({
             <LoadingFeedback feedback="Fetching court bookings from Live Express API..." />
           )}
 
-          {!isLoading && paginatedBookings !== null && (
+          {!isLoading && paginatedBookings !== null && paginatedBookings.length === 0 && (
+            <div style={{ padding: "32px", textAlign: "center", color: "#94a3b8" }}>
+              No matching sports court bookings found.
+            </div>
+          )}
+
+          {!isLoading && paginatedBookings !== null && paginatedBookings.length > 0 && (
             <Table
               head={
                 <Table.Row>
@@ -317,17 +394,23 @@ export const CourtApprovalMaster = ({
             />
           )}
 
-          {!isLoading && bookings !== null && bookings.length === 0 && (
-            <div style={{ padding: "32px", textAlign: "center", color: "#94a3b8" }}>
-              No pending sports court bookings found for your project scope. Approved & Rejected requests are stored in the <strong>HISTORY</strong> tab.
-            </div>
-          )}
-
-          {!isLoading && paginatedBookings !== null && bookings && bookings.length > 0 && (
+          {!isLoading && paginatedBookings !== null && paginatedBookings.length > 0 && (
             <Pagination page={page} totalPages={totalPages} onPage={setPage} />
           )}
         </Paper>
       </Dashboard.Page>
+
+      {/* Filter Modal */}
+      {isFilterModalOpen && (
+        <GuestApprovalFilterModal
+          defaultRequestNo={filterRequestId}
+          defaultStartDate={filterStartDate}
+          defaultEndDate={filterEndDate}
+          defaultStatus={filterStatus}
+          onFilter={handleFilterSubmit}
+          onClose={() => setIsFilterModalOpen(false)}
+        />
+      )}
 
       {/* Details View Modal */}
       {selectedBooking && (
@@ -373,90 +456,13 @@ export const CourtApprovalMaster = ({
           <Modal.Footer>
             <Grid>
               <Grid.Cell size={Grid.CellSize.S12}>
-                <Button label="Approve " color={Button.Color.GREEN} onClick={() => handleApprove(selectedBooking)} />
+                <Button label="Approve" color={Button.Color.GREEN} onClick={() => handleApprove(selectedBooking)} />
               </Grid.Cell>
               <Grid.Cell size={Grid.CellSize.S12}>
-            <Button label="Reject "  color={Button.Color.RED} onClick={() => setRejectModal(selectedBooking)} />
+                <Button label="Reject" color={Button.Color.RED} onClick={() => setRejectModal(selectedBooking)} />
               </Grid.Cell>
             </Grid>
-            
             <Button label="Close" onClick={() => setSelectedBooking(null)} />
-          </Modal.Footer>
-        </Modal>
-      )}
-
-      {/* Block Slot Modal */}
-      {blockSlotModal && (
-        <Modal>
-          <Modal.Header title="Block Slot for Maintenance / PT Session" />
-          <Modal.Body>
-            <ListInput label="Select Court *" value={blockCourt}>
-              {(onClose) => (
-                <>
-                  <ListInput.Item
-                    label="Tennis Court #1"
-                    onClick={() => {
-                      setBlockCourt("Tennis Court #1");
-                      onClose();
-                    }}
-                  />
-                  <ListInput.Item
-                    label="Padel Court #2"
-                    onClick={() => {
-                      setBlockCourt("Padel Court #2");
-                      onClose();
-                    }}
-                  />
-                  <ListInput.Item
-                    label="Basketball Court"
-                    onClick={() => {
-                      setBlockCourt("Basketball Court");
-                      onClose();
-                    }}
-                  />
-                </>
-              )}
-            </ListInput>
-            <div style={{ marginTop: "12px" }}>
-              <ListInput label="Blocking Purpose *" value={blockType}>
-                {(onClose) => (
-                  <>
-                    <ListInput.Item
-                      label="Facility Maintenance / Cleaning"
-                      onClick={() => {
-                        setBlockType("Maintenance Blocked");
-                        onClose();
-                      }}
-                    />
-                    <ListInput.Item
-                      label="Personal Trainer (PT) Reservation"
-                      onClick={() => {
-                        setBlockType("PT Session Blocked");
-                        onClose();
-                      }}
-                    />
-                  </>
-                )}
-              </ListInput>
-            </div>
-            <div style={{ marginTop: "12px" }}>
-              <TextInput
-                label="Block Date (YYYY-MM-DD) *"
-                value={blockDate}
-                onChange={(val: string) => setBlockDate(val)}
-              />
-            </div>
-            <div style={{ marginTop: "12px" }}>
-              <TextInput
-                label="Time Slot Window *"
-                value={blockTime}
-                onChange={(val: string) => setBlockTime(val)}
-              />
-            </div>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button label="Lock Court Slot" onClick={handleCreateBlockSlot} />
-            <Button label="Cancel" onClick={() => setBlockSlotModal(false)} />
           </Modal.Footer>
         </Modal>
       )}

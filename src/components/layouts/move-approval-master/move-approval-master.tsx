@@ -21,11 +21,13 @@ import { Actionbar } from "@/components/layouts/action-bar";
 
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
+import { FilterIcon } from "@/components/icons/filter-icon";
 
 import { useForm } from "@/hooks/use-form";
 import { paginate } from "@/utility/paginate";
 import { makeGetMoveApprovalMasterService } from "@/services/get-move-approval-master-service";
 import { makeUpdateMoveApprovalMasterService } from "@/services/update-move-approval-master-service";
+import { MoveApprovalFilterModal } from "./filter-modal";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -70,15 +72,6 @@ type MoveApprovalMasterProps = {
   onHistory?: () => void;
 };
 
-// ─── Badge color helper ───────────────────────────────────────────────────────
-
-function getBadgeColor(status: string) {
-  const s = status?.toLowerCase();
-  if (s === "approved") return Badge.Color.GREEN;
-  if (s === "rejected") return Badge.Color.RED;
-  return Badge.Color.BLUE;
-}
-
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export const MoveApprovalMaster = ({
@@ -87,6 +80,7 @@ export const MoveApprovalMaster = ({
   onBack,
   onHistory,
 }: MoveApprovalMasterProps): JSX.Element => {
+  const [allRequests, setAllRequests] = React.useState<MoveRequest[]>([]);
   const [requests, setRequests] = React.useState<MoveRequest[]>([]);
   const [selectedRequest, setSelectedRequest] =
     React.useState<MoveRequest | null>(null);
@@ -121,6 +115,48 @@ export const MoveApprovalMaster = ({
     }
   }, [propUserId]);
 
+  // Filter Modal States
+  const [isFilterModalOpen, setIsFilterModalOpen] = React.useState<boolean>(false);
+  const [filterRequestNo, setFilterRequestNo] = React.useState<string | null>(null);
+  const [filterStartDate, setFilterStartDate] = React.useState<string | null>(null);
+  const [filterEndDate, setFilterEndDate] = React.useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = React.useState<string | null>(null);
+
+  // Filter Helper Function
+  const applyFilters = React.useCallback(
+    (
+      reqList: MoveRequest[],
+      reqNo: string | null,
+      sDate: string | null,
+      eDate: string | null,
+      stat: string | null
+    ) => {
+      return reqList.filter((item) => {
+        const matchReqNo =
+          !reqNo || item.requestId.toLowerCase().includes(reqNo.toLowerCase());
+        const matchStatus =
+          !stat || item.status?.toLowerCase() === stat.toLowerCase();
+
+        let matchDate = true;
+        if (item.movementDate) {
+          const itemDate = String(item.movementDate).substring(0, 10);
+          if (sDate && eDate) {
+            matchDate = itemDate >= sDate && itemDate <= eDate;
+          } else if (sDate) {
+            matchDate = itemDate >= sDate;
+          } else if (eDate) {
+            matchDate = itemDate <= eDate;
+          }
+        } else if (sDate || eDate) {
+          matchDate = false;
+        }
+
+        return matchReqNo && matchDate && matchStatus;
+      });
+    },
+    []
+  );
+
   // ── GET ──────────────────────────────────────────────────────────────────
   const handleSuccess = React.useCallback((data: unknown) => {
     const raw = data as any;
@@ -132,6 +168,7 @@ export const MoveApprovalMaster = ({
     const pendingList = list.filter(
       (r) => r.status?.toLowerCase() === "pending",
     );
+    setAllRequests(pendingList);
     setRequests(pendingList);
     setPage(1);
   }, []);
@@ -149,6 +186,29 @@ export const MoveApprovalMaster = ({
   React.useEffect(() => {
     loadRequests();
   }, [loadRequests]);
+
+  // Handle Filter Submission
+  const handleFilterSubmit = (filters: {
+    requestId: string | null;
+    startDate: string | null;
+    endDate: string | null;
+    status: string | null;
+  }) => {
+    setFilterRequestNo(filters.requestId);
+    setFilterStartDate(filters.startDate);
+    setFilterEndDate(filters.endDate);
+    setFilterStatus(filters.status);
+
+    const filtered = applyFilters(
+      allRequests,
+      filters.requestId,
+      filters.startDate,
+      filters.endDate,
+      filters.status
+    );
+    setRequests(filtered);
+    setPage(1);
+  };
 
   // Paginated records computation
   const [totalPages, paginatedRequests] = React.useMemo(() => {
@@ -204,17 +264,6 @@ export const MoveApprovalMaster = ({
     setSelectedRequest(null);
   };
 
-  // ── Stats (derived) ───────────────────────────────────────────────────────
-  const pending = requests.filter(
-    (r) => r.status?.toLowerCase() === "pending",
-  ).length;
-  const approved = requests.filter(
-    (r) => r.status?.toLowerCase() === "approved",
-  ).length;
-  const rejected = requests.filter(
-    (r) => r.status?.toLowerCase() === "rejected",
-  ).length;
-
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <Dashboard.Content>
@@ -223,35 +272,15 @@ export const MoveApprovalMaster = ({
         {onBack && (
           <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />
         )}
+        <Button
+          label="FILTER"
+          icon={<FilterIcon />}
+          onClick={() => setIsFilterModalOpen(true)}
+        />
         <Button label="RELOAD" onClick={loadRequests} />
       </Actionbar>
 
       <Dashboard.Page>
-        {/* Stats Row */}
-        {/* <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
-          {[
-            { label: "Total Requests", value: requests.length, color: "#3b82f6" },
-            { label: "Pending", value: pending, color: "#f59e0b" },
-            { label: "Approved", value: approved, color: "#10b981" },
-            { label: "Rejected", value: rejected, color: "#ef4444" },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              style={{
-                flex: 1,
-                background: "#fff",
-                borderRadius: "10px",
-                padding: "14px 18px",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
-                borderLeft: `4px solid ${stat.color}`,
-              }}
-            >
-              <div style={{ fontSize: "22px", fontWeight: 700, color: stat.color }}>{stat.value}</div>
-              <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>{stat.label}</div>
-            </div>
-          ))}
-        </div> */}
-
         <Paper>
           <Paper.Title value="Move-in / Move-out Approval Requests" />
 
@@ -369,8 +398,8 @@ export const MoveApprovalMaster = ({
                             req.status?.toLowerCase() === "approved"
                               ? Badge.Color.GREEN
                               : req.status?.toLowerCase() === "rejected"
-                                ? Badge.Color.RED
-                                : Badge.Color.BLUE
+                              ? Badge.Color.RED
+                              : Badge.Color.BLUE
                           }
                         />
                       </Table.Cell>
@@ -421,6 +450,18 @@ export const MoveApprovalMaster = ({
           )}
         </Paper>
       </Dashboard.Page>
+
+      {/* Filter Modal */}
+      {isFilterModalOpen && (
+        <MoveApprovalFilterModal
+          defaultRequestNo={filterRequestNo}
+          defaultStartDate={filterStartDate}
+          defaultEndDate={filterEndDate}
+          defaultStatus={filterStatus}
+          onFilter={handleFilterSubmit}
+          onClose={() => setIsFilterModalOpen(false)}
+        />
+      )}
 
       {/* ── Detail View Modal ─────────────────────────────────────────────── */}
       {selectedRequest && (

@@ -1134,7 +1134,7 @@ const masterformsSubSections: PermissionItem[] = [
   { id: "delivery-sla-master", title: "Delivery SLA Configuration Master" },
   { id: "access-card-staff-master", title: "Access Card Staff Master" },
   { id: "venue-master", title: "Resturant / Cafe Master" },
-  { id: "project-venue-master", title: "Project Venue Master" },
+  //{ id: "project-venue-master", title: "Project Venue Master" },
   { id: "venue-operating-master", title: "Venue Operating Hours Master" },
   { id: "menu-master", title: "Menu Master" },
   { id: "restaurant-staff-master", title: "Resturant Staff Mapping" },

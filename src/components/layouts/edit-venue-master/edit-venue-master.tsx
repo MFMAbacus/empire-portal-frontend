@@ -58,7 +58,7 @@ export const EditVenueMaster = ({
   const [description, setDescription] = React.useState<string>("");
   const [imageOrLogo, setImageOrLogo] = React.useState<string>("");
   const [isActive, setIsActive] = React.useState<boolean>(true);
-
+  const [isAccessAllowed , setIsAccessAllowed] = React.useState<boolean>(true);
   const [propertyList, setPropertyList] = React.useState<PropertyMasterItem[]>(
     [],
   );
@@ -132,6 +132,7 @@ export const EditVenueMaster = ({
           // Image/Logo state mapping fix
           setImageOrLogo(item.imageOrLogo || item.fileName || "");
           setIsActive(item.isActive ?? true);
+          setIsAccessAllowed(item.isAccessAllowed ?? false);
         }
         setIsFetching(false);
       })
@@ -171,6 +172,7 @@ export const EditVenueMaster = ({
       description,
       imageOrLogo,
       isActive,
+      isAccessAllowed,
     } as any);
   }, [
     sessionId,
@@ -184,6 +186,7 @@ export const EditVenueMaster = ({
     description,
     imageOrLogo,
     isActive,
+    isAccessAllowed,
     submit,
   ]);
 
@@ -424,6 +427,15 @@ export const EditVenueMaster = ({
               </Grid.Cell>
             </Grid>
             <Grid>
+              <Grid.Cell size={Grid.CellSize.S3}>
+                <Checkbox
+                  className="mt-4"
+                  label="Access Allowed"
+                  isChecked={isAccessAllowed}
+                  isDisabled={isLoading || isSuccess}
+                  onChange={setIsAccessAllowed}
+                />
+              </Grid.Cell>
               {/* Field 8: Active Checkbox */}
               <Grid.Cell size={Grid.CellSize.S3}>
                 <Checkbox

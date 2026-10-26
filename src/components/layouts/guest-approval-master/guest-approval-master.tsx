@@ -28,7 +28,7 @@ import { paginate } from "@/utility/paginate";
 import { makeGetGuestApprovalMasterService } from "@/services/get-guest-approval-master-service";
 import { makeUpdateGuestApprovalMasterService } from "@/services/update-guest-approval-master-service";
 import { GetGateMasterServiceApi } from "@/services/get-gate-master-service";
-import { GuestApprovalHistoryFilterModal } from "../guest-approval-history-master/filter-modal";
+import { GuestApprovalFilterModal } from "../guest-approval-master/filter-modal";
 
 export type GuestAccessRequest = {
   id: string;
@@ -111,7 +111,7 @@ export const GuestApprovalMaster = ({
 
   // Filter States
   const [isFilterModalOpen, setIsFilterModalOpen] = React.useState<boolean>(false);
-  const [filterRequestNo, setFilterRequestNo] = React.useState<string | null>(null);
+  const [filterRequestId, setFilterRequestId] = React.useState<string | null>(null);
   const [filterStartDate, setFilterStartDate] = React.useState<string | null>(null);
   const [filterEndDate, setFilterEndDate] = React.useState<string | null>(null);
   const [filterStatus, setFilterStatus] = React.useState<string | null>(null);
@@ -143,7 +143,11 @@ export const GuestApprovalMaster = ({
     ) => {
       return reqList.filter((item) => {
         const matchReqNo =
-          !reqNo || item.requestId.toLowerCase().includes(reqNo.toLowerCase());
+          !reqNo || 
+          (item.requestId && 
+           typeof item.requestId === 'string' && 
+           item.requestId.toLowerCase().includes(reqNo.toLowerCase()));
+           
         const matchStatus = !stat || item.status === stat;
 
         let matchDate = true;
@@ -212,7 +216,7 @@ export const GuestApprovalMaster = ({
     endDate: string | null;
     status: string | null;
   }) => {
-    setFilterRequestNo(filters.requestId);
+    setFilterRequestId(filters.requestId);
     setFilterStartDate(filters.startDate);
     setFilterEndDate(filters.endDate);
     setFilterStatus(filters.status);
@@ -547,8 +551,8 @@ export const GuestApprovalMaster = ({
 
       {/* Filter Modal */}
       {isFilterModalOpen && (
-        <GuestApprovalHistoryFilterModal
-          defaultRequestNo={filterRequestNo}
+        <GuestApprovalFilterModal
+          defaultRequestNo={filterRequestId}
           defaultStartDate={filterStartDate}
           defaultEndDate={filterEndDate}
           defaultStatus={filterStatus}

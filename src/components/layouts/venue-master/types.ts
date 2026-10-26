@@ -6,5 +6,6 @@ export type VenueFilters = {
   projectCode?: string;
   contact?:string;
   isActive?: boolean;
+  isAccessAllowed?: boolean;
   showArchived?: boolean;
 };

@@ -40,8 +40,6 @@ export const MoveApprovalHistoryFilterModal = ({
   const statusOptions = [
     { id: 'Approved', name: 'Approved' },
     { id: 'Rejected', name: 'Rejected' },
-    { id: 'Checked-in', name: 'Checked-in' },
-    { id: 'Expired', name: 'Expired' },
   ];
 
   const hasFilters =

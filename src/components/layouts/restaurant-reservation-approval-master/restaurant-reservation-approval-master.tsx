@@ -25,6 +25,7 @@ import { useForm } from "@/hooks/use-form";
 import { paginate } from "@/utility/paginate";
 import { makeGetRestaurantReservationApprovalMasterService } from "@/services/get-restaurant-reservation-approval-master-service";
 import { makeUpdateRestaurantReservationApprovalMasterService } from "@/services/update-restaurant-reservation-approval-master-service";
+import { RestaurantReservationFilterModal } from "@/components/layouts/restaurant-reservation-approval-master/filter-modal";
 
 export type RestaurantReservation = {
   id: string;
@@ -85,6 +86,48 @@ export const RestaurantReservationApprovalMaster = ({
       return undefined;
     }
   }, [propUserId]);
+
+  // Filter Modal States
+  const [isFilterModalOpen, setIsFilterModalOpen] = React.useState<boolean>(false);
+  const [filterReservationNo, setFilterReservationNo] = React.useState<string | null>(null);
+  const [filterStartDate, setFilterStartDate] = React.useState<string | null>(null);
+  const [filterEndDate, setFilterEndDate] = React.useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = React.useState<string | null>(null);
+
+  // Filter Helper Function
+  const applyFilters = React.useCallback(
+    (
+      reqList: RestaurantReservation[],
+      resNo: string | null,
+      sDate: string | null,
+      eDate: string | null,
+      stat: string | null
+    ) => {
+      return reqList.filter((item) => {
+        const matchReservationNo =
+          !resNo || item.reservationNo?.toLowerCase().includes(resNo.toLowerCase());
+        const matchStatus =
+          !stat || item.status?.toLowerCase() === stat.toLowerCase();
+
+        let matchDate = true;
+        if (item.reservationDate) {
+          const itemDate = String(item.reservationDate).substring(0, 10);
+          if (sDate && eDate) {
+            matchDate = itemDate >= sDate && itemDate <= eDate;
+          } else if (sDate) {
+            matchDate = itemDate >= sDate;
+          } else if (eDate) {
+            matchDate = itemDate <= eDate;
+          }
+        } else if (sDate || eDate) {
+          matchDate = false;
+        }
+
+        return matchReservationNo && matchDate && matchStatus;
+      });
+    },
+    []
+  );
 
   const handleSuccess = React.useCallback((data: unknown) => {
     const raw = data as any;
@@ -162,19 +205,42 @@ export const RestaurantReservationApprovalMaster = ({
     setSelectedRes(null);
   };
 
-  // Paginated records computation
+  // Handle Filter Submit from Filter Modal (Keys updated from requestNo -> reservationNo)
+  const handleFilterSubmit = (filters: {
+    reservationNo: string | null;
+    startDate: string | null;
+    endDate: string | null;
+    status: string | null;
+  }) => {
+    setFilterReservationNo(filters.reservationNo ?? null);
+    setFilterStartDate(filters.startDate ?? null);
+    setFilterEndDate(filters.endDate ?? null);
+    setFilterStatus(filters.status ?? null);
+    setPage(1);
+    setIsFilterModalOpen(false);
+  };
+
+  // Filtered and Paginated records computation
   const [totalPages, paginatedReservations] = React.useMemo(() => {
     if (!reservations) {
       return [1, []];
     }
 
-    const pagination = paginate(reservations, {
+    const filtered = applyFilters(
+      reservations,
+      filterReservationNo,
+      filterStartDate,
+      filterEndDate,
+      filterStatus
+    );
+
+    const pagination = paginate(filtered, {
       currentPage: page,
       totalPerPage: 25,
     });
 
     return [pagination.totalPages, pagination.records];
-  }, [reservations, page]);
+  }, [reservations, page, filterReservationNo, filterStartDate, filterEndDate, filterStatus, applyFilters]);
 
   const getStatusBadge = (status: RestaurantReservation["status"]) => {
     switch (status) {
@@ -185,7 +251,7 @@ export const RestaurantReservationApprovalMaster = ({
       case "Arrived":
         return <Badge value="Arrived & Seated" color={Badge.Color.GREEN} />;
       case "Expired":
-        return <Badge value=" Expired" color={Badge.Color.RED} />;
+        return <Badge value="Expired" color={Badge.Color.RED} />;
       case "Rejected":
         return <Badge value="Rejected" color={Badge.Color.RED} />;
       default:
@@ -196,11 +262,10 @@ export const RestaurantReservationApprovalMaster = ({
   return (
     <Dashboard.Content>
       <Actionbar title="RESTAURANT RESERVATION APPROVAL & ARRIVAL CONFIRMATION">
-        {onBack && <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />}
-        {onHistory && (
-          <Button label="HISTORY" onClick={onHistory} />
-        )}
+        <Button label="FILTER" onClick={() => setIsFilterModalOpen(true)} />
         <Button label="RELOAD" onClick={loadReservations} />
+        {onHistory && <Button label="HISTORY" onClick={onHistory} />}
+        {onBack && <Button label="BACK" icon={<ArrowLeftIcon />} onClick={onBack} />}
       </Actionbar>
 
       <Dashboard.Page>
@@ -223,13 +288,13 @@ export const RestaurantReservationApprovalMaster = ({
             <LoadingFeedback feedback="Fetching restaurant reservation approvals from Live API..." />
           )}
 
-          {!isLoading && reservations.length === 0 && (
+          {!isLoading && paginatedReservations.length === 0 && (
             <div style={{ padding: "32px", textAlign: "center", color: "#94a3b8" }}>
-              No pending or active restaurant reservation requests found.
+              No matching restaurant reservation requests found.
             </div>
           )}
 
-          {!isLoading && reservations.length > 0 && (
+          {!isLoading && paginatedReservations.length > 0 && (
             <Table
               head={
                 <Table.Row>
@@ -315,11 +380,23 @@ export const RestaurantReservationApprovalMaster = ({
             />
           )}
 
-          {!isLoading && reservations.length > 0 && (
+          {!isLoading && paginatedReservations.length > 0 && (
             <Pagination page={page} totalPages={totalPages} onPage={setPage} />
           )}
-        </Paper>
+        </Paper> 
       </Dashboard.Page>
+
+      {/* Filter Modal */}
+      {isFilterModalOpen && (
+        <RestaurantReservationFilterModal
+          defaultReservationNo={filterReservationNo}
+          defaultStartDate={filterStartDate}
+          defaultEndDate={filterEndDate}
+          defaultStatus={filterStatus}
+          onFilter={handleFilterSubmit}
+          onClose={() => setIsFilterModalOpen(false)}
+        />
+      )}
 
       {/* Details View Modal */}
       {selectedRes && (
@@ -377,21 +454,14 @@ export const RestaurantReservationApprovalMaster = ({
           <Modal.Footer>
             {selectedRes.status === "Pending" && (
               <>
-                <Grid>
-                  <Grid.Cell size={Grid.CellSize.S12}>
-                    <Button label="Approve" color={Button.Color.GREEN} onClick={() => handleApprove(selectedRes)} />
-                  </Grid.Cell>
-                  <Grid.Cell size={Grid.CellSize.S12}>
-                    
-                    <Button label="Reject " color={Button.Color.RED} onClick={() => setRejectModal(selectedRes)} />
-                  </Grid.Cell>
-                </Grid>
+                <Button label="Approve" color={Button.Color.GREEN} onClick={() => handleApprove(selectedRes)} />
+                <Button label="Reject" color={Button.Color.RED} onClick={() => setRejectModal(selectedRes)} />
               </>
             )}
             {selectedRes.status === "Approved" && (
               <>
                 <Button label="Confirm Guest Arrived" onClick={() => handleArrivalStatus(selectedRes, true)} />
-                <Button label="Mark Not Arrived " onClick={() => handleArrivalStatus(selectedRes, false)} />
+                <Button label="Mark Not Arrived" onClick={() => handleArrivalStatus(selectedRes, false)} />
               </>
             )}
             <Button label="Close" onClick={() => setSelectedRes(null)} />

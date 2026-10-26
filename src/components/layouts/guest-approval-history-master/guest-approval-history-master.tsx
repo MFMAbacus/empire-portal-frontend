@@ -112,8 +112,13 @@ export const GuestApprovalHistoryMaster = ({
       stat: string | null
     ) => {
       return reqList.filter((item) => {
+        // Safe check for requestId
         const matchReqNo =
-          !reqNo || item.requestId.toLowerCase().includes(reqNo.toLowerCase());
+          !reqNo || 
+          (item.requestId && 
+           typeof item.requestId === 'string' && 
+           item.requestId.toLowerCase().includes(reqNo.toLowerCase()));
+
         const matchStatus = !stat || item.status === stat;
 
         let matchDate = true;

@@ -53,6 +53,7 @@ export class CreateVenueMasterServiceApi extends Service<Input> {
         description: description !== "" ? description : undefined,
         imageOrLogo: imageOrLogo || undefined,
         isActive,
+        isAccessAllowed: input.isAccessAllowed,
       }),
       mode: "cors",
       signal: this._abortController.signal,

@@ -12,6 +12,7 @@ export type Input = {
   description?: string;
   imageOrLogo?: string;
   isActive: boolean;
+  isAccessAllowed: boolean;
   //serviceType?: BuyServiceCategoryNames[] | null;
   //permissions: UserPermissions;
 };

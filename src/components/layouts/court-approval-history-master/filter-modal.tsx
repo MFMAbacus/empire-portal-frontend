@@ -50,7 +50,7 @@ export const GuestApprovalHistoryFilterModal = ({
 
   return (
     <Modal>
-      <Modal.Header title='Filter Guest Approval History' />
+      <Modal.Header title='Filter Court Approval History' />
       <Modal.Body>
         <Grid>
           <TextInput
