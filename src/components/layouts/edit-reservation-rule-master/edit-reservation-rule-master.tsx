@@ -295,7 +295,7 @@ export const EditReservationRuleMaster = ({
                 />
               </Grid.Cell>
               {/* Field 4: late Arrival */}
-              <Grid.Cell size={Grid.CellSize.S3}>
+              <Grid.Cell size={Grid.CellSize.S4}>
                 <NumberInput
                   className="w-100"
                   label="Late Arrival Grace Period (In Mintues) "

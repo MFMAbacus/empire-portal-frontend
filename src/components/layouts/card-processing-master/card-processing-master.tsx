@@ -16,7 +16,7 @@ import { Pagination } from "@/components/base/pagination";
 
 import { Dashboard } from "@/components/layouts/dashboard";
 import { Actionbar } from "@/components/layouts/action-bar";
-
+import { Grid } from "@/components/base/grid";
 import { EyeIcon } from "@/components/icons/eye-icon";
 import { ArrowLeftIcon } from "@/components/icons/arrow-left-icon";
 import { FilterIcon } from "@/components/icons/filter-icon";
@@ -325,12 +325,14 @@ export const CardProcessingMaster = ({
                           </Tooltip>
                           <Button
                             label={req.isSuspended ? "UNSUSPEND" : "MARK SUSPENDED"}
-                            size={Button.Size.SMALL}
+                            size={Button.Size.SMALL} 
+                            color={Button.Color.RED}
                             onClick={() => toggleSuspension(req)}
                           />
                           <Button
                             label="UPDATE STATUS"
                             size={Button.Size.SMALL}
+                            color={Button.Color.GREEN}
                             onClick={() => {
                               setStatusUpdateModal(req);
                               setNewStatus(req.replacementStatus);
@@ -427,17 +429,25 @@ export const CardProcessingMaster = ({
             </div>
           </Modal.Body>
           <Modal.Footer>
-            <Button
+            <Grid>
+              <Grid.Cell size={Grid.CellSize.S12}>
+                <Button
               label={selectedCard.isSuspended ? "Unsuspend Card" : "Mark Card Suspended"}
               onClick={() => toggleSuspension(selectedCard)}
+              color={Button.Color.RED}
             />
+              </Grid.Cell>
+              <Grid.Cell size={Grid.CellSize.S12}>
             <Button
-              label="Update Processing Status"
+              label="Update Status"
               onClick={() => {
                 setStatusUpdateModal(selectedCard);
                 setNewStatus(selectedCard.replacementStatus);
               }}
+              color={Button.Color.GREEN}
             />
+            </Grid.Cell>
+            </Grid>
             <Button label="Close" onClick={() => setSelectedCard(null)} />
           </Modal.Footer>
         </Modal>
@@ -491,7 +501,12 @@ export const CardProcessingMaster = ({
             </ListInput>
           </Modal.Body>
           <Modal.Footer>
-            <Button label="Save" onClick={handleUpdateStatus} />
+            <Grid>
+              <Grid.Cell size={Grid.CellSize.S12}>
+                <Button label="Save" onClick={handleUpdateStatus} color={Button.Color.GREEN}/>
+            </Grid.Cell>
+            </Grid>
+            
             <Button label="Cancel" onClick={() => setStatusUpdateModal(null)} />
           </Modal.Footer>
         </Modal>

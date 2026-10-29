@@ -73,9 +73,7 @@ export const FilterModal = ({
             label="Max Guest \ Reservation"
             placeholder="Enter max gueat."
             value={
-              filters.maxGuest !== undefined
-                ? String(filters.maxGuest)
-                : ""
+              filters.maxGuest !== undefined ? String(filters.maxGuest) : ""
             }
             onChange={(value) =>
               setFilters((prev) => ({
@@ -109,30 +107,33 @@ export const FilterModal = ({
 
         {/* Checkbox: Is Active */}
         <Grid>
-          <Checkbox
-            label="Is Active"
-            isChecked={filters.isActive || false}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                isActive: value,
-              }))
-            }
-          />
-        </Grid>
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <Checkbox
+              label="Is Active"
+              isChecked={filters.isActive || false}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  isActive: value,
+                }))
+              }
+            />
+          </Grid.Cell>
 
-        {/* Checkbox: Show Archived */}
-        <Grid>
-          <Checkbox
-            label="Show Archived"
-            isChecked={filters.showArchived || false}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                showArchived: value,
-              }))
-            }
-          />
+          {/* Checkbox: Show Archived */}
+
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <Checkbox
+              label="Show Archived"
+              isChecked={filters.showArchived || false}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  showArchived: value,
+                }))
+              }
+            />
+          </Grid.Cell>
         </Grid>
       </Modal.Body>
       <Modal.Footer>

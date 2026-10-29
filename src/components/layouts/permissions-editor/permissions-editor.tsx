@@ -1140,7 +1140,7 @@ const masterformsSubSections: PermissionItem[] = [
   { id: "restaurant-staff-master", title: "Resturant Staff Mapping" },
   { id: "reservation-rule-master", title: "Reservation Slot Rule" },
   { id: "court-master", title: "Sports Court Master" },
-  { id: "project-court-master", title: "Project Court Master" },
+  //{ id: "project-court-master", title: "Project Court Master" },
   { id: "court-operating-master", title: "Court Operating Hours Master" },
   { id: "court-time-master", title: "Court Time Slot Master" },
   { id: "court-blocking-master", title: "Court Blocking Master" },

@@ -19,16 +19,17 @@ type FilterModalProps = {
   onFilter: (filters: CourtBlockingFilters) => void;
   onClose: () => void;
 };
- 
+
 export const FilterModal = ({
   defaultFilters,
   onFilter,
   onClose,
 }: FilterModalProps): JSX.Element => {
-  const [filters, setFilters] = React.useState<CourtBlockingFilters>(defaultFilters);
+  const [filters, setFilters] =
+    React.useState<CourtBlockingFilters>(defaultFilters);
   const { handlePublishDateChange } = useDateValidation({
-  publishDate: filters.blockDate,
-});
+    publishDate: filters.blockDate,
+  });
 
   return (
     <Modal>
@@ -36,33 +37,36 @@ export const FilterModal = ({
       <Modal.Body>
         {/* Field 1: Block ID */}
         <Grid>
-          <TextInput
-            className="w-100"
-            label="Block ID"
-            placeholder="Enter block ID."
-            value={filters.blockId ?? ""}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                blockId: value,
-              }))
-            }
-          />
-        </Grid>
-        {/* Field 5: Court ID */}
-        <Grid>
-          <TextInput
-            className="w-100"
-            label="Court ID"
-            placeholder="Enter court Id."
-            value={filters.courtId ?? ""}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                courtId: value,
-              }))
-            }
-          />
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <TextInput
+              className="w-100"
+              label="Block ID"
+              placeholder="Enter block ID."
+              value={filters.blockId ?? ""}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  blockId: value,
+                }))
+              }
+            />
+          </Grid.Cell>
+          {/* Field 5: Court ID */}
+
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <TextInput
+              className="w-100"
+              label="Court ID"
+              placeholder="Enter court Id."
+              value={filters.courtId ?? ""}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  courtId: value,
+                }))
+              }
+            />
+          </Grid.Cell>
         </Grid>
         {/* Field 2: block date  */}
         <Grid>
@@ -71,9 +75,7 @@ export const FilterModal = ({
             label="Block Date"
             placeholder="Enter Block Date."
             value={
-              typeof filters.blockDate !== "undefined"
-                ? filters.blockDate
-                : ""
+              typeof filters.blockDate !== "undefined" ? filters.blockDate : ""
             }
             onChange={(value) => {
               setFilters((prevFilters) => ({
@@ -119,30 +121,33 @@ export const FilterModal = ({
 
         {/* Checkbox: Is Active */}
         <Grid>
-          <Checkbox
-            label="Is Active"
-            isChecked={filters.isActive || false}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                isActive: value,
-              }))
-            }
-          />
-        </Grid>
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <Checkbox
+              label="Is Active"
+              isChecked={filters.isActive || false}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  isActive: value,
+                }))
+              }
+            />
+          </Grid.Cell>
 
-        {/* Checkbox: Show Archived */}
-        <Grid>
-          <Checkbox
-            label="Show Archived"
-            isChecked={filters.showArchived || false}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                showArchived: value,
-              }))
-            }
-          />
+          {/* Checkbox: Show Archived */}
+
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <Checkbox
+              label="Show Archived"
+              isChecked={filters.showArchived || false}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  showArchived: value,
+                }))
+              }
+            />
+          </Grid.Cell>
         </Grid>
       </Modal.Body>
       <Modal.Footer>

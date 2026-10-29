@@ -1,14 +1,14 @@
-import * as React from 'react';
+import * as React from "react";
 
-import { ApartmentFilters } from './types';
+import { ApartmentFilters } from "./types";
 
-import { Button } from '@/components/base/button';
-import { Modal } from '@/components/base/modal';
-import { TextInput } from '@/components/base/text-input';
-import { Grid } from '@/components/base/grid';
-import { Checkbox } from '@/components/base/checkbox';
+import { Button } from "@/components/base/button";
+import { Modal } from "@/components/base/modal";
+import { TextInput } from "@/components/base/text-input";
+import { Grid } from "@/components/base/grid";
+import { Checkbox } from "@/components/base/checkbox";
 
-import { FilterIcon } from '@/components/icons/filter-icon';
+import { FilterIcon } from "@/components/icons/filter-icon";
 
 type FilterModalProps = {
   defaultFilters: ApartmentFilters;
@@ -21,51 +21,55 @@ export const FilterModal = ({
   onFilter,
   onClose,
 }: FilterModalProps): JSX.Element => {
-  const [filters, setFilters] = React.useState<ApartmentFilters>(defaultFilters);
+  const [filters, setFilters] =
+    React.useState<ApartmentFilters>(defaultFilters);
 
   return (
     <Modal>
-      <Modal.Header title='Filter Apartments' />
+      <Modal.Header title="Filter Apartments" />
       <Modal.Body>
         {/* Field 1: Apartment ID */}
         <Grid>
-          <TextInput
-            className='w-100'
-            label='Apartment ID'
-            placeholder='Enter apartment ID.'
-            value={filters.apartmentId ?? ''}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                apartmentId: value,
-              }))
-            }
-          />
-        </Grid>
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <TextInput
+              className="w-100"
+              label="Apartment ID"
+              placeholder="Enter apartment ID."
+              value={filters.apartmentId ?? ""}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  apartmentId: value,
+                }))
+              }
+            />
+          </Grid.Cell>
 
-        {/* Field 2: Apartment No. */}
-        <Grid>
-          <TextInput
-            className='w-100'
-            label='Apartment No.'
-            placeholder='Enter apartment number.'
-            value={filters.apartmentNo ?? ''}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                apartmentNo: value,
-              }))
-            }
-          />
+          {/* Field 2: Apartment No. */}
+
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <TextInput
+              className="w-100"
+              label="Apartment No."
+              placeholder="Enter apartment number."
+              value={filters.apartmentNo ?? ""}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  apartmentNo: value,
+                }))
+              }
+            />
+          </Grid.Cell>
         </Grid>
 
         {/* Field 3: Building/Tower */}
         <Grid>
           <TextInput
-            className='w-100'
-            label='Building/Tower'
-            placeholder='Enter building or tower name.'
-            value={filters.buildingOrTower ?? ''}
+            className="w-100"
+            label="Building/Tower"
+            placeholder="Enter building or tower name."
+            value={filters.buildingOrTower ?? ""}
             onChange={(value) =>
               setFilters((prev) => ({
                 ...prev,
@@ -78,10 +82,10 @@ export const FilterModal = ({
         {/* Field 4: Floor */}
         <Grid>
           <TextInput
-            className='w-100'
-            label='Floor'
-            placeholder='Enter floor number.'
-            value={filters.floor ?? ''}
+            className="w-100"
+            label="Floor"
+            placeholder="Enter floor number."
+            value={filters.floor ?? ""}
             onChange={(value) =>
               setFilters((prev) => ({
                 ...prev,
@@ -94,10 +98,10 @@ export const FilterModal = ({
         {/* Field 5: Project Code */}
         <Grid>
           <TextInput
-            className='w-100'
-            label='Project Code'
-            placeholder='Enter project code.'
-            value={filters.projectCode ?? ''}
+            className="w-100"
+            label="Project Code"
+            placeholder="Enter project code."
+            value={filters.projectCode ?? ""}
             onChange={(value) =>
               setFilters((prev) => ({
                 ...prev,
@@ -109,36 +113,39 @@ export const FilterModal = ({
 
         {/* Checkbox: Is Active */}
         <Grid>
-          <Checkbox
-            label='Is Active'
-            isChecked={filters.isActive || false}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                isActive: value,
-              }))
-            }
-          />
-        </Grid>
+          <Grid.Cell size={Grid.CellSize.S4}>
+            <Checkbox
+              label="Is Active"
+              isChecked={filters.isActive || false}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  isActive: value,
+                }))
+              }
+            />
+          </Grid.Cell>
 
-        {/* Checkbox: Show Archived */}
-        <Grid>
-          <Checkbox
-            label='Show Archived'
-            isChecked={filters.showArchived || false}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                showArchived: value,
-              }))
-            }
-          />
+          {/* Checkbox: Show Archived */}
+
+          <Grid.Cell size={Grid.CellSize.S4}>
+            <Checkbox
+              label="Show Archived"
+              isChecked={filters.showArchived || false}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  showArchived: value,
+                }))
+              }
+            />
+          </Grid.Cell>
         </Grid>
       </Modal.Body>
       <Modal.Footer>
         <Button
-          className='ml-05'
-          label='FILTER'
+          className="ml-05"
+          label="FILTER"
           icon={<FilterIcon />}
           onClick={() => {
             onFilter(filters);
@@ -146,14 +153,14 @@ export const FilterModal = ({
           }}
         />
         <Button
-          className='ml-05'
-          label='CLEAR FILTERS'
+          className="ml-05"
+          label="CLEAR FILTERS"
           onClick={() => {
             onFilter({});
             onClose();
           }}
         />
-        <Button label='CLOSE' onClick={onClose} />
+        <Button label="CLOSE" onClick={onClose} />
       </Modal.Footer>
     </Modal>
   );

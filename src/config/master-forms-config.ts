@@ -238,12 +238,12 @@ export const MASTER_FORM_CATEGORIES: MasterFormCategory[] = [
         description: "Schedule maintenance or reserved court periods.",
         badgeColor: "red",
       },
-      {
-        id: "project-court-master",
-        title: "Project-Court Mapping",
-        description: "Associate courts with specific residential projects.",
-        badgeColor: "purple",
-      },
+      // {
+      //   id: "project-court-master",
+      //   title: "Project-Court Mapping",
+      //   description: "Associate courts with specific residential projects.",
+      //   badgeColor: "purple",
+      // },
       {
         id: "court-booking-master",
         title: "Booking Rules",

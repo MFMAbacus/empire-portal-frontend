@@ -1,14 +1,14 @@
-import * as React from 'react';
+import * as React from "react";
 
-import { ResidentFilters } from './types';
+import { ResidentFilters } from "./types";
 
-import { Button } from '@/components/base/button';
-import { Modal } from '@/components/base/modal';
-import { TextInput } from '@/components/base/text-input';
-import { Grid } from '@/components/base/grid';
-import { Checkbox } from '@/components/base/checkbox';
+import { Button } from "@/components/base/button";
+import { Modal } from "@/components/base/modal";
+import { TextInput } from "@/components/base/text-input";
+import { Grid } from "@/components/base/grid";
+import { Checkbox } from "@/components/base/checkbox";
 
-import { FilterIcon } from '@/components/icons/filter-icon';
+import { FilterIcon } from "@/components/icons/filter-icon";
 
 type FilterModalProps = {
   defaultFilters: ResidentFilters;
@@ -25,106 +25,117 @@ export const FilterModal = ({
 
   return (
     <Modal>
-      <Modal.Header title='Filter Residents' />
+      <Modal.Header title="Filter Residents" />
       <Modal.Body>
         {/* Field 1: Resident ID */}
         <Grid>
-          <TextInput
-            className='w-100'
-            label='Resident ID'
-            placeholder='Enter Resident ID.'
-            value={filters.residentId ?? ''}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                residentId: value,
-              }))
-            }
-          />
-        </Grid>
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <TextInput
+              className="w-100"
+              label="Resident ID"
+              placeholder="Enter Resident ID."
+              value={filters.residentId ?? ""}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  residentId: value,
+                }))
+              }
+            />
+          </Grid.Cell>
 
-        {/* Field 2: Name */}
-        <Grid>
-          <TextInput
-            className='w-100'
-            label='Name'
-            placeholder='Enter resident name.'
-            value={filters.name ?? ''}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                name: value,
-              }))
-            }
-          />
+          {/* Field 2: Name */}
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <TextInput
+              className="w-100"
+              label="Name"
+              placeholder="Enter resident name."
+              value={filters.name ?? ""}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  name: value,
+                }))
+              }
+            />
+          </Grid.Cell>
         </Grid>
 
         {/* Field 3: Email */}
         <Grid>
-          <TextInput
-            className='w-100'
-            label='Email'
-            placeholder='Enter email address.'
-            value={filters.email ?? ''}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                email: value,
-              }))
-            }
-          />
-        </Grid>
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <TextInput
+              className="w-100"
+              label="Email"
+              placeholder="Enter email address."
+              value={filters.email ?? ""}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  email: value,
+                }))
+              }
+            />
+          </Grid.Cell>
 
-        {/* Field 4: Mobile No. (Number Parsing Enabled) */}
-        <Grid>
-          <TextInput
-            className='w-100'
-            label='Mobile No.'
-            placeholder='Enter mobile number.'
-            value={filters.mobileNo !== undefined && filters.mobileNo !== null ? String(filters.mobileNo) : ''}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                mobileNo: value ? Number(value) : undefined,
-              }))
-            }
-          />
+          {/* Field 4: Mobile No. (Number Parsing Enabled) */}
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <TextInput
+              className="w-100"
+              label="Mobile No."
+              placeholder="Enter mobile number."
+              value={
+                filters.mobileNo !== undefined && filters.mobileNo !== null
+                  ? String(filters.mobileNo)
+                  : ""
+              }
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  mobileNo: value ? Number(value) : undefined,
+                }))
+              }
+            />
+          </Grid.Cell>
         </Grid>
 
         {/* Field 5: Apartment ID */}
         <Grid>
-          <TextInput
-            className='w-100'
-            label='Apartment ID'
-            placeholder='Enter apartment ID.'
-            value={filters.apartmentId ?? ''}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                apartmentId: value,
-              }))
-            }
-          />
-        </Grid>
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <TextInput
+              className="w-100"
+              label="Apartment ID"
+              placeholder="Enter apartment ID."
+              value={filters.apartmentId ?? ""}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  apartmentId: value,
+                }))
+              }
+            />
+          </Grid.Cell>
 
-        {/* Field 6: Project Code */}
-        <Grid>
-          <TextInput
-            className='w-100'
-            label='Project Code'
-            placeholder='Enter project code.'
-            value={filters.projectCode ?? ''}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                projectCode: value,
-              }))
-            }
-          />
+          {/* Field 6: Project Code */}
+
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <TextInput
+              className="w-100"
+              label="Project Code"
+              placeholder="Enter project code."
+              value={filters.projectCode ?? ""}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  projectCode: value,
+                }))
+              }
+            />
+          </Grid.Cell>
         </Grid>
 
         {/* Field 7: Login User ID */}
-        <Grid>
+        {/* <Grid>
           <TextInput
             className='w-100'
             label='Login User ID'
@@ -137,56 +148,61 @@ export const FilterModal = ({
               }))
             }
           />
-        </Grid>
+        </Grid> */}
 
         {/* Field 8: Resident Type */}
         <Grid>
-          <TextInput
-            className='w-100'
-            label='Resident Type'
-            placeholder='Enter resident type (e.g. Owner/Tenant).'
-            value={filters.residentType ?? ''}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                residentType: value,
-              }))
-            }
-          />
+          <Grid.Cell size={Grid.CellSize.S8}>
+            <TextInput
+              className="w-100"
+              label="Resident Type"
+              placeholder="Enter resident type (e.g. Owner/Tenant)."
+              value={filters.residentType ?? ""}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  residentType: value,
+                }))
+              }
+            />
+          </Grid.Cell>
         </Grid>
 
         {/* Checkbox: Is Active */}
         <Grid>
-          <Checkbox
-            label='Is Active'
-            isChecked={filters.isActive || false}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                isActive: value,
-              }))
-            }
-          />
-        </Grid>
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <Checkbox
+              label="Is Active"
+              isChecked={filters.isActive || false}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  isActive: value,
+                }))
+              }
+            />
+          </Grid.Cell>
 
-        {/* Checkbox: Show Archived */}
-        <Grid>
-          <Checkbox
-            label='Show Archived'
-            isChecked={filters.showArchived || false}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                showArchived: value,
-              }))
-            }
-          />
+          {/* Checkbox: Show Archived */}
+
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <Checkbox
+              label="Show Archived"
+              isChecked={filters.showArchived || false}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  showArchived: value,
+                }))
+              }
+            />
+          </Grid.Cell>
         </Grid>
       </Modal.Body>
       <Modal.Footer>
         <Button
-          className='ml-05'
-          label='FILTER'
+          className="ml-05"
+          label="FILTER"
           icon={<FilterIcon />}
           onClick={() => {
             onFilter(filters);
@@ -194,14 +210,14 @@ export const FilterModal = ({
           }}
         />
         <Button
-          className='ml-05'
-          label='CLEAR FILTERS'
+          className="ml-05"
+          label="CLEAR FILTERS"
           onClick={() => {
             onFilter({});
             onClose();
           }}
         />
-        <Button label='CLOSE' onClick={onClose} />
+        <Button label="CLOSE" onClick={onClose} />
       </Modal.Footer>
     </Modal>
   );

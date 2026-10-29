@@ -1,14 +1,14 @@
-import * as React from 'react';
+import * as React from "react";
 
-import { CardReplacementReasonFilters } from './types';
+import { CardReplacementReasonFilters } from "./types";
 
-import { Button } from '@/components/base/button';
-import { Modal } from '@/components/base/modal';
-import { TextInput } from '@/components/base/text-input';
-import { Grid } from '@/components/base/grid';
-import { Checkbox } from '@/components/base/checkbox';
+import { Button } from "@/components/base/button";
+import { Modal } from "@/components/base/modal";
+import { TextInput } from "@/components/base/text-input";
+import { Grid } from "@/components/base/grid";
+import { Checkbox } from "@/components/base/checkbox";
 
-import { FilterIcon } from '@/components/icons/filter-icon';
+import { FilterIcon } from "@/components/icons/filter-icon";
 
 type FilterModalProps = {
   defaultFilters: CardReplacementReasonFilters;
@@ -21,19 +21,20 @@ export const FilterModal = ({
   onFilter,
   onClose,
 }: FilterModalProps): JSX.Element => {
-  const [filters, setFilters] = React.useState<CardReplacementReasonFilters>(defaultFilters);
+  const [filters, setFilters] =
+    React.useState<CardReplacementReasonFilters>(defaultFilters);
 
   return (
     <Modal>
-      <Modal.Header title='Filter Card Replacement Reasons' />
+      <Modal.Header title="Filter Card Replacement Reasons" />
       <Modal.Body>
         {/* Field 1: Reason ID */}
         <Grid>
           <TextInput
-            className='w-100'
-            label='Reason ID'
-            placeholder='Enter reason ID.'
-            value={filters.reasonId ?? ''}
+            className="w-100"
+            label="Reason ID"
+            placeholder="Enter reason ID."
+            value={filters.reasonId ?? ""}
             onChange={(value) =>
               setFilters((prev) => ({
                 ...prev,
@@ -46,10 +47,10 @@ export const FilterModal = ({
         {/* Field 2: Reason Name */}
         <Grid>
           <TextInput
-            className='w-100'
-            label='Reason Name'
-            placeholder='Enter reason name.'
-            value={filters.reasonName ?? ''}
+            className="w-100"
+            label="Reason Name"
+            placeholder="Enter reason name."
+            value={filters.reasonName ?? ""}
             onChange={(value) =>
               setFilters((prev) => ({
                 ...prev,
@@ -61,50 +62,54 @@ export const FilterModal = ({
 
         {/* Checkbox: Charges Applicable */}
         <Grid>
-          <Checkbox
-            label='Charges Applicable'
-            isChecked={filters.chargesApplicable || false}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                chargesApplicable: value,
-              }))
-            }
-          />
-        </Grid>
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <Checkbox
+              label="Charges Applicable"
+              isChecked={filters.chargesApplicable || false}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  chargesApplicable: value,
+                }))
+              }
+            />
+          </Grid.Cell>
 
-        {/* Checkbox: Is Active */}
-        <Grid>
-          <Checkbox
-            label='Is Active'
-            isChecked={filters.isActive || false}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                isActive: value,
-              }))
-            }
-          />
-        </Grid>
+          {/* Checkbox: Is Active */}
 
-        {/* Checkbox: Show Archived */}
-        <Grid>
-          <Checkbox
-            label='Show Archived'
-            isChecked={filters.showArchived || false}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                showArchived: value,
-              }))
-            }
-          />
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <Checkbox
+              label="Is Active"
+              isChecked={filters.isActive || false}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  isActive: value,
+                }))
+              }
+            />
+          </Grid.Cell>
+
+          {/* Checkbox: Show Archived */}
+
+          <Grid.Cell size={Grid.CellSize.S6}>
+            <Checkbox
+              label="Show Archived"
+              isChecked={filters.showArchived || false}
+              onChange={(value) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  showArchived: value,
+                }))
+              }
+            />
+          </Grid.Cell>
         </Grid>
       </Modal.Body>
       <Modal.Footer>
         <Button
-          className='ml-05'
-          label='FILTER'
+          className="ml-05"
+          label="FILTER"
           icon={<FilterIcon />}
           onClick={() => {
             onFilter(filters);
@@ -112,14 +117,14 @@ export const FilterModal = ({
           }}
         />
         <Button
-          className='ml-05'
-          label='CLEAR FILTERS'
+          className="ml-05"
+          label="CLEAR FILTERS"
           onClick={() => {
             onFilter({});
             onClose();
           }}
         />
-        <Button label='CLOSE' onClick={onClose} />
+        <Button label="CLOSE" onClick={onClose} />
       </Modal.Footer>
     </Modal>
   );

@@ -40,7 +40,6 @@ export const CourtTimeFilterModal = ({
       <Modal.Body>
         <Grid>
           {/* Row 1: Text Filters */}
-          <Grid.Cell size={Grid.CellSize.S8}>
             <TextInput
               className="w-100"
               label="Court ID"
@@ -53,7 +52,6 @@ export const CourtTimeFilterModal = ({
                 }))
               }
             />
-          </Grid.Cell>
         </Grid>
         <Grid>
           <NumberInput
