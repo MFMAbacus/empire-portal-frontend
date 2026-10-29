@@ -203,7 +203,14 @@ export const CreateReplacementFeeMaster = ({
                 value={feeAmount}
                 hasError={typeof validation["feeAmount"] !== "undefined"}
                 isDisabled={isLoading || isSuccess}
-                onChange={setFeeAmount}
+                onChange={(val: any) => {
+                  const text =
+                    typeof val === "string" ? val : val?.target?.value || "";
+
+                  if (text === "" || /^\d*\.?\d*$/.test(text)) {
+                    setFeeAmount(text);
+                  }
+                }}
               />
             </Grid.Cell>
 
@@ -229,7 +236,14 @@ export const CreateReplacementFeeMaster = ({
                 value={tax}
                 hasError={typeof validation["tax"] !== "undefined"}
                 isDisabled={isLoading || isSuccess}
-                onChange={setTax}
+                onChange={(val: any) => {
+                  const text =
+                    typeof val === "string" ? val : val?.target?.value || "";
+
+                  if (text === "" || /^\d*\.?\d*$/.test(text)) {
+                    setTax(text);
+                  }
+                }}
               />
             </Grid.Cell>
           </Grid>

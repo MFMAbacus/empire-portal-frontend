@@ -277,7 +277,14 @@ export const EditDeliverySLAMaster = ({
                     typeof validation["deliveryPeriodHours"] !== "undefined"
                   }
                   isDisabled={isLoading || isSuccess}
-                  onChange={setDeliveryPeriodHours}
+                  onChange={(val: any) => {
+                  const text =
+                    typeof val === "string" ? val : val?.target?.value || "";
+
+                  if (text === "" || /^\d*\.?\d*$/.test(text)) {
+                    setDeliveryPeriodHours(text);
+                  }
+                }}
                 />
               </Grid.Cell>
 
