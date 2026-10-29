@@ -1491,7 +1491,7 @@ const topbarNavItemPageMap: { [page: string]: string } = {
   "approval-routing-master": "masterforms",
   "create-approval-routing-master": "masterforms",
   "edit-approval-routing-master": "masterforms",
-  "email-template-master": "masterforms",
+  //"email-template-master": "masterforms",
   "create-email-template-master": "masterforms",
   "edit-email-template-master": "masterforms",
   "common-status-master": "masterforms",

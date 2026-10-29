@@ -1117,7 +1117,7 @@ const masterformsSubSections: PermissionItem[] = [
   { id: "resident-master", title: "Resident Master  " },
   // { id: "role-master", title: "User / Role Master " },
   { id: "approval-routing-master", title: "Approval Routing Master " },
-  { id: "email-template-master", title: "Email Template Master" },
+  //{ id: "email-template-master", title: "Email Template Master" },
   { id: "common-status-master", title: "Common Status Master" },
   { id: "gate-master", title: "Gate Master" },
   { id: "guard-account-mapping-master", title: "Guard Account Mapping Master" },

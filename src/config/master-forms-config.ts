@@ -46,12 +46,12 @@ export const MASTER_FORM_CATEGORIES: MasterFormCategory[] = [
         description: "Configure multi-level approval workflows and routes.",
         badgeColor: "indigo",
       },
-      {
-        id: "email-template-master",
-        title: "Email Templates",
-        description: "Create and customize automated email notification templates.",
-        badgeColor: "teal",
-      },
+      // {
+      //   id: "email-template-master",
+      //   title: "Email Templates",
+      //   description: "Create and customize automated email notification templates.",
+      //   badgeColor: "teal",
+      // },
       {
         id: "common-status-master",
         title: "Status Master",

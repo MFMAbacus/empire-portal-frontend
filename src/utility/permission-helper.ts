@@ -50,6 +50,7 @@ export class PermissionHelper {
       announcements: { read: false, write: false },
       userManagement: { read: false, write: false },
       welcomescreenMedia: { read: false, write: false },
+      collection: { read: false, write: false },
       transactions: { read: false, write: false },
       generalConfigurations: { read: false, write: false },
       // FIX 1: Renamed to camelCase masterForms & included subSections
